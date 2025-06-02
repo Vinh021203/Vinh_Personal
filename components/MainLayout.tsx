@@ -7,7 +7,7 @@ import { text } from '@/libs/text';
 import { FaFacebookMessenger, FaPhoneAlt, FaRobot } from 'react-icons/fa';
 import { useUser } from '@/contexts/UserContext';
 import { useState } from 'react';
-import ChatbotBox from '@/components/ChatbotBox';
+// import ChatbotBox from '@/components/ChatbotBox';
 import toast from 'react-hot-toast';
 
 interface MainLayoutProps {
@@ -27,9 +27,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <Footer />
 
       {/* Chatbox nếu đã đăng nhập */}
-      {showChat && user && (
+      {/* {showChat && user && (
         <ChatbotBox onClose={() => setShowChat(false)} />
-      )}
+      )} */}
 
       {/* Nút nổi – chỉ hiển thị khi chatbox đang tắt */}
       {!showChat && (

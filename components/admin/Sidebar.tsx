@@ -23,7 +23,7 @@ const menuItems = [
   { label: 'Dự án', href: '/admin/projects', icon: FolderKanban },
   { label: 'Dịch vụ', href: '/admin/services', icon: Wrench },
   { label: 'Người dùng', href: '/admin/users', icon: Users },
-  { label: 'Tin nhắn', href: '/admin/messages', icon: MessageCircle },
+  // { label: 'Tin nhắn', href: '/admin/messages', icon: MessageCircle },
   { label: 'Cài đặt', href: '/admin/settings', icon: Settings },
   { label: 'Về trang chủ', href: '/', icon: Home },
 ];

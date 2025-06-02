@@ -8,13 +8,11 @@ import { connectDB } from '@/libs/mongodb';
 import Post from '@/models/Post';
 import { Facebook, Twitter, Linkedin } from 'lucide-react';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  await connectDB();
-  const post = await Post.findOne({ slug: decodeURIComponent(params.slug) }).lean();
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await Post.findOne({ slug: decodeURIComponent(slug) }).lean();
   if (!post) return {};
   return {
     title: `${post.title} | VinhWorks`,
@@ -23,7 +21,7 @@ export async function generateMetadata({
       title: `${post.title} | VinhWorks`,
       description: post.content?.slice(0, 150) || '',
       images: post.thumbnail ? [{ url: post.thumbnail }] : [],
-      url: `https://vinhworks.com/blog/${params.slug}`,
+      url: `https://vinhworks.com/blog/${slug}`,
       type: 'article',
     },
   };
@@ -32,10 +30,12 @@ export async function generateMetadata({
 export default async function BlogPost({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
+
   await connectDB();
-  const post = await Post.findOne({ slug: decodeURIComponent(params.slug) }).lean();
+  const post = await Post.findOne({ slug: decodeURIComponent(slug) }).lean();
   if (!post) return notFound();
 
   const relatedPosts = await Post.find({ slug: { $ne: post.slug } }).limit(3).lean();
