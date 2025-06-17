@@ -1,9 +1,12 @@
-'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+"use client";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface DecodedToken {
+  id?: string; // Thêm property id
+  _id?: string; // Thêm _id để support MongoDB
   name: string;
   role: string;
+  email?: string;
   exp?: number;
 }
 
@@ -20,14 +23,26 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const res = await fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' });
-      const data = await res.json();
-      setUser(data.user || null);
+      try {
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = await res.json();
+        setUser(data.user || null);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setUser(null);
+      }
     };
     fetchUser();
   }, []);
 
-  return <UserContext.Provider value={{ user, setUser }}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      {children}
+    </UserContext.Provider>
+  );
 };
 
 export const useUser = () => useContext(UserContext);
