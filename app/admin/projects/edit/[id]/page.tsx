@@ -1,213 +1,884 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import toast, { Toaster } from 'react-hot-toast';
-import { motion } from 'framer-motion';
-import { Wrench, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import Form from '@/components/admin/Form';
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  Upload,
+  X,
+  Image as ImageIcon,
+  FolderKanban,
+  Calendar,
+  User,
+  Tag,
+  Monitor,
+  Sparkles,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Edit3,
+  Trash2,
+  RefreshCw,
+  Plus,
+  DollarSign,
+  Activity,
+  Globe,
+  ExternalLink,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+
+interface ProjectData {
+  name: string;
+  client: string;
+  status: string;
+  description?: string;
+  image?: string;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  budget?: number;
+  progress?: number;
+  priority?: "low" | "medium" | "high";
+  liveUrl?: string;
+  githubUrl?: string;
+}
 
 export default function EditProjectPage() {
   const router = useRouter();
   const { id } = useParams();
 
-  const [name, setName] = useState('');
-  const [client, setClient] = useState('');
-  const [status, setStatus] = useState('Đang triển khai');
+  const [name, setName] = useState("");
+  const [client, setClient] = useState("");
+  const [status, setStatus] = useState("Đang triển khai");
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
-  const [currentImage, setCurrentImage] = useState('');
-  const [description, setDescription] = useState('');
-  const [updatedAt, setUpdatedAt] = useState('');
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
+  const [currentImage, setCurrentImage] = useState("");
+  const [description, setDescription] = useState("");
+  const [budget, setBudget] = useState<number>(0);
+  const [progress, setProgress] = useState<number>(0);
+  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [liveUrl, setLiveUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
         const res = await fetch(`/api/projects/${id}`);
-        if (!res.ok) throw new Error('Không tìm thấy dự án');
-        const data = await res.json();
-        setName(data.name);
-        setClient(data.client);
-        setStatus(data.status);
+        if (!res.ok) throw new Error("Không tìm thấy dự án");
+        const data: ProjectData = await res.json();
+
+        setName(data.name || "");
+        setClient(data.client || "");
+        setStatus(data.status || "Đang triển khai");
         setTags(data.tags || []);
-        setDescription(data.description || '');
-        setUpdatedAt(data.updatedAt || '');
-        setCurrentImage(data.image || '');
+        setDescription(data.description || "");
+        setBudget(data.budget || 0);
+        setProgress(data.progress || 0);
+        setPriority(data.priority || "medium");
+        setLiveUrl(data.liveUrl || "");
+        setGithubUrl(data.githubUrl || "");
+        setUpdatedAt(data.updatedAt || "");
+        setCurrentImage(data.image || "");
       } catch (err) {
-        toast.error('Không thể tải dự án!');
-        router.push('/admin/projects');
+        toast.error("Không thể tải dự án!");
+        router.push("/admin/projects");
+      } finally {
+        setFetchLoading(false);
       }
     };
 
     if (id) fetchProject();
-  }, [id]);
+  }, [id, router]);
 
+  // Handle file upload preview
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnail(file);
+      setIsDirty(true);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setThumbnailPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove thumbnail
+  const removeThumbnail = () => {
+    setThumbnail(null);
+    setCurrentImage("");
+    setThumbnailPreview("");
+    setIsDirty(true);
+  };
+
+  // Handle tag addition
   const handleAddTag = () => {
     const trimmed = tagInput.trim();
     if (trimmed && !tags.includes(trimmed)) {
       setTags([...tags, trimmed]);
+      setTagInput("");
+      setIsDirty(true);
     }
-    setTagInput('');
   };
 
+  // Handle tag removal
   const handleRemoveTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
+    setIsDirty(true);
   };
 
+  // Save draft
+  const saveDraft = async () => {
+    if (!name.trim() || !client.trim()) {
+      toast.error("Vui lòng nhập tên dự án và khách hàng!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name.trim());
+    formData.append("client", client.trim());
+    formData.append("status", status);
+    formData.append("description", description.trim());
+    formData.append("budget", budget.toString());
+    formData.append("progress", progress.toString());
+    formData.append("priority", priority);
+    formData.append("liveUrl", liveUrl.trim());
+    formData.append("githubUrl", githubUrl.trim());
+    formData.append("tags", JSON.stringify(tags));
+    formData.append("updatedAt", new Date().toISOString());
+
+    if (thumbnail) {
+      formData.append("thumbnail", thumbnail);
+    }
+
+    try {
+      await fetch(`/api/projects/${id}`, {
+        method: "PUT",
+        body: formData,
+      });
+      toast.success("💾 Đã lưu thay đổi");
+      setIsDirty(false);
+    } catch (err) {
+      toast.error("Không thể lưu thay đổi");
+    }
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (!name.trim() || !client.trim()) {
-      toast.error('Vui lòng nhập đầy đủ tên và khách hàng!');
+      toast.error("Vui lòng nhập đầy đủ tên dự án và khách hàng!");
       setLoading(false);
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('name', name);
-      formData.append('client', client);
-      formData.append('status', status);
-      formData.append('tags', JSON.stringify(tags));
-      formData.append('description', description);
-      if (thumbnail) formData.append('thumbnail', thumbnail);
+      formData.append("name", name.trim());
+      formData.append("client", client.trim());
+      formData.append("status", status);
+      formData.append("description", description.trim());
+      formData.append("budget", budget.toString());
+      formData.append("progress", progress.toString());
+      formData.append("priority", priority);
+      formData.append("liveUrl", liveUrl.trim());
+      formData.append("githubUrl", githubUrl.trim());
+      formData.append("tags", JSON.stringify(tags));
+      formData.append("updatedAt", new Date().toISOString());
+
+      if (thumbnail) {
+        formData.append("thumbnail", thumbnail);
+      }
 
       const res = await fetch(`/api/projects/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         body: formData,
       });
 
-      if (!res.ok) throw new Error('Lỗi cập nhật');
+      if (!res.ok) throw new Error("Lỗi cập nhật");
 
-      toast.success(`✅ Đã cập nhật dự án #${id}`);
-      router.push('/admin/projects');
+      toast.success(`✅ Đã cập nhật dự án thành công!`);
+      setIsDirty(false);
+      router.push("/admin/projects");
     } catch (err) {
-      toast.error('Lỗi khi cập nhật!');
+      toast.error("❌ Lỗi khi cập nhật! Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="max-w-3xl px-4 mx-auto"
-    >
-      <Toaster />
-
-      <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-start">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-teal-500 rounded-lg shadow-lg">
-            <Wrench size={22} className="text-white" />
+  if (fetchLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 rounded-full border-purple-500/30"></div>
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white break-words">
-              Cập nhật <span className="text-teal-400">Dự án #{id}</span>
-            </h1>
-            {updatedAt && (
-              <p className="mt-1 text-sm text-gray-400">
-                🕒 Lần sửa cuối: <span className="font-medium">{new Date(updatedAt).toLocaleString('vi-VN')}</span>
-              </p>
-            )}
-            <p className="text-sm text-blue-400 underline break-all">
-              <Link href={`/projects/${id}`}>Xem dự án công khai</Link>
-            </p>
-          </div>
+          <motion.p
+            className="mt-6 text-lg font-medium text-purple-300"
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Đang tải dự án...
+          </motion.p>
         </div>
-
-        <Link
-          href="/admin/projects"
-          className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-white border rounded border-white/10 hover:bg-white/10"
-        >
-          <ArrowLeft size={16} /> Trở về
-        </Link>
       </div>
+    );
+  }
 
-      <Form
-        fields={[
-          { label: 'Tên dự án', type: 'text', value: name, onChange: (e) => setName(e.target.value) },
-          { label: 'Khách hàng', type: 'text', value: client, onChange: (e) => setClient(e.target.value) },
-          { label: 'Mô tả dự án', type: 'textarea', value: description, onChange: (e) => setDescription(e.target.value) },
-        ]}
-        submitLabel={loading ? 'Đang cập nhật...' : 'Cập nhật dự án'}
-        onSubmit={handleSubmit}
-        disabled={loading}
+  return (
+    <div className="space-y-8">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: "rgba(15, 23, 42, 0.95)",
+            color: "#fff",
+            border: "1px solid rgba(147, 51, 234, 0.3)",
+            backdropFilter: "blur(20px)",
+            borderRadius: "12px",
+          },
+        }}
       />
 
-      <div className="mt-6 space-y-6">
-        <div>
-          <label className="block mb-1 text-sm font-medium text-teal-300">Trạng thái</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            disabled={loading}
-            className="w-full px-4 py-2 text-white bg-gray-800 border border-gray-600 rounded-lg"
+      {/* Enhanced Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center"
+      >
+        <div className="flex items-center gap-4">
+          <motion.div
+            initial={{ rotate: -15, scale: 0.9 }}
+            animate={{ rotate: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="p-3 shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl"
           >
-            <option value="Đang triển khai">Đang triển khai</option>
-            <option value="Hoàn thành">Hoàn thành</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block mb-2 text-sm font-medium text-teal-300">🖼 Ảnh đại diện</label>
-          {currentImage && (
-            <img
-              src={currentImage}
-              alt="Current"
-              className="object-cover mb-2 border border-gray-700 rounded w-28 h-28"
-            />
-          )}
-          <input
-            type="file"
-            onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
-            accept="image/*"
-            className="block w-full text-sm text-gray-300 bg-gray-800 border border-gray-600 rounded-lg file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-teal-500 file:text-white hover:file:bg-teal-400"
-          />
-          {thumbnail && (
-            <p className="mt-1 text-xs text-gray-400">Đã chọn: {thumbnail.name}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block mb-1 text-sm font-medium text-teal-300">Tags</label>
-          <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:gap-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-              placeholder="Nhập tag và nhấn Enter"
-              className="flex-1 px-4 py-2 text-white bg-gray-800 border border-gray-600 rounded-lg"
-              disabled={loading}
-            />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              disabled={loading}
-              className="px-3 py-2 text-sm text-white bg-teal-500 rounded hover:bg-teal-400"
-            >
-              Thêm
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1 text-sm text-white bg-gray-700 rounded-full cursor-pointer hover:bg-red-500"
-                onClick={() => handleRemoveTag(tag)}
+            <Edit3 size={24} className="text-white" />
+          </motion.div>
+          <div>
+            <h1 className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
+              Chỉnh sửa dự án
+            </h1>
+            <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+              <div className="flex items-center gap-1">
+                <FolderKanban size={14} />
+                <span>ID: #{id}</span>
+              </div>
+              {updatedAt && (
+                <div className="flex items-center gap-1">
+                  <Clock size={14} />
+                  <span>
+                    Cập nhật: {new Date(updatedAt).toLocaleDateString("vi-VN")}
+                  </span>
+                </div>
+              )}
+              {isDirty && (
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <AlertCircle size={14} />
+                  <span>Có thay đổi chưa lưu</span>
+                </div>
+              )}
+            </div>
+            {liveUrl && (
+              <Link
+                href={liveUrl}
+                target="_blank"
+                className="inline-flex items-center gap-1 mt-1 text-sm text-blue-400 transition-colors hover:text-blue-300"
               >
-                #{tag}
-              </span>
-            ))}
+                <ExternalLink size={12} />
+                <span>Xem dự án trực tiếp</span>
+              </Link>
+            )}
           </div>
         </div>
-      </div>
-    </motion.section>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={saveDraft}
+            disabled={!isDirty}
+            className="flex items-center gap-2 px-4 py-2 text-gray-400 transition-all border border-gray-500/30 rounded-xl hover:bg-gray-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save size={16} />
+            <span>Lưu thay đổi</span>
+          </button>
+
+          <button
+            onClick={() => setShowPreview(true)}
+            className="flex items-center gap-2 px-4 py-2 text-blue-400 transition-all border border-blue-500/30 rounded-xl hover:bg-blue-500/10"
+          >
+            <Eye size={16} />
+            <span>Xem trước</span>
+          </button>
+
+          <Link
+            href="/admin/projects"
+            className="flex items-center gap-2 px-4 py-2 text-purple-400 transition-all border border-purple-500/30 rounded-xl hover:bg-purple-500/10"
+          >
+            <ArrowLeft size={16} />
+            <span>Quay lại</span>
+          </Link>
+        </div>
+      </motion.div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Main Content */}
+          <div className="space-y-6 lg:col-span-2">
+            {/* Project Name */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Tên dự án
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Nhập tên dự án..."
+                className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                required
+              />
+            </motion.div>
+
+            {/* Client */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Khách hàng
+              </label>
+              <input
+                type="text"
+                value={client}
+                onChange={(e) => {
+                  setClient(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Nhập tên khách hàng..."
+                className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                required
+              />
+            </motion.div>
+
+            {/* Description */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Mô tả dự án
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Mô tả chi tiết về dự án..."
+                rows={6}
+                className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border resize-none bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+              />
+            </motion.div>
+
+            {/* URLs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Liên kết dự án
+              </label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-2 text-sm text-gray-300">
+                    Website trực tiếp
+                  </label>
+                  <input
+                    type="url"
+                    value={liveUrl}
+                    onChange={(e) => {
+                      setLiveUrl(e.target.value);
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://example.com"
+                    className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm text-gray-300">
+                    GitHub Repository
+                  </label>
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => {
+                      setGithubUrl(e.target.value);
+                      setIsDirty(true);
+                    }}
+                    placeholder="https://github.com/username/repo"
+                    className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Thumbnail Upload */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Ảnh dự án
+              </label>
+
+              {/* Current/Preview Image */}
+              {(thumbnailPreview || currentImage) && (
+                <div className="relative inline-block mb-4">
+                  <Image
+                    src={thumbnailPreview || currentImage}
+                    alt="Project thumbnail"
+                    width={200}
+                    height={150}
+                    className="object-cover w-48 border h-36 rounded-2xl border-purple-500/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    className="absolute p-1 text-white transition-colors bg-red-500 rounded-full -top-2 -right-2 hover:bg-red-600"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
+              {/* Upload Area */}
+              <div className="relative">
+                <input
+                  type="file"
+                  id="thumbnail"
+                  onChange={handleThumbnailChange}
+                  accept="image/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <label
+                  htmlFor="thumbnail"
+                  className="flex flex-col items-center justify-center w-full h-32 transition-colors border-2 border-dashed cursor-pointer border-purple-500/30 rounded-2xl hover:border-purple-400/50 bg-purple-500/5 hover:bg-purple-500/10"
+                >
+                  <Upload className="w-8 h-8 mb-2 text-purple-400" />
+                  <span className="text-sm text-gray-300">
+                    {thumbnail
+                      ? `Đã chọn: ${thumbnail.name}`
+                      : "Click để chọn ảnh mới"}
+                  </span>
+                </label>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Status & Priority */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Trạng thái & Ưu tiên
+              </label>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-2 text-sm text-gray-300">
+                    Trạng thái
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => {
+                      setStatus(e.target.value);
+                      setIsDirty(true);
+                    }}
+                    className="w-full px-4 py-3 text-white transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                  >
+                    <option value="Đang triển khai">Đang triển khai</option>
+                    <option value="Đang thực hiện">Đang thực hiện</option>
+                    <option value="Hoàn thành">Hoàn thành</option>
+                    <option value="Tạm dừng">Tạm dừng</option>
+                    <option value="Hủy bỏ">Hủy bỏ</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-2 text-sm text-gray-300">
+                    Mức độ ưu tiên
+                  </label>
+                  <select
+                    value={priority}
+                    onChange={(e) => {
+                      setPriority(e.target.value as "low" | "medium" | "high");
+                      setIsDirty(true);
+                    }}
+                    className="w-full px-4 py-3 text-white transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Budget & Progress */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Ngân sách & Tiến độ
+              </label>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-2 text-sm text-gray-300">
+                    Ngân sách (VNĐ)
+                  </label>
+                  <input
+                    type="number"
+                    value={budget}
+                    onChange={(e) => {
+                      setBudget(Number(e.target.value));
+                      setIsDirty(true);
+                    }}
+                    placeholder="0"
+                    className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-2 text-sm text-gray-300">
+                    Tiến độ (%)
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={progress}
+                    onChange={(e) => {
+                      setProgress(Number(e.target.value));
+                      setIsDirty(true);
+                    }}
+                    className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-700 slider"
+                  />
+                  <div className="flex justify-between mt-1 text-sm text-gray-400">
+                    <span>0%</span>
+                    <span className="font-medium text-purple-400">
+                      {progress}%
+                    </span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Tags */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30"
+            >
+              <label className="block mb-4 text-lg font-semibold text-white">
+                Tags công nghệ
+              </label>
+
+              {/* Add Tag */}
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), handleAddTag())
+                  }
+                  placeholder="Thêm tag..."
+                  className="flex-1 px-3 py-2 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="px-4 py-2 text-white transition-colors bg-purple-500 rounded-xl hover:bg-purple-600"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+
+              {/* Tags List */}
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-2 px-3 py-1 text-sm text-purple-300 transition-all border rounded-full cursor-pointer bg-purple-500/20 border-purple-500/30 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/30"
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    #{tag}
+                    <X size={12} />
+                  </span>
+                ))}
+              </div>
+
+              {tags.length === 0 && (
+                <p className="text-sm italic text-gray-500">
+                  Chưa có tag nào. Thêm tag để phân loại dự án.
+                </p>
+              )}
+            </motion.div>
+
+            {/* Submit Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+            >
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center justify-center w-full gap-3 px-6 py-4 font-semibold text-white transition-all duration-300 shadow-lg rounded-2xl bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:from-purple-600 hover:via-blue-600 hover:to-indigo-600 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw size={20} className="animate-spin" />
+                    <span>Đang cập nhật...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={20} />
+                    <span>Cập nhật dự án</span>
+                  </>
+                )}
+              </button>
+            </motion.div>
+          </div>
+        </div>
+      </form>
+
+      {/* Preview Modal */}
+      <AnimatePresence>
+        {showPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ y: 50, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 50, opacity: 0, scale: 0.9 }}
+              className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-purple-500/20 backdrop-blur-xl bg-gradient-to-br from-slate-800/95 to-slate-900/95"
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-purple-500/20 bg-slate-900/95 backdrop-blur-xl">
+                <h2 className="text-xl font-bold text-white">
+                  Xem trước dự án
+                </h2>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="p-2 text-gray-400 transition-all hover:text-white hover:bg-white/10 rounded-xl"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6">
+                {(thumbnailPreview || currentImage) && (
+                  <div className="relative mb-6 overflow-hidden aspect-video rounded-2xl">
+                    <Image
+                      src={thumbnailPreview || currentImage}
+                      alt={name}
+                      width={800}
+                      height={450}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <h3 className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
+                    {name || "Tên dự án"}
+                  </h3>
+
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <div className="flex items-center gap-1">
+                      <User size={14} />
+                      <span>{client}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} />
+                      <span>{new Date().toLocaleDateString("vi-VN")}</span>
+                    </div>
+                    {budget > 0 && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign size={14} />
+                        <span>{budget.toLocaleString("vi-VN")}đ</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <span
+                      className={`px-3 py-1 text-sm font-medium rounded-full ${
+                        status === "Hoàn thành"
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : status === "Đang thực hiện"
+                          ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                          : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                    <span
+                      className={`px-3 py-1 text-sm font-medium rounded-full ${
+                        priority === "high"
+                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          : priority === "medium"
+                          ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                          : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                      }`}
+                    >
+                      Ưu tiên:{" "}
+                      {priority === "high"
+                        ? "Cao"
+                        : priority === "medium"
+                        ? "Trung bình"
+                        : "Thấp"}
+                    </span>
+                  </div>
+
+                  {progress > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2 text-sm text-gray-300">
+                        <span>Tiến độ hoàn thành</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <div className="w-full h-3 bg-gray-700 rounded-full">
+                        <div
+                          className="h-3 transition-all duration-1000 rounded-full bg-gradient-to-r from-purple-500 to-blue-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 text-sm text-purple-300 border rounded-full bg-purple-500/20 border-purple-500/30"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="prose prose-invert max-w-none">
+                    <div className="leading-relaxed text-gray-300 whitespace-pre-wrap">
+                      {description || "Mô tả dự án sẽ hiển thị ở đây..."}
+                    </div>
+                  </div>
+
+                  {(liveUrl || githubUrl) && (
+                    <div className="flex gap-4 pt-4">
+                      {liveUrl && (
+                        <a
+                          href={liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 text-green-400 transition-all border bg-green-500/20 rounded-xl border-green-500/30 hover:bg-green-500/30"
+                        >
+                          <Globe size={16} />
+                          <span>Xem trực tiếp</span>
+                        </a>
+                      )}
+                      {githubUrl && (
+                        <a
+                          href={githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 text-gray-400 transition-all border bg-gray-500/20 rounded-xl border-gray-500/30 hover:bg-gray-500/30"
+                        >
+                          <Monitor size={16} />
+                          <span>GitHub</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: linear-gradient(to right, #8b5cf6, #3b82f6);
+          cursor: pointer;
+          box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+
+        .slider::-moz-range-thumb {
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: linear-gradient(to right, #8b5cf6, #3b82f6);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+      `}</style>
+    </div>
   );
 }
