@@ -138,7 +138,7 @@ export const Header = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text">
-                VinhWorks
+                VinhCodes
               </span>
               <span className="-mt-1 text-xs font-normal text-gray-400">
                 Tech Solutions
