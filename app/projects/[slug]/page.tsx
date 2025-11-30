@@ -3,61 +3,52 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   ArrowLeft,
   ExternalLink,
-  Calendar,
-  User,
-  Tag,
   Share2,
-  Eye,
   ZoomIn,
   X,
-  Clock,
   Code,
   Globe,
-  Sparkles,
-  ChevronRight,
-  Monitor,
-  Rocket,
   Star,
-  MessageCircle,
   ArrowRight,
-  Play,
-  Download,
   Github,
-  Figma,
   Award,
-  TrendingUp,
-  Target,
-  Layers,
+  Rocket,
+  Calendar,
+  Users,
 } from "lucide-react";
 import Head from "next/head";
 
+// --- Interface khớp với Backend ---
 interface Project {
   _id: string;
   name: string;
-  client: string;
-  description: string;
-  content: string;
-  image: string;
   slug: string;
-  category: string;
-  technologies: string[];
+  client: string;
+  description: string; // Mô tả ngắn
+  content?: string; // Nội dung chi tiết (Markdown)
+  image: string; // Ảnh đại diện (Thumbnail)
+  gallery?: string[]; // Mảng ảnh phụ
+  category?: string;
+  technologies?: string[]; // Hoặc tags
+  tags?: string[];
   createdAt: string;
-  completedAt: string;
   liveUrl?: string;
   githubUrl?: string;
-  figmaUrl?: string;
-  tags?: string[];
   featured?: boolean;
+  budget?: number;
+  progress?: number;
+  // Các trường bổ sung nếu backend có, nếu không sẽ dùng fallback
   duration?: string;
   teamSize?: number;
+  completedAt?: string;
 }
 
 export default function ProjectDetailPage() {
@@ -66,52 +57,61 @@ export default function ProjectDetailPage() {
   const [related, setRelated] = useState<Project[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isClient, setIsClient] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  useEffect(() => {
-    setIsClient(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  // Scroll Progress Bar
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
+  // --- FETCH DATA ---
   useEffect(() => {
+    if (!slug) return;
+
     const fetchProject = async () => {
       try {
-        const res = await fetch("/api/projects");
-        const data = await res.json();
-        const current = data.find((p: Project) => p.slug === slug);
-        setProject(current);
-        setRelated(
-          data
+        // Gọi API lấy danh sách (hoặc API lấy chi tiết theo slug nếu bạn đã viết)
+        // Ở đây giả sử gọi /api/projects và lọc client-side (tốt nhất nên có API getBySlug)
+        const res = await fetch("/api/projects", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to fetch");
+
+        const data: Project[] = await res.json();
+        const current = data.find((p) => p.slug === slug);
+
+        if (current) {
+          setProject(current);
+          // Lấy dự án liên quan (cùng category, trừ dự án hiện tại)
+          const relatedProjects = data
             .filter(
-              (p: Project) =>
-                p.slug !== slug && p.category === current?.category
+              (p) =>
+                p.slug !== slug &&
+                // Logic gợi ý: cùng category hoặc ngẫu nhiên
+                (p.category === current.category || !current.category)
             )
-            .slice(0, 3)
-        );
-      } catch {
-        toast.error("Không thể tải thông tin dự án!");
+            .slice(0, 3);
+          setRelated(relatedProjects);
+        } else {
+          toast.error("Không tìm thấy dự án này!");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Lỗi khi tải dữ liệu!");
       } finally {
         setLoading(false);
       }
     };
+
     fetchProject();
   }, [slug]);
 
-  // Pre-generate particle positions
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-  ];
+  // --- PREPARE GALLERY IMAGES ---
+  // Kết hợp ảnh chính (thumbnail) và ảnh gallery thành một danh sách để hiển thị
+  const galleryImages = project
+    ? [project.image, ...(project.gallery || [])].filter(Boolean)
+    : [];
+
+  // Nếu không có ảnh nào thì dùng placeholder
+  const displayImages =
+    galleryImages.length > 0 ? galleryImages : ["/placeholder.jpg"];
 
   const handleShare = () => {
     if (navigator.share && project) {
@@ -126,191 +126,73 @@ export default function ProjectDetailPage() {
     }
   };
 
-  // Mock additional images for carousel
-  const projectImages = [
-    project?.image || "/placeholder.jpg",
-    "/placeholder.jpg",
-    "/placeholder.jpg",
-    "/placeholder.jpg",
-  ];
-
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 rounded-full border-purple-500/30"></div>
-            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
-          </div>
-          <motion.p
-            className="mt-6 text-lg font-medium text-purple-300"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            Đang tải dự án...
-          </motion.p>
+          <div className="w-16 h-16 mb-4 border-4 border-purple-200 rounded-full border-t-purple-600 animate-spin"></div>
+          <p className="font-bold text-purple-600 animate-pulse">
+            Loading Project...
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!project) {
+  if (!project)
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
-        <div className="text-center">
-          <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-r from-red-500/20 to-pink-500/20">
-            <X className="w-12 h-12 text-red-400" />
-          </div>
-          <h1 className="mb-4 text-2xl font-bold text-white">
-            Dự án không tồn tại
-          </h1>
-          <p className="mb-6 text-gray-400">
-            Dự án bạn tìm kiếm không tồn tại hoặc đã bị xóa.
-          </p>
-          <Link href="/projects">
-            <button className="px-6 py-3 text-white transition-all duration-300 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl hover:from-purple-600 hover:to-blue-600">
-              Quay lại danh sách dự án
-            </button>
-          </Link>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        Project not found
       </div>
     );
-  }
 
   return (
-    <div>
+    <>
+      {/* Có thể dùng Next SEO hoặc Metadata API ở layout cha */}
       <Head>
         <title>{project.name} | VinhWorks</title>
         <meta name="description" content={project.description} />
-        <meta property="og:title" content={`${project.name} | VinhWorks`} />
-        <meta property="og:description" content={project.description} />
-        <meta property="og:image" content={project.image} />
-        <meta property="og:type" content="website" />
-        <meta
-          property="og:url"
-          content={`https://vinhworks.com/projects/${project.slug}`}
-        />
-        <meta name="twitter:card" content="summary_large_image" />
       </Head>
+      <Toaster position="top-center" />
 
-      {/* Add CSS for grid animation */}
-      <style jsx>{`
-        @keyframes grid-move {
-          0% {
-            transform: translate(0, 0);
-          }
-          100% {
-            transform: translate(50px, 50px);
-          }
-        }
-      `}</style>
+      {/* Scroll Progress */}
+      <motion.div
+        style={{ scaleX }}
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 origin-left z-[100]"
+      />
 
-      <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
-        {/* Animated Grid Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "50px 50px",
-              animation: "grid-move 20s linear infinite",
-            }}
-          />
+      <main className="min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-purple-200 selection:text-purple-900">
+        {/* Background Decoration */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-200/40 rounded-full blur-[100px] animate-blob" />
+          <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-blue-200/40 rounded-full blur-[100px] animate-blob animation-delay-2000" />
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
         </div>
 
-        {/* Dynamic Gradient Orbs */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute rounded-full w-96 h-96 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%)",
-              left: `${mousePosition.x * 0.02}px`,
-              top: `${mousePosition.y * 0.02}px`,
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.div
-            className="absolute rounded-full w-80 h-80 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
-              right: `${mousePosition.x * 0.015}px`,
-              bottom: `${mousePosition.y * 0.015}px`,
-            }}
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
-
-        {/* Floating Tech Elements */}
-        {isClient && (
-          <div className="absolute inset-0 overflow-hidden">
-            {particlePositions.map((position, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  left: `${position.left}%`,
-                  top: `${position.top}%`,
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{
-                  duration: 8 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              >
-                <div className="w-2 h-2 rounded-full bg-purple-400/20" />
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {/* Fixed Navigation Bar */}
-        <motion.nav
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          className="fixed top-0 left-0 right-0 z-50 px-6 py-4 border-b bg-slate-900/95 backdrop-blur-xl border-purple-500/20"
-        >
+        {/* Navigation */}
+        <nav className="fixed top-0 left-0 right-0 z-50 px-4 py-6 transition-all border-b shadow-sm border-slate-200/60 bg-white/90 backdrop-blur-xl">
           <div className="flex items-center justify-between mx-auto max-w-7xl">
             <Link href="/projects">
-              <button className="flex items-center gap-2 px-4 py-2 text-purple-400 transition-all duration-300 border border-purple-500/30 rounded-xl hover:bg-purple-500/10">
-                <ArrowLeft size={16} />
-                <span>Quay lại</span>
-              </button>
+              <motion.button
+                whileHover={{ x: -3 }}
+                className="flex items-center gap-2 px-4 py-2 font-bold transition-all border border-transparent rounded-full text-slate-600 bg-slate-100/50 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+              >
+                <div className="p-1 bg-white rounded-full shadow-sm">
+                  <ArrowLeft size={16} />
+                </div>
+                <span className="text-sm">Quay lại</span>
+              </motion.button>
             </Link>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleShare}
-                className="p-3 text-purple-400 transition-all duration-300 border bg-purple-500/20 border-purple-500/30 rounded-xl hover:bg-purple-500/30"
+                className="p-2.5 text-slate-500 bg-white border border-slate-200 rounded-full hover:text-purple-600 hover:border-purple-200 hover:shadow-md transition-all"
+                title="Chia sẻ"
               >
-                <Share2 size={20} />
+                <Share2 size={18} />
               </motion.button>
 
               {project.liveUrl && (
@@ -320,410 +202,426 @@ export default function ProjectDetailPage() {
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-2 text-white transition-all duration-300 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl hover:from-purple-600 hover:to-blue-600"
+                  className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-purple-600 hover:shadow-lg hover:shadow-purple-200 transition-all"
                 >
                   <Globe size={16} />
-                  <span>Live Site</span>
+                  <span>Live Demo</span>
                 </motion.a>
               )}
             </div>
           </div>
-        </motion.nav>
+        </nav>
 
-        <div className="px-6 pt-24">
+        <div className="relative z-10 px-6 pt-32 pb-24">
           <div className="mx-auto max-w-7xl">
-            {/* Hero Section - Split Layout */}
-            <div className="grid gap-12 mb-20 lg:grid-cols-2">
-              {/* Left Column - Project Info */}
+            {/* ================= HERO SECTION ================= */}
+            <div className="grid gap-12 mb-24 lg:grid-cols-12 lg:gap-20">
+              {/* Left: Project Info */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-                className="space-y-8"
+                transition={{ duration: 0.6 }}
+                className="space-y-8 lg:col-span-7"
               >
-                {/* Category & Featured Badge */}
-                <div className="flex items-center gap-4">
-                  <span className="px-4 py-2 text-sm font-medium text-purple-300 border rounded-full bg-purple-500/20 border-purple-500/30">
-                    {project.category}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Category (Lấy từ tags[0] nếu không có category riêng) */}
+                  <span className="px-3 py-1 text-xs font-bold tracking-wider text-purple-600 uppercase border border-purple-200 rounded-lg bg-purple-50">
+                    {project.category ||
+                      (project.tags && project.tags[0]) ||
+                      "Project"}
                   </span>
                   {project.featured && (
-                    <span className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-300 border rounded-full bg-yellow-500/20 border-yellow-500/30">
-                      <Star className="w-4 h-4" />
-                      Nổi bật
-                    </span>
+                    <motion.span
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="flex items-center gap-1 px-3 py-1 text-xs font-bold tracking-wider uppercase border rounded-lg text-amber-600 bg-amber-50 border-amber-200"
+                    >
+                      <Star size={12} fill="currentColor" /> Featured
+                    </motion.span>
                   )}
                 </div>
 
-                {/* Project Title */}
-                <h1 className="text-5xl font-black leading-tight text-transparent md:text-6xl lg:text-7xl bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
+                <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
                   {project.name}
                 </h1>
 
-                {/* Description */}
-                <p className="text-xl leading-relaxed text-gray-300">
+                <p className="text-xl font-medium leading-relaxed text-slate-600">
                   {project.description}
                 </p>
 
-                {/* Client Info */}
-                <div className="flex items-center gap-4 p-6 border bg-white/5 backdrop-blur-sm border-white/10 rounded-2xl">
-                  <User className="w-8 h-8 text-purple-400" />
-                  <div>
-                    <p className="text-sm text-gray-400">Khách hàng</p>
-                    <p className="text-xl font-bold text-white">
-                      {project.client}
-                    </p>
-                  </div>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-6 py-8 border-slate-200 sm:grid-cols-4 border-y">
+                  <StatItem label="Khách hàng" value={project.client} />
+                  <StatItem
+                    label="Thời gian"
+                    value={project.duration || "N/A"}
+                  />
+                  <StatItem
+                    label="Team Size"
+                    value={`${project.teamSize || 1} người`}
+                  />
+                  <StatItem
+                    label="Năm"
+                    value={new Date(project.createdAt).getFullYear().toString()}
+                  />
                 </div>
 
-                {/* Technologies */}
-                {project.technologies && project.technologies.length > 0 && (
+                {/* Tech Stack (Sử dụng tags từ DB) */}
+                {project.tags && project.tags.length > 0 && (
                   <div>
-                    <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-white">
-                      <Code className="w-5 h-5 text-purple-400" />
-                      Tech Stack
+                    <h3 className="flex items-center gap-2 mb-4 text-sm font-bold tracking-wider uppercase text-slate-900">
+                      <Code size={16} className="text-purple-500" />{" "}
+                      Technologies
                     </h3>
-                    <div className="flex flex-wrap gap-3">
-                      {project.technologies.map((tech, index) => (
-                        <span
-                          key={index}
-                          className="px-4 py-2 text-sm text-purple-300 border bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl border-purple-500/30 backdrop-blur-sm"
+                    <div className="flex flex-wrap gap-2">
+                      {project.tags.map((tech, i) => (
+                        <motion.span
+                          key={i}
+                          whileHover={{ y: -3, backgroundColor: "#F3E8FF" }}
+                          className="px-4 py-2 text-sm font-bold bg-white border shadow-sm cursor-default border-slate-200 rounded-xl text-slate-600 hover:border-purple-200 hover:text-purple-600"
                         >
                           {tech}
-                        </span>
+                        </motion.span>
                       ))}
                     </div>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 pt-4">
                   {project.liveUrl && (
                     <motion.a
                       href={project.liveUrl}
                       target="_blank"
-                      rel="noopener noreferrer"
                       whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="flex items-center gap-3 px-6 py-3 text-white transition-all duration-300 shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl hover:from-purple-600 hover:to-blue-600"
+                      className="flex items-center gap-2 px-8 py-4 font-bold text-white transition-all shadow-xl bg-slate-900 rounded-2xl hover:bg-purple-600 hover:shadow-purple-200 hover:-translate-y-1"
                     >
-                      <Globe size={20} />
-                      <span>Xem Live</span>
-                      <ExternalLink size={16} />
+                      Xem Website <ExternalLink size={18} />
                     </motion.a>
                   )}
-
                   {project.githubUrl && (
                     <motion.a
                       href={project.githubUrl}
                       target="_blank"
-                      rel="noopener noreferrer"
                       whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="flex items-center gap-3 px-6 py-3 text-purple-400 transition-all duration-300 border border-purple-500/30 rounded-xl hover:bg-purple-500/10"
+                      className="flex items-center gap-2 px-8 py-4 font-bold transition-all bg-white border text-slate-900 rounded-2xl border-slate-200 hover:border-purple-300 hover:text-purple-600"
                     >
-                      <Github size={20} />
-                      <span>Source Code</span>
+                      Source Code <Github size={18} />
                     </motion.a>
                   )}
                 </div>
               </motion.div>
 
-              {/* Right Column - Project Stats */}
+              {/* Right: Highlight Stats & Quote */}
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="space-y-6"
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="space-y-6 lg:col-span-5"
               >
-                {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-6 text-center border bg-white/5 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <Calendar className="w-8 h-8 mx-auto mb-3 text-blue-400" />
-                    <p className="mb-1 text-sm text-gray-400">Hoàn thành</p>
-                    <p className="font-bold text-white">
-                      {new Date(
-                        project.completedAt || project.createdAt
-                      ).toLocaleDateString("vi-VN")}
-                    </p>
-                  </div>
-
-                  <div className="p-6 text-center border bg-white/5 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <Clock className="w-8 h-8 mx-auto mb-3 text-green-400" />
-                    <p className="mb-1 text-sm text-gray-400">Thời gian</p>
-                    <p className="font-bold text-white">
-                      {project.duration || "2-4 tuần"}
-                    </p>
-                  </div>
-
-                  <div className="p-6 text-center border bg-white/5 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <Target className="w-8 h-8 mx-auto mb-3 text-yellow-400" />
-                    <p className="mb-1 text-sm text-gray-400">Team Size</p>
-                    <p className="font-bold text-white">
-                      {project.teamSize || 3} người
-                    </p>
-                  </div>
-
-                  <div className="p-6 text-center border bg-white/5 backdrop-blur-sm border-white/10 rounded-2xl">
-                    <Award className="w-8 h-8 mx-auto mb-3 text-red-400" />
-                    <p className="mb-1 text-sm text-gray-400">Status</p>
-                    <p className="font-bold text-green-400">Hoàn thành</p>
+                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50">
+                  <h3 className="flex items-center gap-2 mb-6 text-xl font-black text-slate-900">
+                    <Award className="text-amber-500" /> Kết quả đạt được
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Hiển thị Budget nếu có */}
+                    {project.budget && (
+                      <ResultRow
+                        label="Ngân sách"
+                        value={`$${project.budget.toLocaleString()}`}
+                        color="text-green-500"
+                      />
+                    )}
+                    {/* Hiển thị Progress nếu có */}
+                    {project.progress !== undefined && (
+                      <ResultRow
+                        label="Tiến độ"
+                        value={`${project.progress}%`}
+                        color="text-blue-500"
+                      />
+                    )}
+                    <ResultRow
+                      label="User Satisfaction"
+                      value="5.0/5"
+                      color="text-purple-500"
+                    />
                   </div>
                 </div>
 
-                {/* Project Highlights */}
-                <div className="p-6 border bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-purple-500/20 rounded-2xl backdrop-blur-sm">
-                  <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-white">
-                    <TrendingUp className="w-5 h-5 text-green-400" />
-                    Kết quả đạt được
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-300">Performance Score</span>
-                      <span className="font-bold text-green-400">95/100</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-300">Load Time</span>
-                      <span className="font-bold text-blue-400">2.1s</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-300">User Satisfaction</span>
-                      <span className="font-bold text-yellow-400">4.8/5</span>
-                    </div>
-                  </div>
+                <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-8 rounded-[2.5rem] text-white shadow-xl shadow-purple-200 transform rotate-1 hover:rotate-0 transition-transform duration-500">
+                  <QuoteContent />
                 </div>
               </motion.div>
             </div>
 
-            {/* Main Project Image with Carousel */}
+            {/* ================= GALLERY SECTION (Ảnh thật từ DB) ================= */}
             <motion.div
               initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="mb-20"
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mb-24"
             >
-              {/* Main Image */}
-              <div className="relative mb-6">
-                <div className="absolute opacity-75 -inset-1 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-indigo-500/20 rounded-3xl blur-xl" />
-                <div
-                  className="relative overflow-hidden rounded-3xl cursor-zoom-in group"
-                  onClick={() => setLightboxOpen(true)}
-                >
-                  <Image
-                    src={projectImages[activeImageIndex]}
-                    alt={project.name}
-                    width={1200}
-                    height={600}
-                    className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-t from-black/40 via-transparent to-transparent group-hover:opacity-100" />
-                  <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-300 opacity-0 group-hover:opacity-100">
-                    <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm">
-                      <ZoomIn className="w-8 h-8 text-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Image Carousel Thumbnails */}
-              <div className="flex justify-center gap-4">
-                {projectImages.map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveImageIndex(index)}
-                    className={`relative overflow-hidden rounded-xl transition-all duration-300 ${
-                      activeImageIndex === index
-                        ? "ring-2 ring-purple-500 scale-105"
-                        : "hover:scale-105 opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <Image
-                      src={img}
-                      alt={`${project.name} - Image ${index + 1}`}
-                      width={120}
-                      height={80}
-                      className="object-cover w-20 h-14 md:w-24 md:h-16"
-                    />
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Project Content */}
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="mb-20"
-            >
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-indigo-500/10 rounded-3xl blur-xl" />
-                <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30">
-                  <h2 className="flex items-center gap-3 mb-8 text-3xl font-bold text-white">
-                    <Monitor className="w-8 h-8 text-purple-400" />
-                    Chi tiết dự án
-                  </h2>
-                  <div className="prose prose-lg prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {project.content ||
-                        "Đây là một dự án chất lượng cao với thiết kế hiện đại và tối ưu hiệu suất. Dự án được phát triển với công nghệ tiên tiến, đảm bảo trải nghiệm người dùng tốt nhất và hiệu suất cao."}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Related Projects - Single Row */}
-            {related.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.8 }}
-                className="pt-20 border-t border-purple-500/20"
+              {/* Ảnh chính lớn */}
+              <div
+                className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-200 border-4 border-white bg-slate-50 mb-8 group cursor-zoom-in"
+                onClick={() => setLightboxOpen(true)}
               >
-                <div className="mb-12 text-center">
-                  <h3 className="flex items-center justify-center gap-3 mb-4 text-3xl font-bold text-white md:text-4xl">
-                    <Rocket className="w-8 h-8 text-purple-400" />
-                    Dự án liên quan
-                  </h3>
-                  <p className="text-lg text-gray-300">
-                    Khám phá thêm các dự án tương tự
-                  </p>
+                <Image
+                  src={displayImages[activeImageIndex]}
+                  alt={project.name}
+                  width={1600}
+                  height={900}
+                  className="object-cover w-full h-auto transition-transform duration-700 group-hover:scale-105"
+                  unoptimized // Fix lỗi 400 Cloudinary
+                  priority
+                />
+                <div className="absolute inset-0 flex items-center justify-center transition-all opacity-0 bg-black/0 group-hover:bg-black/10 group-hover:opacity-100">
+                  <motion.div
+                    initial={{ scale: 0.5 }}
+                    whileHover={{ scale: 1.1 }}
+                    className="p-4 rounded-full shadow-lg bg-white/90 backdrop-blur"
+                  >
+                    <ZoomIn size={32} className="text-purple-600" />
+                  </motion.div>
                 </div>
+              </div>
 
-                {/* Single Row Grid */}
-                <div className="grid gap-8 md:grid-cols-3">
-                  {related.map((relatedProject, i) => (
-                    <motion.div
-                      key={relatedProject._id}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.9 + i * 0.1 }}
-                      whileHover={{ scale: 1.05, y: -10 }}
-                      className="group"
+              {/* Thumbnail list (chỉ hiện nếu có nhiều hơn 1 ảnh) */}
+              {displayImages.length > 1 && (
+                <div className="flex gap-4 pb-4 overflow-x-auto no-scrollbar">
+                  {displayImages.map((img, idx) => (
+                    <motion.button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      whileHover={{ scale: 1.05 }}
+                      className={`relative flex-shrink-0 w-32 h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                        activeImageIndex === idx
+                          ? "border-purple-500 ring-2 ring-purple-200"
+                          : "border-transparent opacity-60 hover:opacity-100"
+                      }`}
                     >
-                      <Link href={`/projects/${relatedProject.slug}`}>
-                        <div className="relative overflow-hidden transition-all duration-500 border shadow-2xl rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30 hover:border-purple-400/40">
-                          {/* Project Image */}
-                          <div className="relative aspect-[4/3] overflow-hidden">
-                            <Image
-                              src={relatedProject.image || "/placeholder.jpg"}
-                              alt={relatedProject.name}
-                              width={400}
-                              height={300}
-                              className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 transition-opacity duration-300 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80" />
-
-                            {/* Overlay Content */}
-                            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                              <span className="inline-block px-3 py-1 mb-3 text-xs font-medium rounded-full bg-purple-500/80">
-                                {relatedProject.category}
-                              </span>
-                              <h4 className="mb-2 text-xl font-bold transition-all group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-blue-400 group-hover:bg-clip-text">
-                                {relatedProject.name}
-                              </h4>
-                              <p className="mb-3 text-sm text-gray-300 line-clamp-2">
-                                {relatedProject.description}
-                              </p>
-
-                              {/* View Project Button */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-purple-300">
-                                  Xem chi tiết
-                                </span>
-                                <ArrowRight className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:translate-x-2" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </motion.div>
+                      <Image
+                        src={img}
+                        alt="thumbnail"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </motion.button>
                   ))}
                 </div>
-              </motion.div>
+              )}
+            </motion.div>
+
+            {/* ================= CONTENT DETAILS (Markdown) ================= */}
+            <div className="max-w-4xl mx-auto mb-32">
+              <div className="flex items-center gap-4 mb-12">
+                <div className="flex-1 h-px bg-slate-200"></div>
+                <h2 className="text-3xl font-black tracking-tight text-center uppercase text-slate-900">
+                  Chi tiết triển khai
+                </h2>
+                <div className="flex-1 h-px bg-slate-200"></div>
+              </div>
+
+              <article className="prose prose-lg prose-slate max-w-none prose-headings:font-black prose-headings:text-slate-900 prose-p:text-slate-600 prose-p:leading-8 prose-a:text-purple-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-3xl prose-img:shadow-xl prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-2 prose-code:rounded-lg prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:bg-purple-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic ">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {project.content ||
+                    (project.description
+                      ? `### Giới thiệu \n\n ${project.description} \n\n _(Nội dung chi tiết đang được cập nhật)_`
+                      : "Nội dung chi tiết đang được cập nhật...")}
+                </ReactMarkdown>
+              </article>
+            </div>
+
+            {/* ================= RELATED PROJECTS ================= */}
+            {related.length > 0 && (
+              <div className="pt-24 mb-24 border-t border-slate-200">
+                <div className="flex items-center justify-between mb-12">
+                  <h3 className="text-3xl font-black text-slate-900">
+                    Dự án liên quan
+                  </h3>
+                  <Link
+                    href="/projects"
+                    className="flex items-center gap-1 font-bold text-purple-600 hover:text-purple-700"
+                  >
+                    Xem tất cả <ArrowRight size={16} />
+                  </Link>
+                </div>
+                <div className="grid gap-8 md:grid-cols-3">
+                  {related.map((item) => (
+                    <Link
+                      key={item._id}
+                      href={`/projects/${item.slug}`}
+                      className="block h-full group"
+                    >
+                      <motion.div
+                        whileHover={{ y: -10 }}
+                        className="rounded-[2rem] overflow-hidden border border-slate-100 bg-white shadow-sm hover:shadow-xl hover:shadow-purple-100 transition-all h-full flex flex-col"
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden bg-purple-50">
+                          <Image
+                            src={item.image || "/placeholder.jpg"}
+                            alt={item.name}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                            unoptimized
+                          />
+                        </div>
+                        <div className="flex flex-col flex-grow p-6">
+                          <div className="mb-2 text-xs font-bold tracking-wider text-purple-500 uppercase">
+                            {item.category || "Project"}
+                          </div>
+                          <h4 className="mb-2 text-xl font-bold transition-colors text-slate-900 group-hover:text-purple-600">
+                            {item.name}
+                          </h4>
+                          <p className="flex-grow text-sm text-slate-500 line-clamp-2">
+                            {item.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
 
-            {/* Enhanced CTA Section */}
+            {/* ================= CTA SECTION ================= */}
             <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1 }}
-              className="mt-24 mb-16 text-center"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-24 relative rounded-[3rem] bg-gradient-to-br from-violet-600 to-fuchsia-600 p-12 text-center overflow-hidden shadow-2xl shadow-purple-200 border border-purple-500"
             >
-              <div className="relative p-12 border md:p-16 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10">
-                <h3 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-                  🚀 Sẵn sàng bắt đầu dự án của bạn?
-                </h3>
-                <p className="max-w-3xl mx-auto mb-10 text-xl leading-relaxed text-gray-300">
-                  Hãy để chúng tôi biến ý tưởng của bạn thành hiện thực với
-                  thiết kế hiện đại và công nghệ tiên tiến nhất
+              <div className="absolute inset-0 bg-[url('/grid-white.svg')] opacity-[0.1]" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-center w-20 h-20 mx-auto mb-8 border shadow-xl bg-white/10 border-white/20 rounded-3xl backdrop-blur-md">
+                  <Rocket size={40} className="text-white" />
+                </div>
+                <h2 className="mb-6 text-3xl font-black text-white md:text-5xl">
+                  Bạn đã sẵn sàng <br />{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-200">
+                    bứt phá doanh thu?
+                  </span>
+                </h2>
+                <p className="max-w-2xl mx-auto mb-10 text-lg font-medium text-purple-100">
+                  Đừng để ý tưởng tuyệt vời của bạn chỉ nằm trên giấy. Hãy để
+                  chúng tôi biến nó thành hiện thực ngay hôm nay.
                 </p>
-
-                <div className="flex flex-col justify-center gap-6 sm:flex-row">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link href="/contact">
-                      <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-bold text-white transition-all duration-300 shadow-2xl rounded-2xl bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:from-purple-600 hover:via-blue-600 hover:to-indigo-600 hover:shadow-purple-500/25">
-                        <MessageCircle size={24} />
-                        <span>Bắt đầu dự án ngay</span>
-                        <ArrowRight size={20} />
-                      </button>
-                    </Link>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Link href="/projects">
-                      <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-bold text-purple-400 transition-all duration-300 border-2 rounded-2xl border-purple-500/30 bg-purple-500/10 hover:border-purple-400/50 hover:bg-purple-500/20 backdrop-blur-sm">
-                        <Eye size={24} />
-                        <span>Xem thêm dự án</span>
-                      </button>
-                    </Link>
-                  </motion.div>
+                <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                  <Link href="/contact">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center justify-center w-full gap-2 px-8 py-4 font-bold text-purple-600 transition-all bg-white shadow-lg rounded-2xl hover:bg-purple-50 sm:w-auto"
+                    >
+                      Bắt đầu ngay <ArrowRight size={18} />
+                    </motion.button>
+                  </Link>
+                  <Link href="/pricing">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full px-8 py-4 font-bold text-white transition-all bg-transparent border-2 rounded-2xl border-white/30 hover:bg-white/10 hover:border-white sm:w-auto"
+                    >
+                      Xem bảng giá
+                    </motion.button>
+                  </Link>
                 </div>
               </div>
             </motion.div>
           </div>
         </div>
 
-        {/* Enhanced Lightbox */}
+        {/* ================= LIGHTBOX ================= */}
         <AnimatePresence>
           {lightboxOpen && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
               onClick={() => setLightboxOpen(false)}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm cursor-zoom-out"
             >
+              <button className="absolute p-3 text-purple-600 transition-colors rounded-full top-6 right-6 bg-purple-50 hover:bg-purple-100">
+                <X size={24} />
+              </button>
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="relative max-w-full max-h-full"
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                className="relative w-full max-h-full overflow-hidden shadow-2xl max-w-7xl rounded-3xl shadow-purple-200"
+                onClick={(e) => e.stopPropagation()}
               >
                 <Image
-                  src={projectImages[activeImageIndex]}
+                  src={displayImages[activeImageIndex]}
                   alt="Preview"
-                  width={1600}
-                  height={900}
-                  className="object-contain max-w-full max-h-full rounded-2xl"
+                  width={1920}
+                  height={1080}
+                  className="object-contain w-full h-auto"
+                  unoptimized
                 />
-                <button
-                  onClick={() => setLightboxOpen(false)}
-                  className="absolute p-3 text-white transition-colors rounded-full top-4 right-4 bg-black/50 backdrop-blur-sm hover:bg-black/70"
-                >
-                  <X size={24} />
-                </button>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-      </section>
+      </main>
+    </>
+  );
+}
+
+// --- Sub-components ---
+function StatItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-bold tracking-wider uppercase text-slate-400">
+        {label}
+      </p>
+      <p className="text-lg font-bold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function ResultRow({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <div className="flex items-center justify-between p-4 transition-colors border border-slate-100 bg-slate-50 rounded-2xl hover:bg-purple-50 hover:border-purple-100">
+      <span className="font-bold text-slate-500">{label}</span>
+      <span className={`text-2xl font-black ${color}`}>{value}</span>
+    </div>
+  );
+}
+
+function QuoteContent() {
+  return (
+    <div className="flex flex-col justify-between h-full">
+      <div className="mb-6">
+        <div className="flex gap-1 mb-4 text-amber-300">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Star key={i} size={20} fill="currentColor" />
+          ))}
+        </div>
+        <p className="text-lg italic font-medium leading-relaxed opacity-95">
+          "Đội ngũ làm việc cực kỳ chuyên nghiệp và tận tâm. Sản phẩm cuối cùng
+          vượt xa mong đợi của chúng tôi về cả thẩm mỹ lẫn hiệu năng."
+        </p>
+      </div>
+      <div className="flex items-center gap-4 pt-6 border-t border-white/20">
+        <div className="flex items-center justify-center w-12 h-12 text-xl font-bold rounded-full bg-white/20 backdrop-blur-sm">
+          C
+        </div>
+        <div>
+          <p className="font-bold text-white">CEO TechCorp</p>
+          <p className="text-xs tracking-wider text-purple-100 uppercase">
+            Client Partner
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

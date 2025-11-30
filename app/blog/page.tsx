@@ -1,37 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Rss,
-  ArrowRight,
-  Tag,
-  Calendar,
-  Clock,
-  User,
-  Search,
-  Filter,
-  Grid3X3,
-  List,
-  BookOpen,
-  TrendingUp,
-  Star,
-  Eye,
-  MessageCircle,
-  Share2,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  Monitor,
-} from "lucide-react";
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import toast from "react-hot-toast";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useSpring,
+  useMotionTemplate,
+  useMotionValue,
+} from "framer-motion";
+import {
+  Search,
+  Grid3X3,
+  List,
+  BookOpen,
+  Eye,
+  Mail,
+  Calendar,
+  Clock,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  Tag,
+  Rss,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 const POSTS_PER_PAGE = 6;
 
 interface BlogPost {
+  _id: string;
   title: string;
   excerpt: string;
   slug: string;
@@ -45,6 +48,144 @@ interface BlogPost {
   category: string;
 }
 
+// --- COMPONENTS ---
+
+const BlogCard = ({
+  post,
+  viewMode,
+}: {
+  post: BlogPost;
+  viewMode: "grid" | "list";
+}) => {
+  const isList = viewMode === "list";
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({
+    currentTarget,
+    clientX,
+    clientY,
+  }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      onMouseMove={handleMouseMove}
+      className={`group relative h-full ${isList ? "md:col-span-2" : ""}`}
+    >
+      {/* Animated Gradient Border Background */}
+      <div className="absolute -inset-[1px] bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 rounded-[2rem] opacity-0 group-hover:opacity-100 blur-sm transition duration-500 group-hover:duration-200" />
+
+      {/* Main Card Content */}
+      <div
+        className={`relative h-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden flex ${
+          isList ? "flex-col md:flex-row" : "flex-col"
+        }`}
+      >
+        {/* Spotlight Effect */}
+        <motion.div
+          className="absolute z-10 transition duration-300 opacity-0 pointer-events-none -inset-px group-hover:opacity-100"
+          style={{
+            background: useMotionTemplate`
+              radial-gradient(
+                600px circle at ${mouseX}px ${mouseY}px,
+                rgba(139, 92, 246, 0.05),
+                transparent 80%
+              )
+            `,
+          }}
+        />
+
+        {/* Image Section */}
+        <div
+          className={`relative overflow-hidden ${
+            isList ? "md:w-2/5 h-64 md:h-auto" : "aspect-[16/10]"
+          }`}
+        >
+          <Image
+            src={post.image || "/placeholder.jpg"}
+            alt={post.title}
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 transition-opacity bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-60 group-hover:opacity-40" />
+
+          {/* Badge */}
+          <div className="absolute z-20 top-4 left-4">
+            <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-full shadow-lg">
+              {post.category}
+            </span>
+          </div>
+        </div>
+
+        {/* Text Content */}
+        <div
+          className={`relative z-20 p-6 flex flex-col ${
+            isList ? "md:w-3/5 justify-center" : ""
+          }`}
+        >
+          <div className="flex items-center gap-3 mb-3 text-xs font-medium text-slate-400">
+            <span className="flex items-center gap-1">
+              <Calendar size={12} />{" "}
+              {new Date(post.createdAt).toLocaleDateString("vi-VN")}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <Clock size={12} /> {post.readTime}
+            </span>
+          </div>
+
+          <h3 className="mb-3 text-xl font-bold transition-all duration-300 text-slate-900 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-fuchsia-600">
+            <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+          </h3>
+
+          <p className="flex-grow mb-4 text-sm font-medium leading-relaxed text-slate-500 line-clamp-2">
+            {post.excerpt}
+          </p>
+
+          {/* Tags - Only show on Grid view or Desktop List view */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {post.tags?.slice(0, 2).map((tag, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-slate-500 bg-slate-100 rounded-lg group-hover:bg-violet-50 group-hover:text-violet-600 transition-colors"
+              >
+                <Tag size={10} /> {tag}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-4 mt-auto border-t border-slate-100 group-hover:border-slate-200/50">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-[10px] font-bold">
+                {post.author.charAt(0)}
+              </div>
+              <span className="text-xs font-bold text-slate-600">
+                {post.author}
+              </span>
+            </div>
+            <Link
+              href={`/blog/${post.slug}`}
+              className="flex items-center gap-1 text-xs font-bold transition-all text-slate-400 group-hover:text-violet-600 group-hover:gap-2"
+            >
+              Đọc tiếp <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// --- MAIN PAGE ---
+
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
@@ -53,644 +194,376 @@ export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const categories = ["all", "web-development", "ui-ux", "seo", "technology"];
-  const categoryLabels: Record<string, string> = {
-    all: "Tất cả",
-    "web-development": "Web Development",
-    "ui-ux": "UI/UX Design",
-    seo: "SEO & Marketing",
-    technology: "Công nghệ",
-  };
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
+  const categories = [
+    { id: "all", label: "Tất cả" },
+    { id: "web-development", label: "Lập trình Web" },
+    { id: "ui-ux", label: "Thiết kế UI/UX" },
+    { id: "seo", label: "Marketing & SEO" },
+    { id: "technology", label: "Công nghệ" },
+  ];
+
+  // --- FETCH DATA ---
   useEffect(() => {
-    setIsClient(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
-  const paginatedPosts = filteredPosts.slice(
-    (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
-  );
-
-  useEffect(() => {
+    setMounted(true);
     const fetchPosts = async () => {
       try {
         const res = await fetch("/api/posts");
+        if (!res.ok) throw new Error("Failed to fetch");
+
         const data = await res.json();
-        const transformed = data.map((post: any, index: number) => ({
+
+        // Map Data từ API sang Interface
+        const transformedPosts: BlogPost[] = data.map((post: any) => ({
+          _id: post._id,
+          id: post._id,
           title: post.title,
           excerpt:
-            post.content?.slice(0, 150) + "..." || "Nội dung bài viết...",
+            post.excerpt ||
+            post.content?.replace(/<[^>]+>/g, "").slice(0, 120) + "..." ||
+            "Chưa có tóm tắt",
           slug: post.slug,
-          image: post.thumbnail || "/placeholder.jpg",
-          tags: post.tags || ["Web Development"],
-          createdAt: post.createdAt || new Date().toISOString(),
-          author: post.author || "VinhWorks",
-          readTime: "5 phút đọc",
-          views: Math.floor(Math.random() * 1000) + 100,
-          featured: index < 2,
-          category: post.category || "web-development",
+          image:
+            post.thumbnail ||
+            post.image ||
+            "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80", // Fallback image
+          tags: post.tags || [],
+          createdAt: post.createdAt,
+          author: post.author?.name || post.author || "Admin",
+          readTime: post.readTime || "5 phút",
+          views: post.views || 0,
+          featured: post.featured || false,
+          category: post.category || "technology",
         }));
-        setPosts(transformed);
-        setFilteredPosts(transformed);
+
+        setPosts(transformedPosts);
+        setFilteredPosts(transformedPosts);
       } catch (err) {
-        toast.error("Không thể tải dữ liệu bài viết!");
+        console.error(err);
+        toast.error("Không thể tải bài viết. Vui lòng thử lại sau.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchPosts();
   }, []);
 
-  // Filter posts based on search and category
+  // --- FILTERING ---
   useEffect(() => {
-    let filtered = posts;
+    let result = posts;
 
     if (selectedCategory !== "all") {
-      filtered = filtered.filter((post) => post.category === selectedCategory);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (post) =>
-          post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          post.tags.some((tag) =>
-            tag.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+      result = result.filter((p) =>
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase())
       );
     }
 
-    setFilteredPosts(filtered);
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title.toLowerCase().includes(lowerTerm) ||
+          p.excerpt.toLowerCase().includes(lowerTerm)
+      );
+    }
+
+    setFilteredPosts(result);
     setCurrentPage(1);
-  }, [posts, searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, posts]);
 
-  // Pre-generate particle positions
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-    { left: 25, top: 40 },
-    { left: 85, top: 75 },
-  ];
+  const paginatedPosts = filteredPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE
+  );
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
 
-  const stats = [
-    {
-      icon: BookOpen,
-      label: "Tổng bài viết",
-      value: posts.length,
-      color: "text-purple-400",
+  if (!mounted) return null;
+
+  // SEO Schema
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "Blog Công nghệ VinhWorks",
+    url: "https://vinhworks.com/blog",
+    description:
+      "Chia sẻ kiến thức lập trình, thiết kế web và xu hướng công nghệ mới nhất.",
+    publisher: {
+      "@type": "Organization",
+      name: "VinhWorks",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://vinhworks.com/logo.png",
+      },
     },
-    { icon: Eye, label: "Lượt xem", value: "50K+", color: "text-blue-400" },
-    { icon: User, label: "Độc giả", value: "10K+", color: "text-indigo-400" },
-    {
-      icon: TrendingUp,
-      label: "Tăng trưởng",
-      value: "+25%",
-      color: "text-pink-400",
-    },
-  ];
+  };
 
   return (
-    <div>
+    <>
       <Head>
-        <title>Blog & Tin tức | VinhWorks</title>
+        <title>Blog & Kiến thức - VinhWorks</title>
         <meta
           name="description"
-          content="Cập nhật kiến thức lập trình web, xu hướng công nghệ, và hướng dẫn SEO chuẩn hiện đại từ VinhWorks."
+          content="Cập nhật xu hướng công nghệ, hướng dẫn lập trình và thiết kế website chuyên nghiệp."
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta property="og:title" content="Blog & Tin tức | VinhWorks" />
-        <meta
-          property="og:description"
-          content="Chia sẻ kiến thức lập trình, thiết kế web, tối ưu hiệu suất, và SEO từ VinhWorks."
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://vinhworks.com/blog" />
-        <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
-      {/* Enhanced Loading Screen */}
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            key="loading-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900"
-          >
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <div className="w-16 h-16 border-4 rounded-full border-purple-500/30"></div>
-                <div className="absolute top-0 left-0 w-16 h-16 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
-              </div>
-              <motion.p
-                className="mt-6 text-lg font-medium text-purple-300"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Đang tải blog...
-              </motion.p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Toaster
+        position="top-center"
+        toastOptions={{ style: { background: "#333", color: "#fff" } }}
+      />
+      <motion.div
+        style={{ scaleX }}
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 origin-left z-[100]"
+      />
 
-      {/* Add CSS for grid animation */}
-      <style jsx>{`
-        @keyframes grid-move {
-          0% {
-            transform: translate(0, 0);
-          }
-          100% {
-            transform: translate(50px, 50px);
-          }
-        }
-      `}</style>
-
-      <section
-        className={`relative min-h-screen px-4 py-20 pt-32 md:pt-28 lg:pt-24 overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 transition-all duration-500 ${
-          loading
-            ? "blur-sm pointer-events-none select-none opacity-30"
-            : "opacity-100"
-        }`}
-      >
-        {/* Animated Grid Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "50px 50px",
-              animation: "grid-move 20s linear infinite",
-            }}
-          />
-        </div>
-
-        {/* Dynamic Gradient Orbs */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute rounded-full w-96 h-96 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%)",
-              left: `${mousePosition.x * 0.02}px`,
-              top: `${mousePosition.y * 0.02}px`,
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.div
-            className="absolute rounded-full w-80 h-80 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
-              right: `${mousePosition.x * 0.015}px`,
-              bottom: `${mousePosition.y * 0.015}px`,
-            }}
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
-
-        {/* Floating Tech Elements */}
-        {isClient && (
-          <div className="absolute inset-0 overflow-hidden">
-            {particlePositions.map((position, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  left: `${position.left}%`,
-                  top: `${position.top}%`,
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{
-                  duration: 8 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              >
-                <div className="w-2 h-2 rounded-full bg-purple-400/20" />
-              </motion.div>
-            ))}
+      <main className="min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-violet-200 selection:text-violet-900">
+        {/* ================= HERO HEADER ================= */}
+        <section className="relative pt-32 pb-12 overflow-hidden lg:pt-40 lg:pb-16">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-fuchsia-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob" />
+            <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-cyan-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-2000" />
+            <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-violet-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-4000" />
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
           </div>
-        )}
 
-        <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Enhanced Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-16 text-center md:mb-20"
-          >
-            {/* Header Badge */}
-            <motion.div
-              className="inline-flex items-center gap-3 px-6 py-3 mb-8 text-purple-300 border rounded-full bg-purple-500/10 border-purple-500/20 backdrop-blur-sm"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Rss className="w-5 h-5 text-blue-400 animate-pulse" />
-              <span className="text-sm font-medium tracking-wide uppercase">
-                Blog & Kiến thức
-              </span>
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-            </motion.div>
-
-            <h1 className="mb-6 text-4xl font-bold text-transparent md:text-6xl lg:text-7xl bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
-              Kiến thức & Xu hướng 📚
-            </h1>
-            <p className="max-w-3xl mx-auto text-lg leading-relaxed text-gray-300 md:text-xl">
-              Chia sẻ kinh nghiệm lập trình web, thiết kế UI/UX, SEO và những xu
-              hướng công nghệ mới nhất.
-              <br />
-              <span className="font-medium text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
-                Cập nhật liên tục để bạn luôn dẫn đầu!
-              </span>
-            </p>
-          </motion.div>
-
-          {/* Enhanced Stats Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-2 gap-6 mb-16 md:grid-cols-4"
-          >
-            {stats.map((stat, i) => {
-              const IconComponent = stat.icon;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  className="p-6 text-center transition-all duration-300 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10 hover:border-purple-400/40"
-                >
-                  <IconComponent
-                    className={`w-8 h-8 ${stat.color} mx-auto mb-3`}
-                  />
-                  <div className="mb-1 text-2xl font-bold text-white">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-300">{stat.label}</div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-
-          {/* Enhanced Filter Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mb-12"
-          >
-            <div className="flex flex-col items-center justify-between gap-6 p-6 border md:flex-row rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10">
-              {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search
-                  className="absolute text-purple-400 transform -translate-y-1/2 left-4 top-1/2"
-                  size={20}
-                />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm bài viết..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full py-3 pl-12 pr-4 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
-                />
-              </div>
-
-              {/* Category Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="text-purple-400" size={20} />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-3 text-white transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
-                >
-                  {categories.map((category) => (
-                    <option
-                      key={category}
-                      value={category}
-                      className="bg-slate-800"
-                    >
-                      {categoryLabels[category]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-2 p-1 border bg-slate-700/50 rounded-2xl border-purple-500/30">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-xl transition-all ${
-                    viewMode === "grid"
-                      ? "bg-purple-500 text-white"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  <Grid3X3 size={20} />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-xl transition-all ${
-                    viewMode === "list"
-                      ? "bg-purple-500 text-white"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  <List size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* Results count */}
-            <div className="mt-4 text-center">
-              <p className="text-gray-400">
-                Hiển thị{" "}
-                <span className="font-semibold text-purple-400">
-                  {filteredPosts.length}
-                </span>{" "}
-                bài viết
-                {searchTerm && (
-                  <span>
-                    {" "}
-                    cho từ khóa "
-                    <span className="text-blue-400">{searchTerm}</span>"
-                  </span>
-                )}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Enhanced Blog Posts Grid */}
-          {filteredPosts.length === 0 && !loading ? (
+          <div className="container relative z-10 max-w-5xl px-6 mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="py-20 text-center"
+              transition={{ duration: 0.8 }}
             >
-              <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20">
-                <Search className="w-12 h-12 text-purple-400" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold border border-white rounded-full shadow-sm bg-white/80 backdrop-blur-md text-violet-600 ring-1 ring-violet-100">
+                <Rss size={16} className="fill-violet-500" />
+                <span>Blog & News</span>
               </div>
-              <h3 className="mb-4 text-2xl font-bold text-white">
-                Không tìm thấy bài viết
-              </h3>
-              <p className="mb-6 text-gray-400">
-                Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc danh mục
+
+              <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-[1.1]">
+                Kiến thức &{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500">
+                  Xu hướng
+                </span>
+              </h1>
+
+              <p className="max-w-2xl mx-auto mb-12 text-xl font-medium leading-relaxed text-slate-600">
+                Khám phá kho tàng kiến thức về lập trình, thiết kế và công nghệ
+                được cập nhật liên tục mỗi ngày.
               </p>
-              <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setSelectedCategory("all");
-                }}
-                className="px-6 py-3 text-white transition-all duration-300 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl hover:from-purple-600 hover:to-blue-600"
-              >
-                Xem tất cả bài viết
-              </button>
             </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className={`grid gap-8 mb-16 ${
-                viewMode === "grid"
-                  ? "md:grid-cols-2 lg:grid-cols-3"
-                  : "grid-cols-1"
-              }`}
-            >
-              <AnimatePresence>
-                {paginatedPosts.map((post, idx) => (
-                  <motion.div
-                    key={post.slug}
-                    layout
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -40 }}
-                    transition={{ duration: 0.5, delay: idx * 0.1 }}
-                    whileHover={{ scale: 1.02, y: -5 }}
-                    className={`group relative overflow-hidden rounded-3xl border border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30 hover:border-purple-400/40 transition-all duration-300 shadow-2xl ${
-                      viewMode === "list" ? "flex flex-col md:flex-row" : ""
+          </div>
+        </section>
+
+        {/* ================= CONTENT AREA ================= */}
+        <section className="py-12 pb-24">
+          <div className="container px-6 mx-auto max-w-7xl">
+            {/* Sticky Toolbar */}
+            <div className="sticky z-30 mb-12 top-20">
+              <div className="flex flex-col items-center justify-between gap-4 p-4 border shadow-lg bg-white/80 backdrop-blur-xl rounded-2xl border-white/50 shadow-slate-200/50 lg:flex-row">
+                {/* Search */}
+                <div className="relative w-full lg:w-96 group">
+                  <Search
+                    className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-violet-600"
+                    size={20}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm bài viết..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full py-3 pl-12 pr-4 text-sm font-medium transition-all border outline-none bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-700 placeholder:text-slate-400"
+                  />
+                </div>
+
+                {/* Filter & View */}
+                <div className="flex items-center w-full gap-4 pb-2 overflow-x-auto lg:w-auto lg:pb-0 no-scrollbar">
+                  <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                          selectedCategory === cat.id
+                            ? "bg-white text-violet-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-900"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200 shrink-0">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`p-2 rounded-lg transition-all ${
+                        viewMode === "grid"
+                          ? "bg-white text-violet-600 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <Grid3X3 size={20} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`p-2 rounded-lg transition-all ${
+                        viewMode === "list"
+                          ? "bg-white text-violet-600 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      <List size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Posts Grid */}
+            {loading ? (
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-[2rem] h-96 animate-pulse border border-slate-100 shadow-sm"
+                  />
+                ))}
+              </div>
+            ) : filteredPosts.length > 0 ? (
+              <div
+                className={`grid gap-8 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                    : "grid-cols-1 max-w-4xl mx-auto"
+                }`}
+              >
+                <AnimatePresence mode="popLayout">
+                  {paginatedPosts.map((post) => (
+                    <BlogCard key={post._id} post={post} viewMode={viewMode} />
+                  ))}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+                <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 rounded-full bg-slate-50">
+                  <Search className="text-slate-400" size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Không tìm thấy bài viết nào
+                </h3>
+                <p className="mt-2 text-slate-500">
+                  Hãy thử tìm kiếm với từ khóa khác xem sao.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedCategory("all");
+                  }}
+                  className="px-6 py-2 mt-6 font-bold text-white transition-colors rounded-full bg-slate-900 hover:bg-slate-800"
+                >
+                  Xóa bộ lọc
+                </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-16">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-3 transition-all bg-white border shadow-sm rounded-xl border-slate-200 text-slate-500 hover:bg-white hover:border-violet-200 hover:text-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-11 h-11 rounded-xl font-bold text-sm transition-all shadow-sm border ${
+                      currentPage === i + 1
+                        ? "bg-violet-600 text-white border-violet-600 shadow-violet-500/30"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-600"
                     }`}
                   >
-                    {/* Featured Badge */}
-                    {post.featured && (
-                      <div className="absolute z-10 flex items-center gap-1 px-3 py-1 text-xs font-medium text-yellow-300 border rounded-full top-4 left-4 bg-yellow-500/20 border-yellow-500/30">
-                        <Star className="w-3 h-3" />
-                        Nổi bật
-                      </div>
-                    )}
-
-                    {/* Post Image */}
-                    <div
-                      className={`relative overflow-hidden ${
-                        viewMode === "list" ? "md:w-1/3" : "aspect-[4/3]"
-                      }`}
-                    >
-                      <Image
-                        src={post.image}
-                        alt={`Ảnh đại diện cho bài viết: ${post.title}`}
-                        width={400}
-                        height={300}
-                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:opacity-100" />
-
-                      {/* Category Badge */}
-                      <div className="absolute px-3 py-1 text-xs font-medium text-white rounded-full top-4 right-4 bg-purple-500/80 backdrop-blur-sm">
-                        {categoryLabels[post.category] || "Blog"}
-                      </div>
-                    </div>
-
-                    {/* Post Content */}
-                    <div
-                      className={`p-6 md:p-8 ${
-                        viewMode === "list"
-                          ? "md:w-2/3 flex flex-col justify-center"
-                          : ""
-                      }`}
-                    >
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {post.tags.slice(0, 3).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-1 px-3 py-1 text-xs text-purple-300 border rounded-full bg-purple-500/20 border-purple-500/30"
-                          >
-                            <Tag size={10} />
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Title */}
-                      <h2 className="mb-3 text-xl font-bold text-white transition-all md:text-2xl group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-blue-400 group-hover:bg-clip-text line-clamp-2">
-                        {post.title}
-                      </h2>
-
-                      {/* Excerpt */}
-                      <p className="mb-4 text-sm leading-relaxed text-gray-300 line-clamp-3">
-                        {post.excerpt}
-                      </p>
-
-                      {/* Meta Info */}
-                      <div className="flex items-center justify-between mb-4 text-xs text-gray-400">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <User size={12} />
-                            <span>{post.author}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar size={12} />
-                            <span>
-                              {new Date(post.createdAt).toLocaleDateString(
-                                "vi-VN"
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock size={12} />
-                            <span>{post.readTime}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye size={12} />
-                          <span>{post.views}</span>
-                        </div>
-                      </div>
-
-                      {/* Read More Button */}
-                      <Link href={`/blog/${post.slug}`}>
-                        <button className="flex items-center gap-2 px-4 py-2 text-purple-400 transition-all duration-300 border border-purple-500/30 rounded-xl hover:bg-purple-500/10 group/btn">
-                          <BookOpen size={16} />
-                          <span>Đọc thêm</span>
-                          <ArrowRight
-                            size={14}
-                            className="transition-transform group-hover/btn:translate-x-1"
-                          />
-                        </button>
-                      </Link>
-                    </div>
-                  </motion.div>
+                    {i + 1}
+                  </button>
                 ))}
-              </AnimatePresence>
-            </motion.div>
-          )}
 
-          {/* Enhanced Pagination */}
-          {totalPages > 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex items-center justify-center gap-2 mb-16"
-            >
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="p-3 text-purple-400 transition-all duration-300 border border-purple-500/30 rounded-xl hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={20} />
-              </button>
-
-              {Array.from({ length: totalPages }).map((_, i) => (
                 <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-4 py-2 rounded-xl transition-all duration-300 ${
-                    currentPage === i + 1
-                      ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg"
-                      : "border border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-                  }`}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="p-3 transition-all bg-white border shadow-sm rounded-xl border-slate-200 text-slate-500 hover:bg-white hover:border-violet-200 hover:text-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {i + 1}
+                  <ChevronRight size={20} />
                 </button>
-              ))}
+              </div>
+            )}
+          </div>
+        </section>
 
-              <button
-                onClick={() =>
-                  setCurrentPage(Math.min(totalPages, currentPage + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="p-3 text-purple-400 transition-all duration-300 border border-purple-500/30 rounded-xl hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </motion.div>
-          )}
+        {/* ================= NEWSLETTER (Light Mode & Full Width Aligned) ================= */}
+        <section className="relative py-24 overflow-hidden">
+          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
+            <div className="relative overflow-hidden text-center bg-white border shadow-2xl rounded-[3rem] p-12 md:p-20 border-slate-100">
+              {/* Abstract Glows (Light Version) */}
+              <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-100/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" />
+              <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-fuchsia-100/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" />
+              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
 
-          {/* Enhanced CTA Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="text-center"
-          >
-            <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10">
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                📬 Đăng ký nhận bài viết mới
-              </h3>
-              <p className="max-w-2xl mx-auto mb-8 text-gray-300">
-                Nhận thông báo khi có bài viết mới về công nghệ, lập trình và
-                thiết kế web
-              </p>
+              <div className="relative z-10 max-w-3xl mx-auto">
+                <div className="inline-flex p-4 mb-8 bg-white border shadow-sm rounded-2xl border-slate-100 text-violet-600">
+                  <Mail size={32} />
+                </div>
 
-              <div className="flex flex-col justify-center max-w-md gap-4 mx-auto sm:flex-row">
-                <input
-                  type="email"
-                  placeholder="Nhập email của bạn..."
-                  className="flex-1 px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-6 py-3 text-white transition-all duration-300 shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl hover:from-purple-600 hover:to-blue-600"
+                <h2 className="mb-6 text-4xl font-black leading-tight text-slate-900 md:text-6xl">
+                  Đừng bỏ lỡ <br />{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">
+                    Kiến thức mới
+                  </span>
+                </h2>
+
+                <p className="mb-10 text-lg font-medium text-slate-500">
+                  Đăng ký nhận bản tin hàng tuần để cập nhật những bài viết,
+                  tutorial và tài nguyên miễn phí chất lượng nhất.
+                </p>
+
+                <form
+                  className="flex flex-col gap-4 sm:flex-row"
+                  onSubmit={(e) => e.preventDefault()}
                 >
-                  Đăng ký
-                </motion.button>
+                  <input
+                    type="email"
+                    placeholder="Địa chỉ email của bạn"
+                    className="flex-1 px-6 py-4 transition-all bg-white border-2 shadow-sm outline-none text-slate-900 rounded-2xl border-slate-200 placeholder:text-slate-400 focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500"
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-10 py-4 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl hover:shadow-violet-500/30"
+                  >
+                    Đăng ký ngay
+                  </motion.button>
+                </form>
+
+                <p className="mt-6 text-xs font-medium text-slate-400">
+                  Cam kết không spam. Hủy đăng ký bất cứ lúc nào.
+                </p>
               </div>
             </div>
-          </motion.div>
-        </div>
-      </section>
-    </div>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

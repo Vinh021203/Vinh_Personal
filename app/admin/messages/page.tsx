@@ -4,32 +4,24 @@ import { useEffect, useState, useRef } from "react";
 import {
   MessageCircle,
   Send,
-  User,
   Search,
   Phone,
   Video,
   MoreVertical,
-  Paperclip,
-  Smile,
+  Plus,
   Check,
   CheckCheck,
   Clock,
-  Users,
-  Mail,
-  Filter,
-  Archive,
-  Star,
-  Settings,
-  X,
   ChevronLeft,
-  ChevronRight,
-  Activity,
-  Circle,
+  Mic,
+  Image as ImageIcon,
+  Smile,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
-import Avatar from "@/components/admin/Avatar";
+import Image from "next/image";
 
+// --- Interfaces ---
 interface Message {
   _id: string;
   senderId: string;
@@ -57,162 +49,130 @@ export default function AdminMessagesPage() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState("");
-  const [adminId, setAdminId] = useState<string | null>(null);
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
   const [mobileUserPanel, setMobileUserPanel] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const chatBottomRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // ✅ useEffect 1: Fetch Messages (Fixed cache issue)
+  // State lưu thông tin users để map avatar
+  const [usersMap, setUsersMap] = useState<Record<string, any>>({});
+
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // --- Fetch Data ---
   useEffect(() => {
-    const fetchMessages = async () => {
+    const initData = async () => {
       try {
+        // 1. Get Users List & Admin Info
+        const usersRes = await fetch("/api/users");
+        const usersData = await usersRes.json();
+
+        // Tạo map để tra cứu nhanh user info từ ID
+        const map: Record<string, any> = {};
+        let adminIdFound = null;
+
+        if (Array.isArray(usersData)) {
+          usersData.forEach((u: any) => {
+            map[u._id] = u; // Lưu ý key là _id từ mongoDB
+            if (u.role === "admin") adminIdFound = u._id;
+          });
+        }
+        setUsersMap(map);
+        if (adminIdFound) setCurrentAdminId(adminIdFound);
+
+        // 2. Get Messages
         const timestamp = new Date().getTime();
         const res = await fetch(`/api/messages?t=${timestamp}`, {
           cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-          },
         });
-
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
+        if (!res.ok) throw new Error("Failed to fetch messages");
         const data = await res.json();
         setMessages(data);
-
-        const adminMsg = data.find((msg: Message) => msg.isAdmin === true);
-        if (adminMsg?.senderId) {
-          setAdminId(adminMsg.senderId);
-        }
       } catch (err) {
-        console.error("Lỗi tải tin nhắn:", err);
-        toast.error("Không thể tải tin nhắn!");
-        setMessages([]);
+        console.error(err);
+        // toast.error("Không thể tải dữ liệu!");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMessages();
+    initData();
+    const interval = setInterval(initData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  // ✅ useEffect 2: Auto Scroll (Optimized)
+  // Auto scroll to bottom
   useEffect(() => {
-    const scrollToBottom = () => {
+    if (messages.length > 0 && selectedUser) {
       setTimeout(() => {
         chatBottomRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "end",
         });
       }, 100);
-    };
-
-    if (messages.length > 0 && selectedUser) {
-      scrollToBottom();
     }
   }, [messages, selectedUser]);
 
-  // ✅ useEffect 3: Audio Notification (Improved)
-  useEffect(() => {
-    const playNotificationSound = async () => {
-      if (!audioRef.current) return;
+  // --- Logic Process User List ---
+  const userListMap = new Map<string, UserInfo>();
 
-      try {
-        audioRef.current.currentTime = 0;
-        await audioRef.current.play();
-      } catch (error) {
-        console.log("Không thể phát âm thanh:", error);
-      }
-    };
+  messages.forEach((msg) => {
+    // Nếu người gửi không phải là admin hiện tại -> đó là khách hàng
+    if (msg.senderId !== currentAdminId) {
+      if (!userListMap.has(msg.senderId)) {
+        // Lấy thông tin user từ usersMap đã fetch
+        const userProfile = usersMap[msg.senderId] || {};
 
-    if (messages.length > 0 && !loading) {
-      playNotificationSound();
-    }
-  }, [messages, loading]);
-
-  // ✅ useEffect 4: Auto Refresh (New)
-  useEffect(() => {
-    if (!selectedUser) return;
-
-    const refreshMessages = async () => {
-      try {
-        const timestamp = new Date().getTime();
-        const res = await fetch(`/api/messages?t=${timestamp}`, {
-          cache: "no-store",
-          headers: { "Cache-Control": "no-cache" },
+        userListMap.set(msg.senderId, {
+          id: msg.senderId,
+          name: userProfile.name || msg.senderName || "Khách hàng",
+          // Ưu tiên avatar từ User Profile, nếu không có thì dùng Dicebear fallback
+          avatar:
+            userProfile.avatar ||
+            `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`,
+          unreadCount: 0,
+          isOnline: Math.random() > 0.5, // Mock status
         });
-
-        if (res.ok) {
-          const data = await res.json();
-          setMessages(data);
-        }
-      } catch (err) {
-        console.error("Auto refresh failed:", err);
       }
-    };
 
-    const interval = setInterval(refreshMessages, 5000);
-    return () => clearInterval(interval);
-  }, [selectedUser]);
+      const user = userListMap.get(msg.senderId)!;
+      user.lastMessage = msg.content;
+      user.lastMessageTime = msg.createdAt;
+      if (!msg.read && !msg.isAdmin) user.unreadCount! += 1;
+    }
+  });
 
-  // Create user info with last message and unread count
-  const userInfos: UserInfo[] = Array.from(
-    new Map(
-      messages
-        .filter((msg) => msg.senderId !== adminId)
-        .map((msg) => [msg.senderId, msg.senderName])
-    )
-  ).map(([id, name]) => {
-    const userMessages = messages.filter(
-      (m) =>
-        m.senderId === id || (m.senderId === adminId && m.receiverId === id)
+  const userInfos = Array.from(userListMap.values()).sort((a, b) => {
+    return (
+      new Date(b.lastMessageTime || 0).getTime() -
+      new Date(a.lastMessageTime || 0).getTime()
     );
-    const lastMessage = userMessages[userMessages.length - 1];
-    const unreadCount = userMessages.filter(
-      (m) => m.senderId === id && !m.read
-    ).length;
-
-    return {
-      id: id as string,
-      name: name as string,
-      lastMessage: lastMessage?.content || "",
-      lastMessageTime: lastMessage?.createdAt || "",
-      unreadCount,
-      isOnline: Math.random() > 0.5,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        name as string
-      )}&background=8b5cf6&color=fff&size=128`,
-    };
   });
 
   const filteredUsers = userInfos.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (filterStatus === "all" ||
-        (filterStatus === "unread" && user.unreadCount > 0) ||
-        (filterStatus === "online" && user.isOnline))
+        (filterStatus === "unread" && user.unreadCount! > 0))
   );
 
   const filteredMessages = selectedUser
     ? messages.filter(
-        (m) =>
-          (m.senderId === selectedUser &&
-            (!m.receiverId || m.receiverId === adminId)) ||
-          (m.senderId === adminId && m.receiverId === selectedUser)
+        (m) => m.senderId === selectedUser || m.receiverId === selectedUser
       )
     : [];
 
   const selectedUserInfo = userInfos.find((u) => u.id === selectedUser);
 
-  // ✅ Enhanced handleReply with optimistic updates
+  // --- Handlers ---
   const handleReply = async () => {
-    if (!reply.trim() || !selectedUser) return;
+    if (!reply.trim() || !selectedUser || !currentAdminId) return;
 
-    const tempMessage: Message = {
-      _id: `temp-${Date.now()}`,
-      senderId: adminId || "admin",
+    const tempId = `temp-${Date.now()}`;
+    const newMessage: Message = {
+      _id: tempId,
+      senderId: currentAdminId,
       senderName: "Admin",
       receiverId: selectedUser,
       content: reply,
@@ -221,58 +181,23 @@ export default function AdminMessagesPage() {
       status: "sent",
     };
 
-    // Optimistic update
-    setMessages((prev) => [...prev, tempMessage]);
-    const currentReply = reply;
+    setMessages((prev) => [...prev, newMessage]);
     setReply("");
 
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+
     try {
-      const res = await fetch("/api/messages", {
+      await fetch("/api/messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: currentReply,
+          content: newMessage.content,
           receiverId: selectedUser,
           isAdmin: true,
         }),
       });
-
-      if (!res.ok) throw new Error("Failed to send message");
-
-      const newMsg = await res.json();
-
-      // Replace temp message with real message
-      setMessages((prev) =>
-        prev.map((msg) => (msg._id === tempMessage._id ? newMsg : msg))
-      );
-
-      // Force refresh after a delay to ensure sync
-      setTimeout(async () => {
-        try {
-          const timestamp = new Date().getTime();
-          const refreshRes = await fetch(`/api/messages?t=${timestamp}`, {
-            cache: "no-store",
-          });
-          if (refreshRes.ok) {
-            const refreshedMessages = await refreshRes.json();
-            setMessages(refreshedMessages);
-          }
-        } catch (err) {
-          console.error("Refresh after send failed:", err);
-        }
-      }, 500);
-
-      toast.success("Đã gửi tin nhắn!");
-    } catch (err) {
-      console.error("Gửi phản hồi thất bại:", err);
-      toast.error("Không thể gửi tin nhắn!");
-
-      // Remove temp message on error
-      setMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
-      setReply(currentReply); // Restore reply text
+    } catch (error) {
+      toast.error("Gửi tin nhắn thất bại");
     }
   };
 
@@ -283,451 +208,429 @@ export default function AdminMessagesPage() {
     }
   };
 
-  const getMessageStatus = (msg: Message) => {
-    if (msg.status === "read")
-      return <CheckCheck size={14} className="text-blue-400" />;
-    if (msg.status === "delivered")
-      return <CheckCheck size={14} className="text-gray-400" />;
-    if (msg.status === "sent")
-      return <Check size={14} className="text-gray-400" />;
-    return <Clock size={14} className="text-gray-500" />;
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+    return isToday
+      ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 rounded-full border-purple-500/30"></div>
-            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
-          </div>
-          <motion.p
-            className="mt-6 text-lg font-medium text-purple-300"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-orange-200 rounded-full border-t-orange-500 animate-spin" />
+          <p className="text-sm font-bold text-slate-400 animate-pulse">
             Đang tải tin nhắn...
-          </motion.p>
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: "rgba(15, 23, 42, 0.95)",
-            color: "#fff",
-            border: "1px solid rgba(147, 51, 234, 0.3)",
-            backdropFilter: "blur(20px)",
-            borderRadius: "12px",
-          },
-        }}
-      />
+    <div className="h-[calc(100vh-40px)] flex flex-col pb-4">
+      <Toaster position="top-right" />
 
-      <audio ref={audioRef} src="/ping.mp3" preload="auto" />
-
-      {/* Enhanced Header */}
+      {/* 1. HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center"
+        className="flex flex-col items-center justify-between px-1 mb-6 md:flex-row"
       >
         <div className="flex items-center gap-4">
-          <motion.div
-            initial={{ rotate: -15, scale: 0.9 }}
-            animate={{ rotate: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className="p-3 shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl"
-          >
-            <MessageCircle size={24} className="text-white" />
-          </motion.div>
-          <div>
-            <h1 className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
-              Quản lý Tin nhắn
-            </h1>
-            <p className="mt-1 text-gray-400">Hỗ trợ khách hàng 24/7</p>
+          <div className="p-3 bg-white border border-orange-100 shadow-sm rounded-2xl">
+            <MessageCircle size={24} className="text-orange-500" />
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 border rounded-full bg-green-500/20 border-green-500/30">
-            <Activity size={16} className="text-green-400" />
-            <span className="text-sm font-medium text-green-300">Online</span>
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">
+              Trung tâm tin nhắn
+            </h1>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">
+              Kết nối và hỗ trợ khách hàng
+            </p>
           </div>
         </div>
       </motion.div>
 
-      {/* Main Chat Interface */}
+      {/* 2. MAIN LAYOUT */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="h-[calc(100vh-200px)] rounded-3xl border border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30 overflow-hidden"
+        className="flex-1 bg-white border border-orange-100 rounded-[32px] shadow-xl overflow-hidden flex relative"
       >
-        <div className="flex h-full">
-          {/* Sidebar */}
-          <div
-            className={`w-80 border-r border-purple-500/20 flex flex-col ${
-              mobileUserPanel ? "block" : "hidden md:flex"
-            }`}
-          >
-            {/* Search & Filter */}
-            <div className="p-6 border-b border-purple-500/20">
-              <div className="relative mb-4">
-                <Search
-                  className="absolute text-purple-400 transform -translate-y-1/2 left-3 top-1/2"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm người dùng..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full py-2 pl-10 pr-4 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterStatus("all")}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    filterStatus === "all"
-                      ? "bg-purple-500 text-white"
-                      : "bg-slate-700/50 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Tất cả
-                </button>
-                <button
-                  onClick={() => setFilterStatus("unread")}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    filterStatus === "unread"
-                      ? "bg-purple-500 text-white"
-                      : "bg-slate-700/50 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Chưa đọc
-                </button>
-                <button
-                  onClick={() => setFilterStatus("online")}
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
-                    filterStatus === "online"
-                      ? "bg-purple-500 text-white"
-                      : "bg-slate-700/50 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Online
-                </button>
-              </div>
+        {/* --- SIDEBAR (USER LIST) --- */}
+        <div
+          className={`w-full md:w-80 lg:w-96 border-r border-slate-100 flex flex-col bg-slate-50/50 ${
+            selectedUser ? "hidden md:flex" : "flex"
+          }`}
+        >
+          {/* Search Header */}
+          <div className="sticky top-0 z-10 p-5 border-b bg-white/80 backdrop-blur-md border-slate-100">
+            <div className="relative mb-4 group">
+              <Search
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Tìm kiếm khách hàng..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none"
+              />
             </div>
-
-            {/* User List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {filteredUsers.length === 0 ? (
-                <div className="p-6 text-center text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Không có người dùng nào</p>
-                </div>
-              ) : (
-                <div className="p-2">
-                  {filteredUsers.map((userInfo) => (
-                    <motion.div
-                      key={userInfo.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      whileHover={{ scale: 1.02 }}
-                      className={`p-4 rounded-2xl cursor-pointer transition-all duration-300 mb-2 ${
-                        selectedUser === userInfo.id
-                          ? "bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-400/50"
-                          : "hover:bg-white/5"
-                      }`}
-                      onClick={() => {
-                        setSelectedUser(userInfo.id);
-                        setMobileUserPanel(false);
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <Avatar
-                            src={userInfo.avatar}
-                            name={userInfo.name}
-                            size={48}
-                          />
-                          <div
-                            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 ${
-                              userInfo.isOnline ? "bg-green-400" : "bg-gray-400"
-                            }`}
-                          />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-white truncate">
-                              {userInfo.name}
-                            </h3>
-                            {userInfo.unreadCount > 0 && (
-                              <span className="px-2 py-1 text-xs font-medium text-white bg-red-500 rounded-full">
-                                {userInfo.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-sm text-gray-400 truncate">
-                            {userInfo.lastMessage || "Chưa có tin nhắn"}
-                          </p>
-                          {userInfo.lastMessageTime && (
-                            <p className="mt-1 text-xs text-gray-500">
-                              {new Date(
-                                userInfo.lastMessageTime
-                              ).toLocaleDateString("vi-VN")}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+            <div className="flex gap-2 pb-1 overflow-x-auto no-scrollbar">
+              {[
+                { id: "all", label: "Tất cả" },
+                { id: "unread", label: "Chưa đọc" },
+              ].map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setFilterStatus(filter.id)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    filterStatus === filter.id
+                      ? "bg-slate-800 text-white shadow-md shadow-slate-800/20"
+                      : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-100"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Chat Area */}
-          <div className="flex flex-col flex-1">
-            {selectedUser ? (
-              <>
-                {/* Chat Header */}
-                <div className="p-6 border-b border-purple-500/20 bg-slate-800/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => setMobileUserPanel(true)}
-                        className="p-2 text-purple-400 transition-all rounded-lg md:hidden hover:bg-purple-500/10"
-                      >
-                        <ChevronLeft size={20} />
-                      </button>
-
-                      <div className="relative">
-                        <Avatar
-                          src={selectedUserInfo?.avatar}
-                          name={selectedUserInfo?.name || "User"}
-                          size={48}
-                        />
-                        <div
-                          className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-800 ${
-                            selectedUserInfo?.isOnline
-                              ? "bg-green-400"
-                              : "bg-gray-400"
-                          }`}
-                        />
-                      </div>
-
-                      <div>
-                        <h2 className="text-lg font-bold text-white">
-                          {selectedUserInfo?.name}
-                        </h2>
-                        <p className="text-sm text-gray-400">
-                          {selectedUserInfo?.isOnline
-                            ? "Đang online"
-                            : "Offline"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 text-gray-400 transition-all rounded-lg hover:text-white hover:bg-white/10">
-                        <Phone size={20} />
-                      </button>
-                      <button className="p-2 text-gray-400 transition-all rounded-lg hover:text-white hover:bg-white/10">
-                        <Video size={20} />
-                      </button>
-                      <button className="p-2 text-gray-400 transition-all rounded-lg hover:text-white hover:bg-white/10">
-                        <MoreVertical size={20} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-                  <div className="space-y-4">
-                    {filteredMessages.length === 0 ? (
-                      <div className="py-12 text-center text-gray-400">
-                        <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <p>Chưa có tin nhắn nào</p>
-                        <p className="mt-2 text-sm">
-                          Hãy bắt đầu cuộc trò chuyện!
-                        </p>
-                      </div>
-                    ) : (
-                      filteredMessages.map((msg, index) => {
-                        const isFromAdmin = msg.senderId === adminId;
-                        const showAvatar =
-                          index === 0 ||
-                          filteredMessages[index - 1].senderId !== msg.senderId;
-
-                        return (
-                          <motion.div
-                            key={msg._id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className={`flex gap-3 ${
-                              isFromAdmin ? "flex-row-reverse" : "flex-row"
-                            }`}
-                          >
-                            {showAvatar && (
-                              <div className="flex-shrink-0">
-                                {isFromAdmin ? (
-                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
-                                    <span className="text-sm font-bold text-white">
-                                      A
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <Avatar
-                                    src={selectedUserInfo?.avatar}
-                                    name={selectedUserInfo?.name || "User"}
-                                    size={32}
-                                  />
-                                )}
-                              </div>
-                            )}
-
-                            <div
-                              className={`max-w-[70%] ${
-                                !showAvatar
-                                  ? isFromAdmin
-                                    ? "mr-11"
-                                    : "ml-11"
-                                  : ""
-                              }`}
-                            >
-                              <div
-                                className={`px-4 py-3 rounded-2xl shadow-lg ${
-                                  isFromAdmin
-                                    ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                                    : "bg-slate-700/50 text-white border border-purple-500/20"
-                                }`}
-                              >
-                                <p className="text-sm leading-relaxed">
-                                  {msg.content}
-                                </p>
-                              </div>
-
-                              <div
-                                className={`flex items-center gap-2 mt-1 text-xs text-gray-400 ${
-                                  isFromAdmin ? "justify-end" : "justify-start"
-                                }`}
-                              >
-                                <span>
-                                  {new Date(msg.createdAt).toLocaleTimeString(
-                                    "vi-VN",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </span>
-                                {isFromAdmin && getMessageStatus(msg)}
-                              </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })
-                    )}
-                    <div ref={chatBottomRef}></div>
-                  </div>
-                </div>
-
-                {/* Message Input */}
-                <div className="p-6 border-t border-purple-500/20 bg-slate-800/50">
-                  <div className="flex items-center gap-3">
-                    <button className="p-2 text-gray-400 transition-all rounded-lg hover:text-white hover:bg-white/10">
-                      <Paperclip size={20} />
-                    </button>
-
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        value={reply}
-                        onChange={(e) => setReply(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Nhập tin nhắn..."
-                        className="w-full px-4 py-3 pr-12 text-white placeholder-gray-400 transition-all duration-300 border bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50"
-                      />
-                      <button className="absolute p-1 text-gray-400 transition-colors transform -translate-y-1/2 right-3 top-1/2 hover:text-white">
-                        <Smile size={18} />
-                      </button>
-                    </div>
-
-                    <motion.button
-                      onClick={handleReply}
-                      disabled={!reply.trim()}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-3 text-white transition-all duration-300 shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Send size={20} />
-                    </motion.button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center flex-1">
-                <div className="text-center">
-                  <MessageCircle className="w-24 h-24 mx-auto mb-6 text-purple-400/50" />
-                  <h3 className="mb-2 text-xl font-bold text-white">
-                    Chọn cuộc trò chuyện
-                  </h3>
-                  <p className="text-gray-400">
-                    Chọn một người dùng để bắt đầu trò chuyện
-                  </p>
-                </div>
+          {/* List Users */}
+          <div className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
+            {filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                <p className="text-sm font-medium">
+                  Không tìm thấy cuộc hội thoại
+                </p>
               </div>
+            ) : (
+              filteredUsers.map((user) => (
+                <div
+                  key={user.id}
+                  onClick={() => setSelectedUser(user.id)}
+                  className={`group p-3 rounded-2xl cursor-pointer transition-all relative ${
+                    selectedUser === user.id
+                      ? "bg-white shadow-md shadow-orange-100 border border-orange-100 ring-1 ring-orange-500/20"
+                      : "hover:bg-white hover:shadow-sm border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 overflow-hidden border-2 border-white rounded-full shadow-sm bg-slate-100">
+                        <Image
+                          src={user.avatar || "/placeholder.jpg"}
+                          alt=""
+                          width={48}
+                          height={48}
+                          className="object-cover"
+                          unoptimized // Fix lỗi load ảnh từ nguồn ngoài nếu chưa config domain
+                          onError={(e) => {
+                            e.currentTarget.srcset = "/placeholder.jpg"; // Fallback nếu ảnh lỗi
+                          }}
+                        />
+                      </div>
+                      {user.isOnline && (
+                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm ring-1 ring-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline mb-0.5">
+                        <h3
+                          className={`text-sm font-bold truncate ${
+                            selectedUser === user.id
+                              ? "text-slate-800"
+                              : "text-slate-700"
+                          }`}
+                        >
+                          {user.name}
+                        </h3>
+                        {user.lastMessageTime && (
+                          <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap ml-2">
+                            {formatMessageTime(user.lastMessageTime)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p
+                          className={`text-xs truncate max-w-[140px] ${
+                            user.unreadCount! > 0
+                              ? "font-bold text-slate-800"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          {user.lastMessage || "Đã gửi tin nhắn"}
+                        </p>
+                        {user.unreadCount! > 0 && (
+                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm shadow-orange-500/30 animate-pulse">
+                            {user.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
+
+        {/* --- CHAT AREA --- */}
+        <div
+          className={`flex-1 flex flex-col bg-white relative ${
+            !selectedUser ? "hidden md:flex" : "flex"
+          }`}
+        >
+          {selectedUser ? (
+            <>
+              {/* Chat Header */}
+              <div className="absolute top-0 z-20 flex items-center justify-between w-full h-20 px-6 border-b shadow-sm border-slate-100 bg-white/90 backdrop-blur-md">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setSelectedUser(null)}
+                    className="p-2 -ml-2 transition-colors rounded-full md:hidden text-slate-500 hover:bg-slate-100"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Image
+                        src={selectedUserInfo?.avatar || "/placeholder.jpg"}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="object-cover border rounded-full shadow-sm"
+                        unoptimized
+                      />
+                      {selectedUserInfo?.isOnline && (
+                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                      )}
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-800">
+                        {selectedUserInfo?.name}
+                      </h2>
+                      <p className="flex items-center gap-1 text-xs text-slate-500">
+                        {selectedUserInfo?.isOnline ? (
+                          <span className="font-medium text-green-600">
+                            Đang hoạt động
+                          </span>
+                        ) : (
+                          "Hoạt động 5p trước"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-1 md:gap-2">
+                  <button className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors">
+                    <Phone size={20} />
+                  </button>
+                  <button className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors">
+                    <Video size={20} />
+                  </button>
+                  <button className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                    <MoreVertical size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages List */}
+              <div className="flex-1 p-4 pt-24 pb-4 overflow-y-auto bg-slate-50/30 custom-scrollbar">
+                <div className="flex flex-col max-w-3xl gap-2 mx-auto">
+                  <div className="flex justify-center my-4">
+                    <span className="px-3 py-1 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-full uppercase tracking-wider">
+                      Hôm nay
+                    </span>
+                  </div>
+
+                  {filteredMessages.map((msg, index) => {
+                    const isMe = msg.senderId === currentAdminId || msg.isAdmin;
+                    const showAvatar =
+                      index === 0 ||
+                      filteredMessages[index - 1].senderId !== msg.senderId;
+
+                    return (
+                      <motion.div
+                        key={msg._id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex gap-3 ${
+                          isMe ? "flex-row-reverse" : "flex-row"
+                        }`}
+                      >
+                        {!isMe && (
+                          <div
+                            className={`w-8 h-8 shrink-0 flex flex-col justify-end ${
+                              !showAvatar && "invisible"
+                            }`}
+                          >
+                            <Image
+                              src={
+                                selectedUserInfo?.avatar || "/placeholder.jpg"
+                              }
+                              alt=""
+                              width={32}
+                              height={32}
+                              className="object-cover bg-white border rounded-full border-slate-200"
+                              unoptimized
+                            />
+                          </div>
+                        )}
+
+                        <div
+                          className={`flex flex-col max-w-[75%] md:max-w-[60%] ${
+                            isMe ? "items-end" : "items-start"
+                          }`}
+                        >
+                          <div
+                            className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${
+                              isMe
+                                ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-tr-none"
+                                : "bg-white border border-slate-100 text-slate-700 rounded-tl-none"
+                            }`}
+                          >
+                            {msg.content}
+                          </div>
+                          <div
+                            className={`flex items-center gap-1.5 mt-1 text-[10px] font-medium ${
+                              isMe
+                                ? "text-slate-400 flex-row-reverse"
+                                : "text-slate-400"
+                            }`}
+                          >
+                            <span>
+                              {new Date(msg.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {isMe &&
+                              (msg.status === "read" ? (
+                                <CheckCheck
+                                  size={14}
+                                  className="text-blue-500"
+                                />
+                              ) : msg.status === "delivered" ? (
+                                <CheckCheck
+                                  size={14}
+                                  className="text-slate-400"
+                                />
+                              ) : (
+                                <Check size={14} className="text-slate-400" />
+                              ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                  <div ref={chatBottomRef} className="h-px" />
+                </div>
+              </div>
+
+              {/* Input Area */}
+              <div className="p-4 bg-white border-t border-slate-100">
+                <div className="max-w-3xl mx-auto flex items-end gap-2 bg-slate-50 p-2 rounded-[24px] border border-slate-200 focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all">
+                  <button className="p-3 transition-all rounded-full text-slate-400 hover:text-slate-600 hover:bg-white">
+                    <Plus size={20} />
+                  </button>
+                  <button className="hidden p-3 transition-all rounded-full sm:block text-slate-400 hover:text-slate-600 hover:bg-white">
+                    <ImageIcon size={20} />
+                  </button>
+
+                  <textarea
+                    ref={textareaRef}
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Nhập tin nhắn..."
+                    className="flex-1 bg-transparent border-none focus:ring-0 py-3 px-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none max-h-32 min-h-[44px] outline-none custom-scrollbar"
+                    rows={1}
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = "auto";
+                      target.style.height = `${target.scrollHeight}px`;
+                    }}
+                  />
+
+                  {reply.trim() ? (
+                    <button
+                      onClick={handleReply}
+                      className="p-3 text-white transition-all bg-orange-500 rounded-full shadow-lg hover:bg-orange-600 shadow-orange-500/30 active:scale-95"
+                    >
+                      <Send size={18} fill="currentColor" className="ml-0.5" />
+                    </button>
+                  ) : (
+                    <button className="p-3 transition-all rounded-full text-slate-400 hover:text-slate-600 hover:bg-white">
+                      <Mic size={20} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center flex-1 p-8 text-center bg-slate-50/50">
+              <div className="flex items-center justify-center w-32 h-32 mb-6 bg-white rounded-full shadow-lg shadow-slate-200/50 animate-float">
+                <div className="relative">
+                  <MessageCircle size={64} className="text-orange-500" />
+                  <div className="absolute w-4 h-4 bg-green-500 border-2 border-white rounded-full -top-1 -right-1 animate-pulse"></div>
+                </div>
+              </div>
+              <h2 className="mb-2 text-2xl font-extrabold text-slate-800">
+                Xin chào, Admin! 👋
+              </h2>
+              <p className="max-w-xs mx-auto text-slate-500">
+                Chọn một cuộc hội thoại từ danh sách bên trái để bắt đầu hỗ trợ
+                khách hàng ngay.
+              </p>
+            </div>
+          )}
+        </div>
       </motion.div>
 
-      {/* Custom Scrollbar Styles */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+          width: 4px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(15, 23, 42, 0.3);
-          border-radius: 3px;
+          background: transparent;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(
-            to bottom,
-            rgba(147, 51, 234, 0.5),
-            rgba(59, 130, 246, 0.5)
-          );
-          border-radius: 3px;
+          background: #cbd5e1;
+          border-radius: 10px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(
-            to bottom,
-            rgba(147, 51, 234, 0.7),
-            rgba(59, 130, 246, 0.7)
-          );
+          background: #94a3b8;
         }
-
-        @media (max-width: 768px) {
-          .custom-scrollbar::-webkit-scrollbar {
-            display: none;
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        @keyframes float {
+          0% {
+            transform: translateY(0px);
           }
-          .custom-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+          50% {
+            transform: translateY(-10px);
           }
+          100% {
+            transform: translateY(0px);
+          }
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
         }
       `}</style>
     </div>

@@ -1,11 +1,9 @@
-// app/api/messages/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/libs/mongodb";
 import Message from "@/models/Message";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/libs/auth";
 
-// ✅ Thêm config để disable cache
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -18,13 +16,23 @@ export async function GET(req: NextRequest) {
 
   if (!user) return NextResponse.json([], { status: 200 });
 
+  // Nếu là Admin, có thể muốn xem tất cả tin nhắn trong hệ thống để support
+  // Hoặc chỉ xem tin nhắn liên quan đến mình.
+  // Ở đây ta giả định Admin sẽ thấy tất cả tin nhắn gửi đến Admin HOẶC Admin gửi đi.
+  // Nếu muốn Admin thấy toàn bộ chat của hệ thống (kiểu support center), có thể bỏ filter sender/receiver.
+
+  // Cách 1: Chỉ lấy tin nhắn liên quan đến user hiện tại
   const messages = await Message.find({
-    $or: [{ senderId: user.id.toString() }, { receiverId: user.id.toString() }],
+    $or: [
+      { senderId: user.id.toString() },
+      { receiverId: user.id.toString() },
+      { receiverId: null }, // Lấy cả tin nhắn khách gửi chung chung (chưa có receiver cụ thể)
+      { receiverId: "admin" }, // Fallback nếu frontend gửi receiverId="admin"
+    ],
   }).sort({ createdAt: 1 });
 
   return NextResponse.json(messages, {
     headers: {
-      // ✅ Disable cache headers
       "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       Pragma: "no-cache",
       Expires: "0",
@@ -50,14 +58,13 @@ export async function POST(req: NextRequest) {
     senderId: user.id.toString(),
     senderName: user.name,
     receiverId: receiverId || null,
-    isAdmin: !!isAdmin,
+    isAdmin: !!isAdmin, // Chuyển đổi sang boolean
     content,
   });
 
   return NextResponse.json(newMsg, {
     status: 201,
     headers: {
-      // ✅ Disable cache headers
       "Cache-Control": "no-store, no-cache, must-revalidate",
     },
   });

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import {
   Mail,
   Send,
@@ -14,15 +14,101 @@ import {
   Sparkles,
   User,
   ArrowRight,
-  CheckCircle,
+  CheckCircle2,
   Globe,
   Zap,
-  Shield,
+  ShieldCheck,
   Star,
+  Facebook,
+  Instagram,
+  Linkedin,
 } from "lucide-react";
 import Head from "next/head";
 import { Toaster, toast } from "react-hot-toast";
 import emailjs from "emailjs-com";
+
+// --- DATA ---
+
+const contactInfo = [
+  {
+    icon: Phone,
+    title: "Hotline tư vấn",
+    value: "0971 386 588",
+    link: "tel:0971386588",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    border: "border-blue-100",
+  },
+  {
+    icon: Mail,
+    title: "Email hỗ trợ",
+    value: "luongvinh02122003@gmail.com",
+    link: "mailto:luongvinh02122003@gmail.com",
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+    border: "border-purple-100",
+  },
+  {
+    icon: MapPin,
+    title: "Văn phòng",
+    value: "TP. Hạ Long, Quảng Ninh",
+    link: "https://goo.gl/maps/...",
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+    border: "border-orange-100",
+  },
+  {
+    icon: Clock,
+    title: "Giờ làm việc",
+    value: "8:00 - 22:00 (T2 - CN)",
+    link: "#",
+    color: "text-pink-600",
+    bg: "bg-pink-50",
+    border: "border-pink-100",
+  },
+];
+
+const features = [
+  { icon: Zap, text: "Phản hồi < 30p", color: "text-yellow-500" },
+  { icon: ShieldCheck, text: "Bảo mật 100%", color: "text-green-500" },
+  { icon: Star, text: "Tư vấn miễn phí", color: "text-purple-500" },
+  { icon: Globe, text: "Hỗ trợ Online", color: "text-blue-500" },
+];
+
+// --- COMPONENTS ---
+
+const ContactCard = ({
+  info,
+  index,
+}: {
+  info: (typeof contactInfo)[0];
+  index: number;
+}) => (
+  <motion.a
+    href={info.link}
+    target="_blank"
+    rel="noreferrer"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.4 + index * 0.1 }}
+    whileHover={{ scale: 1.02, y: -2 }}
+    className={`flex items-center gap-4 p-5 rounded-2xl border ${info.bg} ${info.border} hover:shadow-lg transition-all duration-300 group cursor-pointer`}
+  >
+    <div
+      className={`p-3 rounded-xl bg-white shadow-sm ${info.color} group-hover:scale-110 transition-transform`}
+    >
+      <info.icon size={24} />
+    </div>
+    <div>
+      <h4 className="text-sm font-bold text-slate-900 mb-0.5 group-hover:text-violet-600 transition-colors">
+        {info.title}
+      </h4>
+      <p className="text-sm font-medium text-slate-500">{info.value}</p>
+    </div>
+  </motion.a>
+);
+
+// --- MAIN PAGE ---
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -32,33 +118,19 @@ export default function ContactPage() {
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
   useEffect(() => {
-    setIsClient(true);
-    const timer = setTimeout(() => setLoading(false), 1500);
-
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
+    setMounted(true);
   }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,518 +154,286 @@ export default function ContactPage() {
         templateParams,
         process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
       );
-
-      toast.success("Liên hệ đã được gửi thành công! 🎉");
+      toast.success("Gửi tin nhắn thành công! Chúng tôi sẽ liên hệ lại sớm.");
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
       console.error("EmailJS Error:", error);
-      toast.error("Không thể gửi liên hệ. Vui lòng thử lại! 😔");
+      toast.error("Lỗi gửi tin nhắn. Vui lòng thử lại hoặc gọi hotline.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Pre-generate particle positions
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-    { left: 25, top: 40 },
-    { left: 85, top: 75 },
-  ];
+  if (!mounted) return null;
 
-  const contactInfo = [
-    {
-      icon: Phone,
-      title: "Điện thoại",
-      value: "0971 386 588",
-      link: "tel:0971386588",
-      color: "text-purple-400",
-      bg: "from-purple-500/10 to-blue-500/10",
+  // Schema SEO
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name: "Liên hệ VinhWorks",
+    description:
+      "Trang liên hệ tư vấn dịch vụ thiết kế website và giải pháp công nghệ.",
+    url: "https://vinhworks.com/contact",
+    mainEntity: {
+      "@type": "Organization",
+      name: "VinhWorks",
+      telephone: "0971-386-588",
+      email: "luongvinh02122003@gmail.com",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Hạ Long, Quảng Ninh",
+        addressCountry: "VN",
+      },
     },
-    {
-      icon: Mail,
-      title: "Email",
-      value: "luongvinh02122003@gmail.com",
-      link: "mailto:luongvinh02122003@gmail.com",
-      color: "text-blue-400",
-      bg: "from-blue-500/10 to-indigo-500/10",
-    },
-    {
-      icon: MapPin,
-      title: "Địa chỉ",
-      value: "TP. Hạ Long, Quảng Ninh",
-      link: "#",
-      color: "text-indigo-400",
-      bg: "from-indigo-500/10 to-purple-500/10",
-    },
-    {
-      icon: Clock,
-      title: "Thời gian làm việc",
-      value: "8:00 - 22:00 (T2-CN)",
-      link: "#",
-      color: "text-pink-400",
-      bg: "from-pink-500/10 to-purple-500/10",
-    },
-  ];
-
-  const features = [
-    { icon: Zap, text: "Phản hồi nhanh trong 24h", color: "text-yellow-400" },
-    {
-      icon: Shield,
-      text: "Bảo mật thông tin tuyệt đối",
-      color: "text-green-400",
-    },
-    { icon: Star, text: "Tư vấn miễn phí 100%", color: "text-purple-400" },
-    { icon: Globe, text: "Hỗ trợ 24/7", color: "text-blue-400" },
-  ];
+  };
 
   return (
     <>
       <Head>
-        <title>Liên hệ | VinhWorks</title>
+        <title>Liên hệ - VinhWorks | Tư vấn Giải pháp Số Miễn phí</title>
         <meta
           name="description"
-          content="Liên hệ với VinhWorks để được tư vấn miễn phí về các giải pháp công nghệ hiện đại."
+          content="Liên hệ ngay với VinhWorks để nhận tư vấn thiết kế website, SEO và giải pháp công nghệ. Hỗ trợ 24/7, phản hồi nhanh chóng."
         />
-        <meta property="og:title" content="Liên hệ | VinhWorks" />
-        <meta
-          property="og:description"
-          content="Trang liên hệ chính thức của VinhWorks - Nhận tư vấn miễn phí 24/7."
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://vinhworks.com/contact" />
-        <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
       <Toaster
         position="top-center"
-        toastOptions={{
-          style: {
-            background: "rgba(15, 23, 42, 0.95)",
-            color: "#fff",
-            border: "1px solid rgba(147, 51, 234, 0.3)",
-            backdropFilter: "blur(20px)",
-            borderRadius: "12px",
-          },
-        }}
+        toastOptions={{ style: { background: "#333", color: "#fff" } }}
       />
 
-      {/* Enhanced Loading Screen */}
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            key="loader"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900"
-          >
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <div className="w-16 h-16 border-4 rounded-full border-purple-500/30"></div>
-                <div className="absolute top-0 left-0 w-16 h-16 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
-              </div>
-              <motion.p
-                className="mt-6 text-lg font-medium text-purple-300"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Đang tải trang liên hệ...
-              </motion.p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        style={{ scaleX }}
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 origin-left z-[100]"
+      />
 
-      {/* Add CSS for grid animation */}
-      <style jsx>{`
-        @keyframes grid-move {
-          0% {
-            transform: translate(0, 0);
-          }
-          100% {
-            transform: translate(50px, 50px);
-          }
-        }
-      `}</style>
-
-      <section
-        className={`relative min-h-screen px-4 py-20 pt-32 md:pt-28 lg:pt-24 overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 transition-all duration-500 ${
-          loading
-            ? "blur-sm pointer-events-none select-none opacity-30"
-            : "opacity-100"
-        }`}
-      >
-        {/* Animated Grid Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "50px 50px",
-              animation: "grid-move 20s linear infinite",
-            }}
-          />
-        </div>
-
-        {/* Dynamic Gradient Orbs */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute rounded-full w-96 h-96 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%)",
-              left: `${mousePosition.x * 0.02}px`,
-              top: `${mousePosition.y * 0.02}px`,
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.div
-            className="absolute rounded-full w-80 h-80 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
-              right: `${mousePosition.x * 0.015}px`,
-              bottom: `${mousePosition.y * 0.015}px`,
-            }}
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
-
-        {/* Floating Tech Elements */}
-        {isClient && (
-          <div className="absolute inset-0 overflow-hidden">
-            {particlePositions.map((position, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  left: `${position.left}%`,
-                  top: `${position.top}%`,
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{
-                  duration: 8 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              >
-                <div className="w-2 h-2 rounded-full bg-purple-400/20" />
-              </motion.div>
-            ))}
+      <main className="min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-purple-100 selection:text-purple-900">
+        {/* ================= HERO SECTION ================= */}
+        <section className="relative pt-20 pb-12">
+          {/* Background Blobs */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-blue-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[800px] h-[800px] bg-purple-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-2000" />
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
           </div>
-        )}
 
-        <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Enhanced Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-16 text-center md:mb-20"
-          >
-            {/* Header Badge */}
+          <div className="container relative z-10 max-w-6xl px-6 mx-auto text-center">
             <motion.div
-              className="inline-flex items-center gap-3 px-6 py-3 mb-8 text-purple-300 border rounded-full bg-purple-500/10 border-purple-500/20 backdrop-blur-sm"
-              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              <MessageCircle className="w-5 h-5 text-blue-400" />
-              <span className="text-sm font-medium tracking-wide uppercase">
-                Liên hệ với chúng tôi
-              </span>
-              <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold text-purple-600 border border-white rounded-full shadow-sm bg-white/80 ring-1 ring-purple-100 backdrop-blur-md">
+                <MessageCircle size={16} className="fill-purple-500" />
+                <span>Hỗ trợ 24/7</span>
+              </div>
+
+              <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-[1.1]">
+                Kết nối cùng <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
+                  VinhWorks Team
+                </span>
+              </h1>
+
+              <p className="max-w-2xl mx-auto mb-12 text-xl font-medium leading-relaxed text-slate-600">
+                Bạn có ý tưởng? Chúng tôi có giải pháp.{" "}
+                <br className="hidden md:block" />
+                Hãy để lại lời nhắn, chúng tôi sẽ phản hồi ngay lập tức.
+              </p>
             </motion.div>
+          </div>
+        </section>
 
-            <h1 className="mb-6 text-4xl font-bold text-transparent md:text-6xl lg:text-7xl bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
-              Hãy kết nối với chúng tôi! 🚀
-            </h1>
-            <p className="max-w-3xl mx-auto text-lg leading-relaxed text-gray-300 md:text-xl">
-              Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn.
-              <br />
-              <span className="font-medium text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
-                Gửi tin nhắn và nhận phản hồi trong vòng 24 giờ!
-              </span>
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Enhanced Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <div className="relative">
-                {/* Glow Effect */}
-                <div className="absolute opacity-75 -inset-1 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-indigo-500/20 rounded-3xl blur-xl" />
-
-                {/* Main Form Card */}
-                <div className="relative p-6 border shadow-2xl md:p-8 lg:p-10 bg-slate-800/30 backdrop-blur-2xl rounded-3xl border-purple-500/20">
+        {/* ================= CONTACT FORM & INFO ================= */}
+        <section className="relative z-10 py-20">
+          <div className="container max-w-6xl px-6 mx-auto">
+            <div className="grid items-start grid-cols-1 gap-12 lg:grid-cols-12">
+              {/* LEFT: FORM CARD (7 cols) */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="relative lg:col-span-7"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 rounded-[2rem] blur opacity-20" />
+                <div className="relative bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl border border-slate-100">
                   <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl">
-                        <Mail className="w-6 h-6 text-white" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-white">
-                        Gửi tin nhắn
-                      </h2>
-                    </div>
-                    <p className="text-gray-300">
-                      Điền thông tin bên dưới và chúng tôi sẽ liên hệ lại với
-                      bạn sớm nhất có thể.
+                    <h2 className="mb-2 text-2xl font-black text-slate-900">
+                      Gửi tin nhắn cho chúng tôi
+                    </h2>
+                    <p className="text-slate-500">
+                      Điền thông tin bên dưới, chúng tôi sẽ liên hệ lại trong
+                      vòng 24h.
                     </p>
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Name Input */}
-                    <motion.div
-                      className="relative group"
-                      whileFocus={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <label className="block mb-2 text-sm font-medium text-purple-300">
-                        Họ và tên *
-                      </label>
-                      <div className="relative">
-                        <User
-                          className="absolute text-purple-400 transition-colors transform -translate-y-1/2 left-4 top-1/2 group-focus-within:text-blue-400"
-                          size={20}
-                        />
-                        <input
-                          type="text"
-                          name="name"
-                          required
-                          placeholder="Nhập họ và tên của bạn"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          className="w-full py-3 pl-12 pr-4 text-white placeholder-gray-400 transition-all duration-300 border md:py-4 bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
-                        />
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Họ tên *
+                        </label>
+                        <div className="relative group">
+                          <User
+                            className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-purple-600"
+                            size={20}
+                          />
+                          <input
+                            type="text"
+                            name="name"
+                            required
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            placeholder="Nguyễn Văn A"
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-medium text-slate-900"
+                          />
+                        </div>
                       </div>
-                    </motion.div>
-
-                    {/* Email Input */}
-                    <motion.div
-                      className="relative group"
-                      whileFocus={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <label className="block mb-2 text-sm font-medium text-purple-300">
-                        Email *
-                      </label>
-                      <div className="relative">
-                        <Mail
-                          className="absolute text-purple-400 transition-colors transform -translate-y-1/2 left-4 top-1/2 group-focus-within:text-blue-400"
-                          size={20}
-                        />
-                        <input
-                          type="email"
-                          name="email"
-                          required
-                          placeholder="your@email.com"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          className="w-full py-3 pl-12 pr-4 text-white placeholder-gray-400 transition-all duration-300 border md:py-4 bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
-                        />
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700">
+                          Email *
+                        </label>
+                        <div className="relative group">
+                          <Mail
+                            className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-purple-600"
+                            size={20}
+                          />
+                          <input
+                            type="email"
+                            name="email"
+                            required
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            placeholder="email@domain.com"
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-medium text-slate-900"
+                          />
+                        </div>
                       </div>
-                    </motion.div>
+                    </div>
 
-                    {/* Subject Input */}
-                    <motion.div
-                      className="relative group"
-                      whileFocus={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <label className="block mb-2 text-sm font-medium text-purple-300">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700">
                         Chủ đề
                       </label>
                       <input
                         type="text"
                         name="subject"
-                        placeholder="Chủ đề tin nhắn"
                         value={formData.subject}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border md:py-4 bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
+                        placeholder="Tôi muốn tư vấn về..."
+                        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-medium text-slate-900"
                       />
-                    </motion.div>
+                    </div>
 
-                    {/* Message Textarea */}
-                    <motion.div
-                      className="relative group"
-                      whileFocus={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <label className="block mb-2 text-sm font-medium text-purple-300">
-                        Nội dung *
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700">
+                        Nội dung tin nhắn *
                       </label>
                       <textarea
                         name="message"
                         required
-                        rows={6}
-                        placeholder="Chia sẻ chi tiết về dự án hoặc câu hỏi của bạn..."
+                        rows={5}
                         value={formData.message}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 text-white placeholder-gray-400 transition-all duration-300 border resize-none md:py-4 bg-slate-700/50 border-purple-500/30 rounded-2xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 hover:border-purple-400/50"
+                        placeholder="Mô tả chi tiết yêu cầu của bạn..."
+                        className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all outline-none font-medium text-slate-900 resize-none"
                       />
-                    </motion.div>
+                    </div>
 
-                    {/* Enhanced Submit Button */}
                     <motion.button
-                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      type="submit"
                       disabled={isSubmitting}
-                      className={`w-full relative overflow-hidden px-6 py-3 md:py-4 text-white font-semibold rounded-2xl transition-all duration-300 ${
-                        isSubmitting
-                          ? "bg-gray-600 cursor-not-allowed"
-                          : "bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:from-purple-600 hover:via-blue-600 hover:to-indigo-600 shadow-lg hover:shadow-2xl"
-                      }`}
+                      className="flex items-center justify-center w-full gap-2 py-4 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-blue-600 via-purple-600 to-orange-600 rounded-xl hover:shadow-xl disabled:opacity-70"
                     >
-                      {!isSubmitting && (
-                        <div className="absolute inset-0 transition-opacity duration-300 opacity-0 bg-gradient-to-r from-purple-400/30 via-blue-400/30 to-indigo-400/30 blur-xl hover:opacity-100" />
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="animate-spin" size={20} /> Đang
+                          gửi...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={20} /> Gửi ngay
+                        </>
                       )}
-
-                      <div className="relative flex items-center justify-center gap-3">
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Đang gửi...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Send size={20} />
-                            <span>Gửi tin nhắn</span>
-                            <ArrowRight size={16} />
-                          </>
-                        )}
-                      </div>
                     </motion.button>
-                  </form>
 
-                  {/* Features */}
-                  <div className="grid grid-cols-2 gap-4 mt-8">
-                    {features.map((feature, i) => {
-                      const IconComponent = feature.icon;
-                      return (
+                    {/* Trust Badges inside form */}
+                    <div className="grid grid-cols-2 gap-4 pt-6 mt-6 border-t border-slate-100">
+                      {features.map((feature, i) => (
                         <div
                           key={i}
-                          className="flex items-center gap-2 text-xs text-gray-400"
+                          className="flex items-center gap-2 text-xs font-medium text-slate-500"
                         >
-                          <IconComponent
-                            className={`w-4 h-4 ${feature.color}`}
-                          />
+                          <feature.icon size={14} className={feature.color} />
                           <span>{feature.text}</span>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+
+              {/* RIGHT: INFO & MAP (5 cols) */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="space-y-8 lg:col-span-5"
+              >
+                {/* Contact Info Grid */}
+                <div className="space-y-4">
+                  {contactInfo.map((info, idx) => (
+                    <ContactCard key={idx} info={info} index={idx} />
+                  ))}
+                </div>
+
+                {/* Map Embed */}
+                <div className="relative h-64 rounded-[2rem] overflow-hidden border border-slate-200 shadow-lg">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.924403805594!2d107.09567831540247!3d20.95666799312065!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314a583e6676361b%3A0x751657366b670769!2sHa%20Long%2C%20Quang%20Ninh%2C%20Vietnam!5e0!3m2!1sen!2s!4v1647856789012!5m2!1sen!2s"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    className="transition-all duration-500 grayscale hover:grayscale-0"
+                  />
+                  <div className="absolute px-4 py-2 text-xs font-bold bg-white rounded-lg shadow-md pointer-events-none bottom-4 left-4 text-slate-700">
+                    📍 Trụ sở chính
                   </div>
                 </div>
-              </div>
-            </motion.div>
 
-            {/* Enhanced Contact Info */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="space-y-6"
-            >
-              <div className="mb-8">
-                <h3 className="mb-4 text-2xl font-bold text-white">
-                  Thông tin liên hệ
-                </h3>
-                <p className="text-gray-300">
-                  Bạn có thể liên hệ trực tiếp qua các kênh bên dưới hoặc ghé
-                  thăm văn phòng của chúng tôi.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {contactInfo.map((info, i) => {
-                  const IconComponent = info.icon;
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 + i * 0.1 }}
-                      whileHover={{ scale: 1.02, x: 5 }}
-                    >
-                      <a
-                        href={info.link}
-                        className={`block p-6 rounded-3xl border border-purple-500/20 backdrop-blur-sm bg-gradient-to-br ${info.bg} hover:border-purple-400/40 transition-all duration-300 group`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 transition-colors bg-slate-700/50 rounded-2xl group-hover:bg-slate-600/50">
-                            <IconComponent
-                              className={`w-6 h-6 ${info.color}`}
-                            />
-                          </div>
-                          <div>
-                            <h4 className="mb-1 font-semibold text-white">
-                              {info.title}
-                            </h4>
-                            <p className="text-sm text-gray-300">
-                              {info.value}
-                            </p>
-                          </div>
-                        </div>
-                      </a>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Response Time */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                className="p-6 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-green-500/10 to-emerald-500/10"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-400" />
-                  <h4 className="text-lg font-bold text-white">
-                    Cam kết phản hồi
-                  </h4>
+                {/* Social Links */}
+                <div className="flex justify-center gap-6 pt-4">
+                  <a
+                    href="#"
+                    className="p-3 transition-all bg-white border rounded-full border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-md"
+                  >
+                    <Facebook size={20} />
+                  </a>
+                  <a
+                    href="#"
+                    className="p-3 transition-all bg-white border rounded-full border-slate-200 text-slate-400 hover:text-pink-600 hover:border-pink-200 hover:shadow-md"
+                  >
+                    <Instagram size={20} />
+                  </a>
+                  <a
+                    href="#"
+                    className="p-3 transition-all bg-white border rounded-full border-slate-200 text-slate-400 hover:text-blue-700 hover:border-blue-200 hover:shadow-md"
+                  >
+                    <Linkedin size={20} />
+                  </a>
                 </div>
-                <p className="text-sm leading-relaxed text-gray-300">
-                  Chúng tôi cam kết phản hồi mọi tin nhắn trong vòng{" "}
-                  <strong className="text-green-400">24 giờ</strong>. Đối với
-                  các yêu cầu khẩn cấp, vui lòng gọi trực tiếp số hotline để
-                  được hỗ trợ nhanh nhất.
-                </p>
               </motion.div>
-            </motion.div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
     </>
   );
 }

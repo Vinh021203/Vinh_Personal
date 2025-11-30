@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['res.cloudinary.com', 'ui-avatars.com'],
+    // Thêm "api.dicebear.com" vào danh sách này
+    domains: [
+      "res.cloudinary.com",
+      "ui-avatars.com",
+      "images.unsplash.com",
+      "api.dicebear.com",
+    ],
   },
 };
 

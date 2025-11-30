@@ -10,7 +10,6 @@ import {
   User,
   LogOut,
   Settings,
-  Globe,
   Sparkles,
   Home,
   Zap,
@@ -29,14 +28,15 @@ export const Header = () => {
   const [open, setOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const { user, setUser } = useUser();
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage(); // Đã bỏ setLang vì không dùng nút đổi ngôn ngữ nữa
   const t = text[lang];
 
-  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -45,7 +45,6 @@ export const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Load user when mount
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -63,7 +62,6 @@ export const Header = () => {
     fetchUser();
   }, [setUser]);
 
-  // Close dropdown & menu on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -104,360 +102,282 @@ export const Header = () => {
   ];
 
   return (
-    <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
-      className={`fixed top-0 left-0 z-50 w-full transition-all duration-500 ${
-        scrolled
-          ? "bg-slate-900/98 backdrop-blur-2xl shadow-2xl border-b border-purple-500/30"
-          : "bg-slate-900/95 backdrop-blur-xl border-b border-purple-500/20"
-      }`}
-    >
-      {/* Animated gradient line */}
-      <div className="absolute bottom-0 left-0 w-full h-0.5">
-        <div className="w-full h-full bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-60 animate-pulse" />
-      </div>
+    <>
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{
+          y: 0,
+          opacity: 1,
+          marginTop: scrolled ? "1rem" : "0rem",
+          maxWidth: scrolled ? "95%" : "100%", // Để rộng hơn chút cho thoáng
+          borderRadius: scrolled ? "9999px" : "0px",
+        }}
+        transition={{
+          duration: 0.5,
+          type: "spring",
+          stiffness: 100,
+          damping: 20,
+        }}
+        className={`fixed left-0 right-0 z-50 mx-auto transition-all duration-500 ${
+          scrolled
+            ? "bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60"
+            : "bg-white/70 backdrop-blur-lg border-b border-white/30"
+        }`}
+      >
+        {/* Background Mesh Gradient: Vàng - Cam - Hồng Phấn */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[inherit]">
+          <div className="absolute -top-[50%] -left-[10%] w-[60%] h-[200%] bg-gradient-to-r from-orange-100/40 to-amber-100/40 blur-3xl rotate-12" />
+          <div className="absolute -bottom-[50%] -right-[10%] w-[60%] h-[200%] bg-gradient-to-l from-rose-100/40 to-pink-100/40 blur-3xl -rotate-12" />
+        </div>
 
-      <div className="flex items-center justify-between px-6 py-4 mx-auto max-w-7xl">
-        {/* Enhanced Logo */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 400 }}
+        <div
+          className={`flex items-center justify-between mx-auto max-w-7xl ${
+            scrolled ? "px-8 py-2.5" : "px-6 py-4"
+          }`}
         >
-          <Link
-            href="/"
-            className="flex items-center gap-3 text-xl font-bold tracking-wide group"
+          {/* Logo Section: Tone Cam Vàng */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400 }}
+            className="relative z-10 flex-shrink-0"
           >
-            <div className="relative">
-              <div className="absolute inset-0 transition-opacity opacity-50 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur-lg group-hover:opacity-75 animate-pulse" />
-              <div className="absolute inset-0 transition-opacity opacity-75 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur-sm group-hover:opacity-100" />
-              <span className="relative flex items-center justify-center w-12 h-12 text-white shadow-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-xl">
-                <Monitor size={24} />
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text">
-                VinhWorks
-              </span>
-              <span className="-mt-1 text-xs font-normal text-gray-400">
-                Tech Solutions
-              </span>
-            </div>
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            <Link
+              href="/"
+              className="flex items-center gap-3 text-xl font-bold tracking-wide group"
             >
-              <Sparkles className="w-5 h-5 text-yellow-400" />
-            </motion.div>
-          </Link>
-        </motion.div>
+              <div className="relative">
+                <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-orange-400 to-rose-400 rounded-xl blur-lg group-hover:opacity-40" />
+                <span className="relative flex items-center justify-center w-10 h-10 text-white transition-transform duration-300 shadow-lg bg-gradient-to-br from-orange-500 via-amber-500 to-rose-500 rounded-xl group-hover:rotate-3">
+                  <Monitor size={20} />
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-extrabold text-transparent bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 bg-clip-text">
+                  VinhWorks
+                </span>
+                {!scrolled && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="-mt-0.5 text-[10px] font-bold text-orange-300/80 uppercase tracking-widest"
+                  >
+                    Tech Solutions
+                  </motion.span>
+                )}
+              </div>
+            </Link>
+          </motion.div>
 
-        {/* Enhanced Desktop Navigation */}
-        <nav className="items-center hidden gap-2 md:flex">
-          {navItems.map((item, index) => {
-            const IconComponent = item.icon;
-            return (
-              <motion.div
-                key={item.href}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center bg-white/50 p-1.5 rounded-full border border-white shadow-sm relative z-10 mx-4">
+            {navItems.map((item) => {
+              const IconComponent = item.icon;
+              const isActive = hoveredPath === item.href;
+
+              return (
                 <Link
+                  key={item.href}
                   href={item.href}
-                  className="relative px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-300 rounded-xl group hover:text-white"
+                  onMouseEnter={() => setHoveredPath(item.href)}
+                  onMouseLeave={() => setHoveredPath(null)}
+                  className="relative px-3.5 py-2 text-sm font-medium transition-colors rounded-full group"
                 >
-                  <div className="absolute inset-0 transition-all duration-300 opacity-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10 rounded-xl group-hover:opacity-100" />
-                  <div className="absolute inset-0 transition-all duration-300 opacity-0 bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-blue-500/5 rounded-xl blur-sm group-hover:opacity-100" />
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      transition={{
+                        type: "spring",
+                        bounce: 0.2,
+                        duration: 0.6,
+                      }}
+                      className="absolute inset-0 border rounded-full shadow-sm bg-gradient-to-r from-orange-50 to-amber-50 border-orange-100/50"
+                      style={{ borderRadius: 9999 }}
+                    />
+                  )}
 
-                  <span className="relative flex items-center gap-2">
+                  <span
+                    className={`relative flex items-center gap-1.5 transition-colors duration-200 z-10 ${
+                      isActive
+                        ? "text-orange-600 font-bold"
+                        : "text-slate-500 group-hover:text-orange-500"
+                    }`}
+                  >
                     <IconComponent
-                      size={16}
-                      className="transition-transform group-hover:scale-110"
+                      size={15}
+                      className={`transition-transform duration-200 ${
+                        isActive
+                          ? "scale-110 stroke-orange-500"
+                          : "scale-100 opacity-70 group-hover:opacity-100"
+                      }`}
                     />
                     {item.label}
                   </span>
-
-                  <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 transition-all duration-300 group-hover:w-full group-hover:left-0 rounded-full" />
                 </Link>
-              </motion.div>
-            );
-          })}
+              );
+            })}
+          </nav>
 
-          {/* Enhanced User Section */}
-          {user ? (
-            <motion.div
-              className="relative ml-6"
-              ref={dropdownRef}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowDropdown((prev) => !prev)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 border rounded-xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20 border-purple-400/30 hover:border-purple-400/50 backdrop-blur-sm shadow-lg"
-              >
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full opacity-75 bg-gradient-to-r from-purple-400 to-pink-400 blur-sm" />
-                  <div className="relative flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                    {user.name.charAt(0).toUpperCase()}
+          {/* User & Actions Section */}
+          <div className="relative z-10 flex items-center flex-shrink-0 gap-3">
+            {/* Đã xóa phần chuyển đổi ngôn ngữ */}
+
+            {user ? (
+              <div className="relative" ref={dropdownRef}>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowDropdown((prev) => !prev)}
+                  className="flex items-center gap-2 py-1 pl-1 pr-3 transition-all bg-white border border-orange-100 rounded-full shadow-sm hover:shadow-md hover:border-orange-200"
+                >
+                  <div className="relative flex items-center justify-center w-8 h-8 overflow-hidden border-2 border-white rounded-full shadow-inner bg-gradient-to-br from-orange-100 to-rose-100">
+                    <span className="text-sm font-bold text-orange-600">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                </div>
-                <span className="truncate max-w-28">{user.name}</span>
-                <ChevronDown
-                  size={16}
-                  className={`transition-transform duration-300 ${
-                    showDropdown ? "rotate-180" : ""
-                  }`}
-                />
-              </motion.button>
+                  <ChevronDown
+                    size={14}
+                    className={`text-orange-300 transition-transform duration-300 ${
+                      showDropdown ? "rotate-180" : ""
+                    }`}
+                  />
+                </motion.button>
 
-              <AnimatePresence>
-                {showDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 z-50 mt-3 overflow-hidden border shadow-2xl w-52 rounded-2xl bg-slate-800/95 backdrop-blur-2xl border-purple-400/20"
-                  >
-                    <div className="p-2">
-                      <div className="px-4 py-3 border-b border-purple-400/20">
-                        <p className="text-sm font-medium text-white">
+                <AnimatePresence>
+                  {showDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-4 w-60 overflow-hidden bg-white/95 backdrop-blur-2xl border border-orange-100 rounded-3xl shadow-[0_20px_50px_-12px_rgba(249,115,22,0.15)]"
+                    >
+                      <div className="p-4 border-b border-orange-100 bg-gradient-to-br from-orange-50 to-rose-50">
+                        <p className="text-sm font-bold text-slate-800">
                           {user.name}
                         </p>
-                        {/* Fixed: Sử dụng optional chaining */}
                         {user?.email && (
-                          <p className="text-xs text-gray-400">{user.email}</p>
+                          <p className="text-xs text-slate-500">{user.email}</p>
                         )}
                       </div>
-                      <div className="py-2">
-                        <Link
-                          href="/profile"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all duration-200 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20"
-                        >
-                          <User size={16} />
-                          Thông tin cá nhân
-                        </Link>
-                        <Link
-                          href="/settings"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 transition-all duration-200 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20"
-                        >
-                          <Settings size={16} />
-                          Cài đặt
-                        </Link>
-                      </div>
-                      <div className="pt-2 border-t border-purple-400/20">
+                      <div className="p-2 space-y-1">
+                        {[
+                          { label: "Hồ sơ", icon: User, href: "/profile" },
+                          {
+                            label: "Cài đặt",
+                            icon: Settings,
+                            href: "/settings",
+                          },
+                        ].map((menuItem) => (
+                          <Link
+                            key={menuItem.href}
+                            href={menuItem.href}
+                            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                          >
+                            <menuItem.icon size={16} />
+                            {menuItem.label}
+                          </Link>
+                        ))}
+                        <div className="h-px my-1 bg-slate-100" />
                         <button
                           onClick={handleLogout}
-                          className="flex items-center w-full gap-3 px-4 py-2.5 text-sm text-red-400 transition-all duration-200 rounded-xl hover:text-red-300 hover:bg-red-500/10"
+                          className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-rose-500 rounded-xl hover:bg-rose-50 transition-colors"
                         >
                           <LogOut size={16} />
                           Đăng xuất
                         </button>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          ) : (
-            <motion.div
-              className="flex items-center gap-4 ml-6"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-medium text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10"
-              >
-                {t.login}
-              </Link>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  href="/register"
-                  className="px-6 py-2.5 text-sm font-semibold text-white transition-all duration-300 rounded-xl shadow-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl"
-                >
-                  {t.register}
-                </Link>
-              </motion.div>
-
-              <div className="relative">
-                <select
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value as "vi" | "en")}
-                  className="px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 border rounded-xl appearance-none cursor-pointer bg-slate-700/50 border-purple-400/30 hover:border-purple-400/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
-                >
-                  <option value="vi" className="bg-slate-800">
-                    🇻🇳 VN
-                  </option>
-                  <option value="en" className="bg-slate-800">
-                    🇺🇸 EN
-                  </option>
-                </select>
-                <Globe className="absolute w-4 h-4 text-purple-400 transform -translate-y-1/2 pointer-events-none right-3 top-1/2" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </motion.div>
-          )}
-        </nav>
-
-        {/* Enhanced Mobile Toggle */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setOpen(!open)}
-          className="relative p-3 text-white transition-all duration-300 border shadow-lg rounded-xl md:hidden bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-400/30 hover:border-purple-400/50"
-        >
-          <AnimatePresence mode="wait">
-            {open ? (
-              <motion.div
-                key="close"
-                initial={{ rotate: -180, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 180, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <X size={24} />
-              </motion.div>
             ) : (
-              <motion.div
-                key="menu"
-                initial={{ rotate: 180, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -180, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Menu size={24} />
-              </motion.div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="hidden px-5 py-2 text-sm font-bold transition-colors md:block text-slate-500 hover:text-orange-500"
+                >
+                  {t.login}
+                </Link>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    href="/register"
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white rounded-full shadow-lg shadow-orange-400/30 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:brightness-105 transition-all"
+                  >
+                    <Sparkles size={14} className="text-yellow-100" />
+                    {t.register}
+                  </Link>
+                </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </motion.button>
-      </div>
 
-      {/* Enhanced Mobile Menu */}
+            {/* Mobile Toggle */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setOpen(!open)}
+              className="p-2 transition-colors bg-white border rounded-full text-slate-500 border-slate-100 md:hidden hover:bg-orange-50 hover:text-orange-500 hover:border-orange-100"
+            >
+              {open ? <X size={24} /> : <Menu size={24} />}
+            </motion.button>
+          </div>
+        </div>
+      </motion.header>
+
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {open && (
           <motion.div
             ref={mobileMenuRef}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="z-50 px-6 pt-4 pb-6 border-t md:hidden bg-slate-900/98 backdrop-blur-2xl border-purple-500/20"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-x-4 top-24 z-40 p-6 bg-white/95 backdrop-blur-3xl rounded-3xl border border-white/60 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] md:hidden"
           >
-            <div className="flex flex-col gap-3">
-              {navItems.map((item, index) => {
-                const IconComponent = item.icon;
-                return (
-                  <motion.div
-                    key={item.href}
-                    initial={{ opacity: 0, x: -30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Link
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-4 px-4 py-3 text-sm font-medium text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20"
-                    >
-                      <IconComponent size={18} />
-                      {item.label}
-                    </Link>
-                  </motion.div>
-                );
-              })}
-
-              <div className="pt-4 mt-4 border-t border-purple-500/20">
-                {user ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="space-y-3"
-                  >
-                    <div className="flex items-center gap-4 px-4 py-3 text-sm font-medium text-white rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20">
-                      <div className="flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        {/* Fixed: Sử dụng optional chaining */}
-                        {user?.email && (
-                          <p className="text-xs text-gray-400">{user.email}</p>
-                        )}
-                      </div>
-                    </div>
-                    <Link
-                      href="/profile"
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-4 px-4 py-3 text-sm text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20"
-                    >
-                      <User size={18} />
-                      Thông tin cá nhân
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full gap-4 px-4 py-3 text-sm text-red-400 transition-all duration-300 rounded-xl hover:text-red-300 hover:bg-red-500/10"
-                    >
-                      <LogOut size={18} />
-                      Đăng xuất
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="space-y-3"
-                  >
-                    <Link
-                      href="/login"
-                      onClick={() => setOpen(false)}
-                      className="block px-4 py-3 text-sm font-medium text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-pink-500/20"
-                    >
-                      {t.login}
-                    </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setOpen(false)}
-                      className="block px-4 py-3 text-sm font-semibold text-center text-white transition-all duration-300 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    >
-                      {t.register}
-                    </Link>
-                  </motion.div>
-                )}
-
+            <div className="grid gap-2">
+              {navItems.map((item, idx) => (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="mt-4"
+                  key={item.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
                 >
-                  <select
-                    value={lang}
-                    onChange={(e) => setLang(e.target.value as "vi" | "en")}
-                    className="w-full px-4 py-3 text-sm font-medium text-white transition-all duration-300 border appearance-none rounded-xl bg-slate-700/50 border-purple-400/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-4 p-3 font-medium rounded-2xl hover:bg-orange-50 text-slate-600 group"
                   >
-                    <option value="vi" className="bg-slate-800">
-                      🇻🇳 Tiếng Việt
-                    </option>
-                    <option value="en" className="bg-slate-800">
-                      🇺🇸 English
-                    </option>
-                  </select>
+                    <div className="p-2 transition-all bg-slate-50 rounded-xl text-slate-400 group-hover:text-orange-500 group-hover:bg-white group-hover:shadow-sm">
+                      <item.icon size={20} />
+                    </div>
+                    {item.label}
+                  </Link>
                 </motion.div>
-              </div>
+              ))}
+            </div>
+
+            {/* Mobile User Actions */}
+            <div className="flex flex-col gap-3 pt-6 mt-6 border-t border-slate-100">
+              {!user && (
+                <>
+                  <Link
+                    href="/login"
+                    className="w-full py-3 font-bold text-center text-slate-500 bg-slate-50 rounded-xl hover:bg-slate-100"
+                  >
+                    {t.login}
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="w-full py-3 font-bold text-center text-white shadow-lg bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl shadow-orange-500/20"
+                  >
+                    {t.register}
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 };

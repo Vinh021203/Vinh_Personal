@@ -1,634 +1,639 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  Monitor,
-  Sparkles,
-  Code,
-  Rocket,
-  Smile,
-  Lightbulb,
-  HeartHandshake,
-  Server,
-  Paintbrush2,
-  BadgeCheck,
-  FolderGit2,
-  Zap,
-  Shield,
-  Globe,
-  ArrowRight,
-  MessageCircle,
-  Clock,
-  Star,
-} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+  useInView,
+  useMotionValue,
+  useMotionTemplate,
+} from "framer-motion";
+import {
+  Code2,
+  Rocket,
+  Heart,
+  Coffee,
+  Brain,
+  Globe,
+  Zap,
+  Award,
+  Users,
+  CheckCircle2,
+  Download,
+  Github,
+  Linkedin,
+  Mail,
+  Layers,
+  Cpu,
+  Sparkles,
+  MousePointer2,
+  Palette,
+  Terminal,
+  Database,
+} from "lucide-react";
+
+// --- DATA & CONFIG ---
+
+const gradients = {
+  primary: "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500",
+  text: "text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500",
+  glass: "bg-white/40 backdrop-blur-xl border border-white/60 shadow-xl",
+  cardHover: "hover:shadow-[0_20px_40px_-15px_rgba(249,115,22,0.3)]",
+};
+
+const stats = [
+  {
+    label: "Năm kinh nghiệm",
+    value: "05+",
+    icon: CalendarClock,
+    color: "text-blue-500",
+  },
+  {
+    label: "Dự án thành công",
+    value: "50+",
+    icon: Rocket,
+    color: "text-orange-500",
+  },
+  {
+    label: "Khách hàng hài lòng",
+    value: "98%",
+    icon: Heart,
+    color: "text-rose-500",
+  },
+  { label: "Tech Stack", value: "15+", icon: Layers, color: "text-purple-500" },
+];
+
+const skillsBento = [
+  {
+    title: "Frontend Mastery",
+    desc: "Pixel-perfect UI với hiệu suất tối đa.",
+    icon: Palette,
+    tags: ["React", "Next.js", "Tailwind", "Framer Motion", "Three.js"],
+    colSpan: "md:col-span-2",
+    bg: "bg-gradient-to-br from-blue-50 to-cyan-50",
+    border: "border-blue-100",
+  },
+  {
+    title: "Backend Robustness",
+    desc: "Hệ thống chịu tải cao, bảo mật.",
+    icon: Server,
+    tags: ["Node.js", "NestJS", "PostgreSQL", "Redis"],
+    colSpan: "md:col-span-1",
+    bg: "bg-gradient-to-br from-purple-50 to-fuchsia-50",
+    border: "border-purple-100",
+  },
+  {
+    title: "DevOps & Cloud",
+    desc: "CI/CD tự động hóa, deploy nhanh.",
+    icon: CloudLightning,
+    tags: ["Docker", "AWS", "Vercel", "GitHub Actions"],
+    colSpan: "md:col-span-1",
+    bg: "bg-gradient-to-br from-orange-50 to-amber-50",
+    border: "border-orange-100",
+  },
+  {
+    title: "Mobile & Cross-platform",
+    desc: "Ứng dụng đa nền tảng mượt mà.",
+    icon: Smartphone,
+    tags: ["React Native", "Flutter", "PWA"],
+    colSpan: "md:col-span-2",
+    bg: "bg-gradient-to-br from-pink-50 to-rose-50",
+    border: "border-pink-100",
+  },
+];
+
+const timeline = [
+  {
+    year: "2024",
+    role: "Senior Full-stack Developer",
+    company: "VinhWorks Agency",
+    desc: "Sáng lập agency chuyên cung cấp giải pháp số. Dẫn dắt team 5 người xây dựng các sản phẩm SaaS.",
+    highlight: "Tăng trưởng 200% doanh thu",
+    color: "bg-orange-500",
+  },
+  {
+    year: "2022",
+    role: "Lead Frontend Engineer",
+    company: "Global Tech Corp",
+    desc: "Chịu trách nhiệm kiến trúc Frontend cho hệ thống E-commerce phục vụ 1M+ user.",
+    highlight: "Giảm 40% thời gian tải trang",
+    color: "bg-purple-500",
+  },
+  {
+    year: "2020",
+    role: "Web Developer",
+    company: "Creative Studio",
+    desc: "Phát triển các website landing page với hiệu ứng animation phức tạp.",
+    highlight: "Đạt giải Awwwards Site of the Day",
+    color: "bg-blue-500",
+  },
+];
+
+// --- ICONS ---
+import {
+  CalendarClock,
+  Smartphone,
+  CloudLightning,
+  Server,
+} from "lucide-react"; // Import thêm icons
+
+// --- COMPONENTS ---
+
+// 1. Floating 3D Badge
+const FloatingBadge = ({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay, type: "spring", stiffness: 200 }}
+    className={`absolute z-20 p-3 rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] backdrop-blur-md border border-white/80 ${className}`}
+  >
+    <motion.div
+      animate={{ y: [0, -8, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay }}
+    >
+      {children}
+    </motion.div>
+  </motion.div>
+);
+
+// 2. Interactive Skill Card
+const BentoCard = ({ item }: { item: (typeof skillsBento)[0] }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    x.set(e.clientX - rect.left);
+    y.set(e.clientY - rect.top);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className={`group relative overflow-hidden rounded-[2rem] p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${item.colSpan} ${item.bg} border ${item.border}`}
+    >
+      {/* Mouse Follow Gradient Spotlight */}
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 transition duration-300 group-hover:opacity-100"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              650px circle at ${x}px ${y}px,
+              rgba(255,255,255,0.8),
+              transparent 80%
+            )
+          `,
+        }}
+      />
+
+      <div className="relative z-10">
+        <div className="inline-block p-3 mb-6 transition-transform duration-300 bg-white shadow-sm rounded-2xl text-slate-700 group-hover:scale-110">
+          <item.icon size={28} />
+        </div>
+        <h3 className="mb-2 text-2xl font-bold text-slate-900">{item.title}</h3>
+        <p className="mb-6 font-medium text-slate-600">{item.desc}</p>
+        <div className="flex flex-wrap gap-2">
+          {item.tags.map((tag) => (
+            <span
+              key={tag}
+              className="px-3 py-1 text-xs font-bold border rounded-lg shadow-sm bg-white/60 border-white/50 text-slate-700"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// --- MAIN PAGE ---
 
 export default function AboutPage() {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isClient, setIsClient] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    setMounted(true);
   }, []);
 
-  // Pre-generate particle positions
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-    { left: 25, top: 40 },
-    { left: 85, top: 75 },
-    { left: 35, top: 90 },
-    { left: 60, top: 25 },
-  ];
+  if (!mounted) return null;
 
-  const techStack = [
-    {
-      name: "React",
-      icon: BadgeCheck,
-      color: "text-blue-400",
-      bg: "from-blue-500/10 to-blue-600/10",
-    },
-    {
-      name: "Next.js",
-      icon: FolderGit2,
-      color: "text-purple-400",
-      bg: "from-purple-500/10 to-purple-600/10",
-    },
-    {
-      name: "Tailwind CSS",
-      icon: Paintbrush2,
-      color: "text-pink-400",
-      bg: "from-pink-500/10 to-pink-600/10",
-    },
-    {
-      name: "Node.js",
-      icon: Server,
-      color: "text-green-400",
-      bg: "from-green-500/10 to-green-600/10",
-    },
-    {
-      name: "MongoDB",
-      icon: Server,
-      color: "text-emerald-400",
-      bg: "from-emerald-500/10 to-emerald-600/10",
-    },
-    {
-      name: "shadcn/ui",
-      icon: Sparkles,
-      color: "text-yellow-400",
-      bg: "from-yellow-500/10 to-yellow-600/10",
-    },
-  ];
-
-  const features = [
-    {
-      icon: Sparkles,
-      title: "Đẹp & Tối ưu",
-      description:
-        "Chú trọng UI/UX hiện đại, tốc độ tải nhanh, chuẩn SEO, điểm Lighthouse cao.",
-      color: "text-purple-400",
-      bg: "from-purple-500/10 to-blue-500/10",
-    },
-    {
-      icon: Code,
-      title: "Công nghệ tiên tiến",
-      description:
-        "Sử dụng stack công nghệ mới nhất: React, Next.js, TypeScript, AI Integration.",
-      color: "text-blue-400",
-      bg: "from-blue-500/10 to-indigo-500/10",
-    },
-    {
-      icon: Rocket,
-      title: "Triển khai nhanh",
-      description:
-        "Đảm bảo đúng deadline, dễ nâng cấp và hỗ trợ tận tình sau bàn giao.",
-      color: "text-pink-400",
-      bg: "from-pink-500/10 to-purple-500/10",
-    },
-    {
-      icon: Shield,
-      title: "Bảo mật cao",
-      description:
-        "Áp dụng các tiêu chuẩn bảo mật mới nhất, SSL, authentication hiện đại.",
-      color: "text-green-400",
-      bg: "from-green-500/10 to-emerald-500/10",
-    },
-    {
-      icon: Globe,
-      title: "Responsive Design",
-      description:
-        "Tối ưu cho mọi thiết bị, từ mobile đến desktop, tablet và các màn hình lớn.",
-      color: "text-indigo-400",
-      bg: "from-indigo-500/10 to-purple-500/10",
-    },
-    {
-      icon: Zap,
-      title: "Performance",
-      description:
-        "Tối ưu hiệu suất, lazy loading, code splitting, CDN integration.",
-      color: "text-yellow-400",
-      bg: "from-yellow-500/10 to-orange-500/10",
-    },
-  ];
-
-  const values = [
-    {
-      icon: Smile,
-      text: "Luôn lắng nghe và tư vấn đúng nhu cầu",
-      color: "text-purple-400",
-    },
-    {
-      icon: Lightbulb,
-      text: "Đề xuất giải pháp rõ ràng, minh bạch",
-      color: "text-yellow-400",
-    },
-    {
-      icon: HeartHandshake,
-      text: "Hỗ trợ bảo trì và nâng cấp miễn phí ban đầu",
-      color: "text-pink-400",
-    },
-  ];
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Vinh",
+    jobTitle: "Senior Full-stack Developer",
+    url: "https://vinhworks.com/about",
+    description:
+      "Chuyên gia xây dựng giải pháp Web App hiện đại với Next.js và AI.",
+  };
 
   return (
     <>
       <Head>
-        <title>Giới thiệu về tôi | VinhWorks</title>
+        <title>Về VinhWorks | Hành trình Sáng tạo & Công nghệ</title>
         <meta
           name="description"
-          content="Vinh là lập trình viên chuyên phát triển website hiện đại, dùng React, Next.js, Tailwind, MongoDB..."
+          content="Khám phá hành trình của VinhWorks - Nơi nghệ thuật gặp gỡ công nghệ."
         />
-        <meta property="og:title" content="Giới thiệu về tôi | VinhWorks" />
-        <meta
-          property="og:description"
-          content="Giới thiệu về Vinh - nhà phát triển web yêu UI/UX, tối ưu hiệu suất, mang lại trải nghiệm tuyệt vời cho khách hàng."
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <meta property="og:image" content="/seo-thumbnail.jpg" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://vinhworks.com/about" />
-        <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
-      {/* Add CSS for grid animation */}
-      <style jsx>{`
-        @keyframes grid-move {
-          0% {
-            transform: translate(0, 0);
-          }
-          100% {
-            transform: translate(50px, 50px);
-          }
-        }
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
-        }
-      `}</style>
+      {/* Scroll Progress Bar (Bright Gradient) */}
+      <motion.div
+        style={{ scaleX }}
+        className={`fixed top-0 left-0 right-0 h-1.5 ${gradients.primary} origin-left z-[100]`}
+      />
 
-      <section className="relative min-h-screen px-4 py-20 pt-32 overflow-hidden md:pt-28 lg:pt-24 bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
-        {/* Animated Grid Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "50px 50px",
-              animation: "grid-move 20s linear infinite",
-            }}
-          />
-        </div>
-
-        {/* Dynamic Gradient Orbs */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute rounded-full w-96 h-96 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%)",
-              left: `${mousePosition.x * 0.02}px`,
-              top: `${mousePosition.y * 0.02}px`,
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.div
-            className="absolute rounded-full w-80 h-80 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
-              right: `${mousePosition.x * 0.015}px`,
-              bottom: `${mousePosition.y * 0.015}px`,
-            }}
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
-
-        {/* Floating Tech Elements */}
-        {isClient && (
-          <div className="absolute inset-0 overflow-hidden">
-            {particlePositions.map((position, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  left: `${position.left}%`,
-                  top: `${position.top}%`,
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{
-                  duration: 8 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              >
-                <div className="w-2 h-2 rounded-full bg-purple-400/20" />
-              </motion.div>
-            ))}
+      <main className="min-h-screen overflow-hidden font-sans bg-white text-slate-900">
+        {/* ================= HERO SECTION ================= */}
+        <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32">
+          {/* Vivid Background Blobs */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-orange-300/20 rounded-full blur-[120px] animate-blob mix-blend-multiply" />
+            <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-purple-300/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply" />
+            <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-pink-300/20 rounded-full blur-[120px] animate-blob animation-delay-4000 mix-blend-multiply" />
+            {/* Grid Texture */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]" />
           </div>
-        )}
 
-        <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-16 text-center md:mb-20"
-          >
-            {/* Header Badge */}
-            <motion.div
-              className="inline-flex items-center gap-3 px-6 py-3 mb-8 text-purple-300 border rounded-full bg-purple-500/10 border-purple-500/20 backdrop-blur-sm"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Monitor className="w-5 h-5" />
-              <span className="text-sm font-medium tracking-wide uppercase">
-                Về tôi
-              </span>
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-            </motion.div>
+          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
+            <div className="flex flex-col items-center gap-16 lg:flex-row">
+              {/* LEFT: TEXT CONTENT */}
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                className="flex-1 text-center lg:text-left"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold text-orange-600 bg-white border border-orange-100 rounded-full shadow-sm"
+                >
+                  <Sparkles size={16} className="fill-orange-500" />
+                  <span>Creative Developer & UI Designer</span>
+                </motion.div>
 
-            {/* Profile Image */}
-            <motion.div
-              className="relative mb-8"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-xl" />
-              <div className="relative w-32 h-32 mx-auto md:w-40 md:h-40">
-                <Image
-                  src="/me.jpg"
-                  alt="Ảnh lập trình viên Vinh"
-                  width={160}
-                  height={160}
-                  className="object-cover w-full h-full border-4 rounded-full shadow-2xl border-purple-500/30"
-                />
-                <div className="absolute flex items-center justify-center w-8 h-8 border-4 rounded-full -bottom-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-400 border-slate-900">
-                  <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+                <h1 className="text-5xl font-black tracking-tight text-slate-900 sm:text-7xl mb-6 leading-[1.1]">
+                  Tôi là <span className={gradients.text}>Vinh.</span> <br />
+                  Xây dựng thế giới số.
+                </h1>
+
+                <p className="max-w-2xl mx-auto mb-10 text-xl font-medium leading-relaxed text-slate-600 lg:mx-0">
+                  Kết hợp tư duy logic của một{" "}
+                  <span className="font-bold text-blue-600">
+                    Lập trình viên
+                  </span>{" "}
+                  với tâm hồn bay bổng của một{" "}
+                  <span className="font-bold text-pink-600">Nghệ sĩ</span>. Tôi
+                  tạo ra những trải nghiệm web không chỉ chạy tốt, mà còn chạm
+                  đến cảm xúc.
+                </p>
+
+                <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+                  <Link href="/contact">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`px-8 py-4 ${gradients.primary} text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center gap-3 text-lg`}
+                    >
+                      <Mail size={20} />
+                      Liên hệ hợp tác
+                    </motion.button>
+                  </Link>
+                  <motion.button
+                    whileHover={{ scale: 1.05, backgroundColor: "#F8FAFC" }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-3 px-8 py-4 text-lg font-bold transition-all bg-white border-2 text-slate-700 border-slate-100 rounded-2xl hover:border-purple-200 hover:text-purple-600"
+                  >
+                    <Download size={20} />
+                    Tải CV
+                  </motion.button>
                 </div>
-              </div>
-            </motion.div>
 
-            {/* Main Title */}
-            <motion.h1
-              className="mb-6 text-4xl font-bold text-transparent md:text-6xl lg:text-7xl bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+                <div className="flex items-center justify-center gap-8 mt-12 lg:justify-start text-slate-400">
+                  <SocialLink
+                    icon={Github}
+                    href="#"
+                    hoverColor="hover:text-slate-900"
+                  />
+                  <SocialLink
+                    icon={Linkedin}
+                    href="#"
+                    hoverColor="hover:text-blue-700"
+                  />
+                  <SocialLink
+                    icon={Globe}
+                    href="#"
+                    hoverColor="hover:text-pink-600"
+                  />
+                </div>
+              </motion.div>
+
+              {/* RIGHT: 3D AVATAR VISUAL */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative flex-1 w-full max-w-lg"
+              >
+                <div className="relative aspect-square">
+                  {/* Rotating Rings */}
+                  <div className="absolute inset-0 border-[3px] border-dashed border-orange-200 rounded-full animate-[spin_20s_linear_infinite]" />
+                  <div className="absolute inset-4 border-[3px] border-dashed border-purple-200 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
+
+                  {/* Main Avatar Container */}
+                  <div className="absolute flex items-center justify-center overflow-hidden border-8 border-white rounded-full shadow-2xl inset-8 bg-gradient-to-br from-orange-100 via-white to-purple-100">
+                    <Image
+                      src="/me.jpg"
+                      alt="Vinh Avatar"
+                      width={500}
+                      height={500}
+                      className="object-cover w-full h-full transition-transform duration-700 hover:scale-110"
+                      priority
+                      unoptimized
+                    />
+                  </div>
+
+                  {/* Floating Badges */}
+                  <FloatingBadge className="top-10 right-10 bg-white/90">
+                    <div className="flex items-center gap-2 font-bold text-orange-600">
+                      <Zap size={20} className="fill-orange-500" />
+                      <span>Fast & Furious</span>
+                    </div>
+                  </FloatingBadge>
+
+                  <FloatingBadge
+                    className="left-0 bottom-20 bg-white/90"
+                    delay={0.2}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-purple-600">
+                      <Code2 size={20} />
+                      <span>Clean Code</span>
+                    </div>
+                  </FloatingBadge>
+
+                  <FloatingBadge
+                    className="top-1/2 -right-8 bg-white/90"
+                    delay={0.4}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-pink-600">
+                      <Heart size={20} className="fill-pink-500" />
+                      <span>UI/UX Lover</span>
+                    </div>
+                  </FloatingBadge>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= STATS SECTION ================= */}
+        <section className="py-10">
+          <div className="container max-w-6xl px-6 mx-auto">
+            <div
+              className={`grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-3xl ${gradients.glass}`}
             >
-              👋 Xin chào, mình là Vinh
-            </motion.h1>
+              {stats.map((stat, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className="text-center cursor-default group"
+                >
+                  <div
+                    className={`flex justify-center mb-3 ${stat.color} group-hover:scale-110 transition-transform`}
+                  >
+                    <stat.icon size={32} />
+                  </div>
+                  <h3 className="mb-1 text-4xl font-black text-slate-900">
+                    {stat.value}
+                  </h3>
+                  <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-            {/* Subtitle */}
-            <motion.div
-              className="max-w-3xl mx-auto mb-8 text-lg text-gray-300 md:text-xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-2 mb-4 text-purple-300 border rounded-full bg-purple-500/10 border-purple-500/20 backdrop-blur-sm">
-                <Zap className="w-4 h-4 text-yellow-400 animate-pulse" />
-                <span className="text-sm font-medium">
-                  "Biến ý tưởng thành website sống động | từng dòng code là tâm
-                  huyết."
-                </span>
-              </div>
-              <p className="leading-relaxed">
-                Một <strong className="text-white">lập trình viên web</strong>{" "}
-                với đam mê xây dựng giao diện đẹp, mượt mà và chuẩn SEO. Mình sử
-                dụng{" "}
-                <strong className="text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
-                  React, Next.js, Tailwind CSS, Node.js, MongoDB
-                </strong>{" "}
-                và{" "}
-                <strong className="text-transparent bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text">
-                  AI Technology
-                </strong>{" "}
-                để hiện thực hóa ý tưởng thành sản phẩm thực tế.
-              </p>
-            </motion.div>
-          </motion.div>
-
-          {/* Tech Stack Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                🛠 Tech Stack & Tools
+        {/* ================= SKILLS BENTO GRID ================= */}
+        <section className="relative py-24">
+          <div className="container max-w-6xl px-6 mx-auto">
+            <div className="mb-20 text-center">
+              <motion.span
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                className="px-4 py-1 text-xs font-bold tracking-widest text-purple-600 uppercase border border-purple-100 rounded-full bg-purple-50"
+              >
+                Vũ khí bí mật
+              </motion.span>
+              <h2 className="mt-4 text-4xl font-black md:text-5xl text-slate-900">
+                Công nghệ tôi <span className={gradients.text}>làm chủ</span>
               </h2>
-              <p className="max-w-2xl mx-auto text-gray-300">
-                Công nghệ và công cụ tôi sử dụng để tạo ra những sản phẩm tuyệt
-                vời
-              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6 md:gap-6">
-              {techStack.map((tech, index) => {
-                const IconComponent = tech.icon;
-                return (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {skillsBento.map((item, idx) => (
+                <BentoCard key={idx} item={item} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ================= JOURNEY TIMELINE ================= */}
+        <section className="relative py-24 overflow-hidden bg-slate-50/50">
+          <div className="container relative z-10 max-w-5xl px-6 mx-auto">
+            <div className="mb-20 text-center">
+              <h2 className="text-4xl font-black md:text-5xl text-slate-900">
+                Hành trình <span className="text-blue-600">phát triển</span>
+              </h2>
+            </div>
+
+            <div className="relative">
+              {/* Vertical Line (Kẻ dọc chính giữa) - Chỉ hiện trên Desktop */}
+              <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-slate-200 -translate-x-1/2 hidden md:block" />
+
+              <div className="space-y-12">
+                {timeline.map((item, idx) => (
                   <motion.div
-                    key={tech.name}
+                    key={idx}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -5 }}
-                    className={`relative p-4 md:p-6 rounded-2xl border border-purple-500/20 backdrop-blur-sm bg-gradient-to-br ${tech.bg} hover:border-purple-400/40 transition-all duration-300 group`}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className={`flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 ${
+                      idx % 2 === 0 ? "md:flex-row-reverse" : ""
+                    }`}
                   >
-                    <div className="text-center">
-                      <IconComponent
-                        className={`w-8 h-8 md:w-10 md:h-10 ${tech.color} mx-auto mb-3 group-hover:scale-110 transition-transform`}
+                    {/* 1. Empty Space for Alignment (Khoảng trống đối diện) */}
+                    <div className="hidden md:block w-[45%]" />
+
+                    {/* 2. Center Dot (Chấm tròn trung tâm) */}
+                    <div className="absolute z-20 flex items-center justify-center -translate-x-1/2 left-8 md:left-1/2">
+                      <div
+                        className={`w-4 h-4 rounded-full ${item.color} ring-4 ring-white shadow-lg`}
                       />
-                      <span className="text-sm font-medium text-white md:text-base">
-                        {tech.name}
-                      </span>
                     </div>
-                    <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-2xl group-hover:opacity-100" />
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
 
-          {/* Features Grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                ✨ Điểm mạnh & Chuyên môn
-              </h2>
-              <p className="max-w-2xl mx-auto text-gray-300">
-                Những giá trị cốt lõi tôi mang lại cho mỗi dự án
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => {
-                const IconComponent = feature.icon;
-                return (
-                  <motion.div
-                    key={feature.title}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02, y: -5 }}
-                    className={`relative p-6 md:p-8 rounded-3xl border border-purple-500/20 backdrop-blur-sm bg-gradient-to-br ${feature.bg} hover:border-purple-400/40 transition-all duration-300 group`}
-                  >
-                    <div className="relative">
-                      <IconComponent
-                        className={`w-12 h-12 ${feature.color} mb-4 group-hover:scale-110 transition-transform`}
-                      />
-                      <h3 className="mb-3 text-xl font-bold text-white">
-                        {feature.title}
-                      </h3>
-                      <p className="leading-relaxed text-gray-300">
-                        {feature.description}
-                      </p>
-                    </div>
-                    <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-3xl group-hover:opacity-100" />
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Values Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10">
-              <h3 className="mb-8 text-2xl font-bold text-center text-white">
-                💎 Giá trị cốt lõi
-              </h3>
-              <div className="space-y-6">
-                {values.map((value, index) => {
-                  const IconComponent = value.icon;
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-center gap-4 p-4 transition-all border rounded-2xl bg-slate-800/30 backdrop-blur-sm border-purple-500/10 hover:border-purple-400/30"
-                    >
-                      <IconComponent
-                        className={`w-6 h-6 ${value.color} flex-shrink-0`}
-                      />
-                      <span className="text-gray-300">{value.text}</span>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Testimonial */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-blue-500/10 to-indigo-500/10">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-current" />
-                  ))}
-                </div>
-              </div>
-              <blockquote className="mb-6 text-lg italic leading-relaxed text-gray-300 md:text-xl">
-                "Website do Vinh làm cực nhanh, đẹp và tối ưu SEO tốt. Rất nhiệt
-                tình và chuyên nghiệp. Đặc biệt ấn tượng với hiệu ứng animation
-                và responsive design."
-              </blockquote>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-12 h-12 font-bold text-white rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
-                  N
-                </div>
-                <div>
-                  <p className="font-semibold text-white">Anh Nam</p>
-                  <p className="text-sm text-gray-400">CEO VN Tech</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* FAQ Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="mb-12 text-center">
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                ❓ Câu hỏi thường gặp
-              </h3>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="p-6 border md:p-8 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10">
-                <div className="flex items-start gap-4 mb-4">
-                  <MessageCircle className="flex-shrink-0 w-6 h-6 mt-1 text-purple-400" />
-                  <div>
-                    <p className="mb-2 font-bold text-purple-400">
-                      Chi phí thiết kế website là bao nhiêu?
-                    </p>
-                    <p className="text-gray-300">
-                      Chi phí tùy độ phức tạp & yêu cầu. Từ 5-50 triệu tùy dự
-                      án. Hãy{" "}
-                      <Link
-                        href="/contact"
-                        className="font-medium text-purple-400 underline hover:text-purple-300"
+                    {/* 3. Content Card */}
+                    <div className="w-full md:w-[45%] pl-16 md:pl-0">
+                      <div
+                        className={`relative p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 ${
+                          idx % 2 === 0 ? "md:text-right" : "md:text-left"
+                        }`}
                       >
-                        liên hệ
-                      </Link>{" "}
-                      để được tư vấn chi tiết miễn phí.
-                    </p>
-                  </div>
-                </div>
+                        {/* Arrow Pointer (Mũi tên chỉ vào Dot) */}
+                        <div
+                          className={`hidden md:block absolute top-6 w-4 h-4 bg-white border-t border-r border-slate-100 rotate-45 ${
+                            idx % 2 === 0
+                              ? "-right-2.5 border-l-0 border-b-0" // Mũi tên bên phải
+                              : "-left-2.5 border-t-0 border-r-0 border-l border-b" // Mũi tên bên trái
+                          }`}
+                        />
+
+                        {/* Mobile Line Connector (Kẻ dọc cho Mobile) */}
+                        <div className="absolute left-[-33px] top-0 bottom-0 w-0.5 bg-slate-200 md:hidden" />
+
+                        <span
+                          className={`inline-block px-3 py-1 mb-3 rounded-lg text-xs font-bold text-white shadow-sm ${item.color}`}
+                        >
+                          {item.year}
+                        </span>
+                        <h3 className="text-xl font-bold text-slate-900">
+                          {item.role}
+                        </h3>
+                        <h4 className="mb-3 text-base font-semibold text-slate-500">
+                          {item.company}
+                        </h4>
+                        <p className="mb-4 text-sm leading-relaxed text-slate-600">
+                          {item.desc}
+                        </p>
+
+                        {/* Highlight Badge */}
+                        <div
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-xs font-bold text-slate-700 ${
+                            idx % 2 === 0 ? "md:flex-row-reverse" : ""
+                          }`}
+                        >
+                          <Award size={14} className="text-yellow-500" />
+                          {item.highlight}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= QUOTE / PHILOSOPHY (Light Mode) ================= */}
+        <section className="py-24">
+          <div className="container max-w-5xl px-6 mx-auto">
+            <div className="relative rounded-[3rem] bg-white border border-slate-100 p-12 md:p-20 text-center overflow-hidden shadow-2xl shadow-slate-200/50">
+              {/* Abstract shapes (Light Mode Colors) */}
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-20%] right-[20%] w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[100px] mix-blend-multiply animate-blob" />
+                <div className="absolute bottom-[-20%] left-[20%] w-[500px] h-[500px] bg-orange-200/40 rounded-full blur-[100px] mix-blend-multiply animate-blob animation-delay-2000" />
+                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
               </div>
 
-              <div className="p-6 border md:p-8 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-blue-500/10 to-indigo-500/10">
-                <div className="flex items-start gap-4 mb-4">
-                  <Clock className="flex-shrink-0 w-6 h-6 mt-1 text-blue-400" />
-                  <div>
-                    <p className="mb-2 font-bold text-blue-400">
-                      Thời gian hoàn thành?
-                    </p>
-                    <p className="text-gray-300">
-                      Thông thường từ 1-4 tuần tùy dự án. Landing page: 3-7
-                      ngày. Website phức tạp: 2-4 tuần. Đảm bảo đúng tiến độ cam
-                      kết.
-                    </p>
-                  </div>
+              <div className="relative z-10">
+                <div className="inline-block p-4 mb-8 text-purple-600 border rounded-full shadow-lg bg-gradient-to-br from-slate-50 to-white border-slate-100">
+                  <Brain size={32} />
+                </div>
+
+                <h2 className="mb-8 text-3xl font-black leading-tight text-slate-900 md:text-5xl">
+                  "Code không chỉ để máy tính hiểu.
+                  <br />
+                  Code là để{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-orange-500">
+                    con người
+                  </span>{" "}
+                  cảm nhận."
+                </h2>
+
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-0.5 w-12 bg-slate-200 rounded-full"></div>
+                  <p className="text-lg font-bold tracking-widest uppercase  text-slate-500">
+                    Triết lý làm việc
+                  </p>
+                  <div className="h-0.5 w-12 bg-slate-200 rounded-full"></div>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
+        </section>
 
-          {/* CTA Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10">
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                🚀 Sẵn sàng bắt đầu dự án?
-              </h3>
-              <p className="max-w-2xl mx-auto mb-8 text-gray-300">
-                Hãy cùng tôi biến ý tưởng của bạn thành hiện thực với công nghệ
-                hiện đại nhất
-              </p>
-
-              <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    href="/contact"
-                    className="inline-flex items-center gap-3 px-8 py-4 font-semibold text-white transition-all duration-300 shadow-lg rounded-2xl bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:from-purple-600 hover:via-blue-600 hover:to-indigo-600 hover:shadow-2xl"
-                  >
-                    <MessageCircle size={20} />
-                    <span>Liên hệ ngay</span>
-                    <ArrowRight size={16} />
-                  </Link>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    href="/projects"
-                    className="inline-flex items-center gap-3 px-8 py-4 font-semibold text-purple-400 transition-all duration-300 border rounded-2xl border-purple-500/30 bg-purple-500/10 hover:border-purple-400/50 hover:bg-purple-500/20 backdrop-blur-sm"
-                  >
-                    <Rocket size={20} />
-                    <span>Xem dự án</span>
-                  </Link>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+        {/* ================= CTA ================= */}
+        <section className="relative py-24 overflow-hidden text-center">
+          <div className="container relative z-10 px-6 mx-auto">
+            <h2 className="mb-8 text-4xl font-black md:text-6xl text-slate-900">
+              Sẵn sàng tạo nên <br /> điều{" "}
+              <span className={gradients.text}>kỳ diệu?</span>
+            </h2>
+            <p className="max-w-2xl mx-auto mb-10 text-xl text-slate-600">
+              Đừng ngần ngại. Hãy chia sẻ ý tưởng của bạn, và chúng ta sẽ cùng
+              nhau biến nó thành hiện thực.
+            </p>
+            <Link href="/contact">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`px-10 py-5 ${gradients.primary} text-white font-bold rounded-full text-xl shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all`}
+              >
+                Bắt đầu dự án ngay
+              </motion.button>
+            </Link>
+          </div>
+        </section>
+      </main>
     </>
   );
 }
+
+// Helper Component for Social Links
+const SocialLink = ({
+  icon: Icon,
+  href,
+  hoverColor,
+}: {
+  icon: any;
+  href: string;
+  hoverColor: string;
+}) => (
+  <a
+    href={href}
+    className={`p-3 rounded-full bg-white border border-slate-100 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${hoverColor}`}
+  >
+    <Icon size={24} />
+  </a>
+);

@@ -2,396 +2,249 @@
 
 import {
   Code,
-  MonitorSmartphone,
-  Layers,
-  Sparkles,
-  ArrowRight,
-  Zap,
-  Globe,
   Palette,
   Rocket,
-  Star,
-  Award,
+  Zap,
+  Globe,
+  ArrowRight,
+  Sparkles,
+  LayoutTemplate,
+  Database,
+  Search,
+  Cpu,
+  CheckCircle2,
 } from "lucide-react";
-import { ServiceCard } from "./ServiceCard";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 
 const services = [
   {
+    id: "web-dev",
     icon: Code,
     title: "Web Development",
     description:
-      "Xây dựng website hiện đại với React, Next.js và công nghệ tiên tiến. Tối ưu hiệu suất và bảo mật cao.",
+      "Xây dựng website hiệu năng cao với React/Next.js. Code sạch, dễ bảo trì và mở rộng.",
+    color: "text-violet-600",
+    bgColor: "bg-violet-100",
+    gradient: "from-violet-500 to-purple-600",
     features: [
-      "React & Next.js",
+      "React / Next.js",
       "TypeScript",
-      "API Integration",
-      "Database Design",
+      "API & Database",
+      "CMS Integration",
     ],
-    color: "from-purple-500 to-blue-500",
-    iconColor: "text-purple-400",
+    colSpan: "md:col-span-2 lg:col-span-1",
   },
   {
+    id: "ui-ux",
     icon: Palette,
     title: "UI/UX Design",
     description:
-      "Thiết kế giao diện đẹp mắt, trải nghiệm người dùng tối ưu và responsive trên mọi thiết bị.",
+      "Thiết kế giao diện người dùng hiện đại, tập trung vào trải nghiệm và tỷ lệ chuyển đổi.",
+    color: "text-pink-600",
+    bgColor: "bg-pink-100",
+    gradient: "from-pink-500 to-rose-500",
     features: [
-      "Figma Design",
-      "Responsive Layout",
-      "User Experience",
-      "Brand Identity",
+      "Figma / Adobe XD",
+      "User Research",
+      "Wireframing",
+      "Prototyping",
     ],
-    color: "from-blue-500 to-indigo-500",
-    iconColor: "text-blue-400",
+    colSpan: "md:col-span-2 lg:col-span-1",
   },
   {
-    icon: Rocket,
-    title: "SEO & Performance",
+    id: "seo",
+    icon: Search,
+    title: "SEO & Marketing",
     description:
-      "Tối ưu tốc độ tải, chuẩn SEO Google, Core Web Vitals và tăng thứ hạng tìm kiếm.",
+      "Tối ưu hóa công cụ tìm kiếm, đưa website của bạn lên top Google bền vững.",
+    color: "text-orange-600",
+    bgColor: "bg-orange-100",
+    gradient: "from-orange-500 to-amber-500",
     features: [
-      "SEO Optimization",
-      "Core Web Vitals",
-      "Page Speed",
-      "Analytics",
+      "Keyword Research",
+      "On-page SEO",
+      "Technical Audit",
+      "Content Strategy",
     ],
-    color: "from-indigo-500 to-purple-500",
-    iconColor: "text-indigo-400",
+    colSpan: "md:col-span-2 lg:col-span-1",
   },
 ];
 
-const stats = [
+const additionalStats = [
   {
-    icon: Award,
-    label: "Dự án hoàn thành",
+    label: "Dự án đã giao",
     value: "50+",
-    color: "text-purple-400",
+    icon: Rocket,
+    color: "text-blue-500",
   },
   {
-    icon: Star,
-    label: "Đánh giá 5 sao",
+    label: "Khách hàng hài lòng",
     value: "98%",
-    color: "text-yellow-400",
+    icon: Sparkles,
+    color: "text-yellow-500",
   },
-  {
-    icon: Zap,
-    label: "Tốc độ trung bình",
-    value: "<2s",
-    color: "text-green-400",
-  },
-  {
-    icon: Globe,
-    label: "Website đang hoạt động",
-    value: "40+",
-    color: "text-blue-400",
-  },
+  { label: "Hỗ trợ", value: "24/7", icon: Zap, color: "text-green-500" },
 ];
 
 export const ServiceSection = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  // Pre-generate particle positions
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-  ];
-
   return (
     <section
       id="services"
-      aria-labelledby="services-heading"
-      className="relative py-20 overflow-hidden md:py-24 lg:py-32 bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900"
+      className="relative py-24 overflow-hidden bg-slate-50"
     >
-      {/* Animated Grid Background */}
-      <div className="absolute inset-0 opacity-10">
-        <div
-          className="absolute inset-0 grid-animation"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "50px 50px",
-          }}
-        />
+      {/* Decorative Background Blobs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[10%] right-[5%] w-96 h-96 bg-purple-200/30 rounded-full blur-3xl mix-blend-multiply animate-blob" />
+        <div className="absolute bottom-[10%] left-[5%] w-96 h-96 bg-pink-200/30 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-2000" />
       </div>
 
-      {/* Dynamic Gradient Orbs */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="absolute rounded-full w-96 h-96 blur-3xl float-animation pulse-glow"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%)",
-            left: `${mousePosition.x * 0.02}px`,
-            top: `${mousePosition.y * 0.02}px`,
-          }}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute rounded-full w-80 h-80 blur-3xl float-animation-reverse pulse-glow"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
-            right: `${mousePosition.x * 0.015}px`,
-            bottom: `${mousePosition.y * 0.015}px`,
-          }}
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      </div>
+      <div className="container relative z-10 px-6 mx-auto max-w-7xl">
+        {/* SECTION HEADER */}
+        <div className="max-w-3xl mx-auto mb-20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-white border border-slate-200 shadow-sm text-sm font-bold text-slate-600"
+          >
+            <LayoutTemplate size={16} className="text-violet-500" />
+            <span>Dịch vụ toàn diện</span>
+          </motion.div>
 
-      {/* Floating Tech Elements */}
-      {isClient && (
-        <div className="absolute inset-0 overflow-hidden">
-          {particlePositions.map((position, i) => (
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="mb-6 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl"
+          >
+            Giải pháp công nghệ <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">
+              Đột phá & Hiệu quả
+            </span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-lg leading-relaxed text-slate-600"
+          >
+            Không chỉ là viết code, tôi mang đến giải pháp số giúp doanh nghiệp
+            của bạn tăng trưởng, tối ưu vận hành và chinh phục khách hàng.
+          </motion.p>
+        </div>
+
+        {/* BENTO GRID SERVICES */}
+        <div className="grid grid-cols-1 gap-8 mb-20 md:grid-cols-2 lg:grid-cols-3">
+          {services.map((service, idx) => (
             <motion.div
-              key={i}
-              className="absolute"
-              style={{
-                left: `${position.left}%`,
-                top: `${position.top}%`,
-              }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.1, 0.3, 0.1],
-                rotate: [0, 180, 360],
-              }}
-              transition={{
-                duration: 8 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
+              key={service.id}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              whileHover={{ y: -10 }}
+              className={`group relative bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-300 overflow-hidden ${service.colSpan}`}
             >
-              <div className="w-2 h-2 rounded-full bg-purple-400/20" />
+              {/* Hover Gradient Border Effect */}
+              <div
+                className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${service.gradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`}
+              />
+
+              {/* Icon Box */}
+              <div
+                className={`w-14 h-14 rounded-2xl ${service.bgColor} ${service.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+              >
+                <service.icon size={28} strokeWidth={2.5} />
+              </div>
+
+              <h3 className="mb-3 text-2xl font-bold transition-colors text-slate-900 group-hover:text-violet-700">
+                {service.title}
+              </h3>
+
+              <p className="mb-6 leading-relaxed text-slate-600">
+                {service.description}
+              </p>
+
+              {/* Feature List */}
+              <ul className="mb-8 space-y-3">
+                {service.features.map((feature, fIdx) => (
+                  <li
+                    key={fIdx}
+                    className="flex items-center gap-3 text-sm font-medium text-slate-500"
+                  >
+                    <CheckCircle2
+                      size={16}
+                      className="text-emerald-500 shrink-0"
+                    />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              {/* Link Button */}
+              <div className="flex items-center justify-between pt-6 mt-auto border-t border-slate-100">
+                <Link
+                  href="/contact"
+                  className="flex items-center gap-2 text-sm font-bold transition-colors text-slate-900 group-hover:text-violet-600"
+                >
+                  Tư vấn ngay
+                  <ArrowRight
+                    size={16}
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </Link>
+                <div
+                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl font-black text-slate-100 absolute bottom-4 right-6 -z-10 select-none scale-150 origin-bottom-right`}
+                >
+                  {idx + 1}
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
-      )}
 
-      <div className="relative z-10 px-4 mx-auto sm:px-6 lg:px-8 max-w-7xl">
-        {/* Enhanced Header */}
+        {/* STATS BAR (Floating) */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="mb-16 text-center md:mb-20"
+          className="relative max-w-4xl mx-auto"
         >
-          {/* Header Badge */}
-          <motion.div
-            className="inline-flex items-center gap-3 px-6 py-3 mb-8 text-purple-300 border rounded-full bg-purple-500/10 border-purple-500/20 backdrop-blur-sm"
-            whileHover={{ scale: 1.05 }}
-          >
-            <Zap className="w-5 h-5 text-yellow-400 animate-pulse" />
-            <span className="text-sm font-medium tracking-wide uppercase">
-              Dịch vụ chuyên nghiệp
-            </span>
-            <Sparkles className="w-4 h-4 text-yellow-400" />
-          </motion.div>
-
-          <h2 id="services-heading" className="sr-only">
-            Dịch vụ cung cấp
-          </h2>
-
-          <h3 className="mb-6 text-4xl font-bold leading-tight text-transparent md:text-5xl lg:text-6xl bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
-            Dịch vụ công nghệ hiện đại
-          </h3>
-
-          <p className="max-w-3xl mx-auto text-lg leading-relaxed text-gray-300 md:text-xl">
-            Kết hợp kinh nghiệm, sáng tạo và công nghệ tiên tiến để mang lại{" "}
-            <span className="font-semibold text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
-              giải pháp tối ưu
-            </span>{" "}
-            cho mục tiêu kinh doanh của bạn.
-          </p>
-        </motion.div>
-
-        {/* Enhanced Stats Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="grid grid-cols-2 gap-6 mb-16 md:grid-cols-4 md:mb-20"
-        >
-          {stats.map((stat, i) => {
-            const IconComponent = stat.icon;
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                className="p-6 text-center transition-all duration-300 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10 hover:border-purple-400/40"
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 blur-2xl opacity-20 rounded-[2rem]" />
+          <div className="relative bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+            {additionalStats.map((stat, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col items-center w-full pt-4 first:pt-0 md:pt-0"
               >
-                <IconComponent
-                  className={`w-8 h-8 ${stat.color} mx-auto mb-3`}
-                />
-                <div className="mb-1 text-2xl font-bold text-white md:text-3xl">
+                <div className={`mb-2 ${stat.color}`}>
+                  <stat.icon size={24} />
+                </div>
+                <div className="mb-1 text-3xl font-black text-slate-900">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-300">{stat.label}</div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        {/* Enhanced Services Grid */}
-        <div className="grid gap-8 mb-16 md:gap-10 md:grid-cols-2 lg:grid-cols-3 md:mb-20">
-          {services.map((service, idx) => {
-            const IconComponent = service.icon;
-            return (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.2, duration: 0.6 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.02, y: -5 }}
-                className="relative overflow-hidden transition-all duration-300 border shadow-2xl group rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-slate-800/30 to-slate-900/30 hover:border-purple-400/40"
-              >
-                {/* Service Card Content */}
-                <div className="relative p-8">
-                  {/* Icon */}
-                  <div className="flex items-center justify-center w-16 h-16 mb-6 transition-transform duration-300 rounded-2xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm group-hover:scale-110">
-                    <IconComponent className={`w-8 h-8 ${service.iconColor}`} />
-                  </div>
-
-                  {/* Title */}
-                  <h4 className="mb-4 text-2xl font-bold text-white transition-all group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-blue-400 group-hover:bg-clip-text">
-                    {service.title}
-                  </h4>
-
-                  {/* Description */}
-                  <p className="mb-6 leading-relaxed text-gray-300">
-                    {service.description}
-                  </p>
-
-                  {/* Features */}
-                  <div className="mb-6 space-y-2">
-                    {service.features.map((feature, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                        <span className="text-sm text-gray-400">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Learn More Link */}
-                  <div className="flex items-center gap-2 text-purple-400 transition-colors group-hover:text-purple-300">
-                    <span className="text-sm font-medium">Tìm hiểu thêm</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </div>
+                <div className="text-sm font-medium tracking-wider uppercase text-slate-500">
+                  {stat.label}
                 </div>
+              </div>
+            ))}
 
-                {/* Gradient Overlay */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-r ${service.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none`}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Enhanced CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="text-center"
-        >
-          <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10">
-            <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-              🚀 Sẵn sàng bắt đầu dự án?
-            </h3>
-            <p className="max-w-2xl mx-auto mb-8 text-gray-300">
-              Hãy để tôi giúp bạn biến ý tưởng thành hiện thực với công nghệ
-              hiện đại và thiết kế chuyên nghiệp
-            </p>
-
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  href="/contact"
-                  aria-label="Đi tới trang liên hệ VinhWorks"
+            {/* CTA Button in Stats Bar */}
+            <div className="w-full pt-6 pl-0 md:w-auto md:pt-0 md:pl-8">
+              <Link href="/contact">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center justify-center w-full gap-2 px-6 py-4 font-bold text-white transition-all shadow-lg whitespace-nowrap bg-slate-900 rounded-xl shadow-slate-900/20 hover:shadow-xl"
                 >
-                  <button className="inline-flex items-center gap-3 px-8 py-4 font-semibold text-white transition-all duration-300 shadow-lg rounded-2xl bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:from-purple-600 hover:via-blue-600 hover:to-indigo-600 hover:shadow-2xl">
-                    <Sparkles size={20} />
-                    <span>Liên hệ ngay</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </Link>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link
-                  href="/pricing"
-                  aria-label="Xem bảng giá dịch vụ VinhWorks"
-                >
-                  <button className="inline-flex items-center gap-3 px-8 py-4 font-semibold text-purple-400 transition-all duration-300 border rounded-2xl border-purple-500/30 bg-purple-500/10 hover:border-purple-400/50 hover:bg-purple-500/20 backdrop-blur-sm">
-                    <Star size={20} />
-                    <span>Xem bảng giá</span>
-                  </button>
-                </Link>
-              </motion.div>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex items-center justify-center gap-8 mt-8 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-purple-400" />
-                <span>Chất lượng cao</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-yellow-400" />
-                <span>Giao hàng nhanh</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 text-green-400" />
-                <span>Hỗ trợ 24/7</span>
-              </div>
+                  <Zap size={18} className="text-yellow-400 fill-yellow-400" />
+                  Bắt đầu ngay
+                </motion.button>
+              </Link>
             </div>
           </div>
         </motion.div>

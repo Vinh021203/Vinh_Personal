@@ -1,20 +1,23 @@
 "use client";
 
 import {
-  Mail,
-  MapPin,
-  Phone,
   Facebook,
   Instagram,
   Linkedin,
+  Twitter,
+  Youtube,
   Monitor,
   ArrowUp,
   Send,
-  Sparkles,
-  Heart,
-  Code,
-  Zap,
+  MapPin,
+  Phone,
+  Mail,
+  ShieldCheck,
+  CreditCard,
   Globe,
+  Clock,
+  ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,10 +26,8 @@ import Link from "next/link";
 export const Footer = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [email, setEmail] = useState("");
-  const [isClient, setIsClient] = useState(false); // Fix hydration
 
   useEffect(() => {
-    setIsClient(true); // Chỉ render particles sau khi mount
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -34,339 +35,261 @@ export const Footer = () => {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Subscribe:", email);
-    setEmail("");
-  };
-
-  // Pre-generate fixed positions để tránh hydration mismatch
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-    { left: 25, top: 40 },
-    { left: 85, top: 75 },
-    { left: 35, top: 90 },
-    { left: 60, top: 25 },
-    { left: 20, top: 55 },
-    { left: 75, top: 35 },
-    { left: 40, top: 80 },
-    { left: 95, top: 45 },
-    { left: 30, top: 65 },
+  // Data cấu trúc theo cột chuyên nghiệp
+  const solutions = [
+    { name: "Thiết kế Website UI/UX", href: "#" },
+    { name: "Phát triển Web App", href: "#" },
+    { name: "Giải pháp E-commerce", href: "#" },
+    { name: "Mobile Application", href: "#" },
+    { name: "SEO & Digital Marketing", href: "#" },
+    { name: "Cloud & DevOps", href: "#", isNew: true },
   ];
 
-  const services = [
-    { name: "Thiết kế Website", icon: Code },
-    { name: "Tối ưu SEO", icon: Zap },
-    { name: "Ứng dụng Mobile", icon: Globe },
-    { name: "Bảo trì & Nâng cấp", icon: Heart },
+  const company = [
+    { name: "Về VinhWorks", href: "/about" },
+    { name: "Hồ sơ năng lực", href: "/portfolio" },
+    { name: "Khách hàng & Đối tác", href: "/partners" },
+    { name: "Tuyển dụng nhân tài", href: "/careers", badge: "Hiring" },
+    { name: "Tin tức công nghệ", href: "/blog" },
+    { name: "Liên hệ hỗ trợ", href: "/contact" },
   ];
 
-  const quickLinks = [
-    { name: "Về chúng tôi", href: "/about" },
-    { name: "Dự án", href: "/projects" },
-    { name: "Blog", href: "/blog" },
-    { name: "Liên hệ", href: "/contact" },
-  ];
-
-  const socialLinks = [
-    {
-      name: "Facebook",
-      icon: Facebook,
-      href: "#",
-      color: "hover:text-blue-400",
-    },
-    {
-      name: "Instagram",
-      icon: Instagram,
-      href: "#",
-      color: "hover:text-pink-400",
-    },
-    {
-      name: "LinkedIn",
-      icon: Linkedin,
-      href: "#",
-      color: "hover:text-blue-500",
-    },
+  const legal = [
+    { name: "Điều khoản sử dụng", href: "/terms" },
+    { name: "Chính sách bảo mật", href: "/privacy" },
+    { name: "Chính sách thanh toán", href: "/payment-policy" },
+    { name: "Khiếu nại & Hoàn tiền", href: "/refund" },
   ];
 
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute rounded-full top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 blur-3xl animate-pulse"></div>
-        <div className="absolute delay-1000 rounded-full bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 blur-3xl animate-pulse"></div>
-      </div>
+    <footer className="relative pt-20 font-sans border-t bg-gradient-to-b from-white via-orange-50/40 to-rose-50/60 text-slate-600 border-orange-100/50">
+      {/* Decorative Top Border Gradient */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-amber-400 to-rose-400 opacity-80" />
 
-      {/* Fixed floating particles - chỉ render sau khi mount */}
-      {isClient && (
-        <div className="absolute inset-0 overflow-hidden">
-          {particlePositions.map((position, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 rounded-full bg-purple-300/20"
-              style={{
-                left: `${position.left}%`,
-                top: `${position.top}%`,
-              }}
-              animate={{
-                y: [0, -50, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 4 + (i % 3), // Variation nhưng deterministic
-                repeat: Infinity,
-                delay: i * 0.3, // Fixed delay
-              }}
-            />
-          ))}
-        </div>
-      )}
+      <div className="container px-6 mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
+          {/* COLUMN 1: BRAND & SOCIALS (Col-span-3) */}
+          <div className="space-y-6 lg:col-span-3">
+            <Link href="/" className="flex items-center gap-3 group w-fit">
+              <div className="relative flex items-center justify-center w-12 h-12 text-white transition-transform duration-300 shadow-lg bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl group-hover:rotate-6">
+                <Monitor size={24} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-800">
+                  VinhWorks
+                </h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-500">
+                  Tech Solutions
+                </p>
+              </div>
+            </Link>
 
-      <div className="relative z-10 px-6 pt-20 pb-12">
-        {/* Enhanced Logo Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col items-center justify-center mb-16 text-center"
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative">
-              <div className="absolute inset-0 opacity-50 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl blur-lg animate-pulse"></div>
-              <div className="absolute inset-0 opacity-75 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur-sm"></div>
-              <span className="relative flex items-center justify-center text-white shadow-2xl w-14 h-14 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-xl">
-                <Monitor size={28} />
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-3xl font-bold text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text">
-                VinhWorks
-              </h2>
-              <span className="-mt-1 text-sm font-normal text-gray-400">
-                Tech Solutions
-              </span>
-            </div>
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            >
-              <Sparkles className="w-6 h-6 text-yellow-400" />
-            </motion.div>
-          </div>
-          <p className="max-w-2xl leading-relaxed text-gray-300">
-            Tạo ra những giải pháp công nghệ hiện đại, tối ưu hiệu suất và trải
-            nghiệm người dùng tuyệt vời.
-            <br />
-            <span className="font-medium text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
-              Biến ý tưởng thành hiện thực số! 🚀
-            </span>
-          </p>
-        </motion.div>
+            <p className="text-sm leading-relaxed text-slate-500">
+              Đối tác tin cậy trong chuyển đổi số. Chúng tôi cung cấp giải pháp
+              công nghệ toàn diện, từ ý tưởng đến vận hành thực tế.
+            </p>
 
-        {/* Enhanced Grid Layout */}
-        <div className="grid grid-cols-1 gap-12 mx-auto max-w-7xl md:grid-cols-2 lg:grid-cols-4">
-          {/* Contact Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="space-y-6"
-          >
-            <h3 className="text-lg font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
-              Liên hệ
-            </h3>
-            <div className="space-y-4">
-              <motion.a
-                href="tel:0971386588"
-                whileHover={{ scale: 1.05, x: 5 }}
-                className="flex items-center gap-3 p-3 text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 group"
-              >
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 group-hover:from-purple-500/30 group-hover:to-pink-500/30">
-                  <Phone size={16} className="text-purple-400" />
-                </div>
-                <span className="text-sm">0971 386 588</span>
-              </motion.a>
-
-              <motion.a
-                href="mailto:luongvinh02122003@gmail.com"
-                whileHover={{ scale: 1.05, x: 5 }}
-                className="flex items-center gap-3 p-3 text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 group"
-              >
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 group-hover:from-purple-500/30 group-hover:to-pink-500/30">
-                  <Mail size={16} className="text-purple-400" />
-                </div>
-                <span className="text-sm">luongvinh02122003@gmail.com</span>
-              </motion.a>
-
-              <motion.div
-                whileHover={{ scale: 1.05, x: 5 }}
-                className="flex items-center gap-3 p-3 text-gray-300 transition-all duration-300 rounded-xl hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 group"
-              >
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 group-hover:from-purple-500/30 group-hover:to-pink-500/30">
-                  <MapPin size={16} className="text-purple-400" />
-                </div>
-                <span className="text-sm">TP. Hạ Long, Quảng Ninh</span>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Services Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-6"
-          >
-            <h3 className="text-lg font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
-              Dịch vụ
-            </h3>
-            <div className="space-y-3">
-              {services.map((service, index) => {
-                const IconComponent = service.icon;
-                return (
-                  <motion.div
-                    key={service.name}
-                    whileHover={{ scale: 1.05, x: 5 }}
-                    className="flex items-center gap-3 p-2 text-gray-300 transition-all duration-300 rounded-lg cursor-pointer hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10 group"
-                  >
-                    <IconComponent
-                      size={16}
-                      className="text-purple-400 transition-colors group-hover:text-pink-400"
-                    />
-                    <span className="text-sm">{service.name}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Quick Links Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="space-y-6"
-          >
-            <h3 className="text-lg font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
-              Liên kết nhanh
-            </h3>
-            <div className="space-y-3">
-              {quickLinks.map((link) => (
-                <motion.div key={link.name} whileHover={{ scale: 1.05, x: 5 }}>
-                  <Link
-                    href={link.href}
-                    className="block p-2 text-sm text-gray-300 transition-all duration-300 rounded-lg hover:text-white hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-pink-500/10"
-                  >
-                    {link.name}
-                  </Link>
-                </motion.div>
+            <div className="flex gap-3">
+              {[Facebook, Linkedin, Twitter, Youtube].map((Icon, idx) => (
+                <motion.a
+                  key={idx}
+                  href="#"
+                  whileHover={{ y: -3 }}
+                  className="p-2.5 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-orange-500 hover:border-orange-200 hover:shadow-md transition-all"
+                >
+                  <Icon size={18} />
+                </motion.a>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Newsletter & Social Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="space-y-6"
-          >
-            <h3 className="text-lg font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
-              Kết nối
+          {/* COLUMN 2: SOLUTIONS (Col-span-3) */}
+          <div className="lg:col-span-3">
+            <h3 className="pb-1 mb-6 text-sm font-bold tracking-wider uppercase border-b-2 border-orange-200 text-slate-900 w-fit">
+              Giải pháp & Dịch vụ
             </h3>
-
-            {/* Social Links */}
-            <div className="flex gap-4">
-              {socialLinks.map((social) => {
-                const IconComponent = social.icon;
-                return (
-                  <motion.a
-                    key={social.name}
-                    href={social.href}
-                    whileHover={{ scale: 1.2, y: -2 }}
-                    whileTap={{ scale: 0.9 }}
-                    className={`p-3 text-gray-400 transition-all duration-300 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 ${social.color}`}
+            <ul className="space-y-3">
+              {solutions.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center text-sm font-medium transition-colors group hover:text-orange-600"
                   >
-                    <IconComponent size={20} />
-                  </motion.a>
-                );
-              })}
-            </div>
+                    <ChevronRight
+                      size={14}
+                      className="mr-2 text-orange-300 transition-colors group-hover:text-orange-500"
+                    />
+                    {item.name}
+                    {item.isNew && (
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold text-white bg-rose-500 rounded-full">
+                        NEW
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            {/* Newsletter */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-white">
-                Nhận thông tin mới
-              </h4>
-              <form onSubmit={handleSubscribe} className="space-y-3">
-                <div className="relative">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Nhập email của bạn..."
-                    required
-                    className="w-full px-4 py-3 text-white transition-all duration-300 border rounded-xl bg-slate-700/50 border-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 hover:border-purple-400/50 backdrop-blur-sm"
-                  />
-                </div>
-                <motion.button
-                  type="submit"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-all duration-300 shadow-lg rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl"
-                >
-                  <Send size={16} />
-                  Đăng ký nhận tin
-                </motion.button>
-              </form>
-            </div>
-          </motion.div>
-        </div>
+          {/* COLUMN 3: COMPANY (Col-span-3) */}
+          <div className="lg:col-span-3">
+            <h3 className="pb-1 mb-6 text-sm font-bold tracking-wider uppercase border-b-2 text-slate-900 border-rose-200 w-fit">
+              Về công ty
+            </h3>
+            <ul className="space-y-3">
+              {company.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="flex items-center text-sm font-medium transition-colors group hover:text-rose-600"
+                  >
+                    {item.name}
+                    {item.badge && (
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold text-orange-600 bg-orange-100 border border-orange-200 rounded">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
 
-        {/* Enhanced Copyright Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="pt-12 mt-16 text-center border-t border-purple-500/20"
-        >
-          <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
-            <p className="text-sm text-gray-400">
-              © {new Date().getFullYear()} VinhWorks. Tất cả quyền được bảo lưu.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <span>Made with</span>
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                <Heart size={16} className="text-red-400" />
-              </motion.div>
-              <span>in Vietnam</span>
+            {/* Mini Certification Badge Area */}
+            <div className="pt-6 mt-8 border-t border-slate-100">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+                <ShieldCheck size={16} className="text-emerald-500" />
+                <span>ISO 9001:2015 Certified</span>
+              </div>
             </div>
           </div>
-        </motion.div>
+
+          {/* COLUMN 4: CONTACT & NEWSLETTER (Col-span-3) */}
+          <div className="space-y-6 lg:col-span-3">
+            {/* Contact Info Block */}
+            <div>
+              <h3 className="pb-1 mb-6 text-sm font-bold tracking-wider uppercase border-b-2 text-slate-900 border-amber-200 w-fit">
+                Trụ sở chính
+              </h3>
+              <ul className="space-y-4 text-sm">
+                <li className="flex items-start gap-3">
+                  <MapPin
+                    size={18}
+                    className="text-orange-500 shrink-0 mt-0.5"
+                  />
+                  <span className="text-slate-600">
+                    Tầng 5, Tòa nhà TechHub, TP. Hạ Long, Quảng Ninh, Việt Nam
+                  </span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Phone size={18} className="text-orange-500 shrink-0" />
+                  <a
+                    href="tel:0971386588"
+                    className="font-bold text-slate-700 hover:text-orange-600"
+                  >
+                    0971 386 588
+                  </a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail size={18} className="text-orange-500 shrink-0" />
+                  <a
+                    href="mailto:contact@vinhworks.com"
+                    className="text-slate-600 hover:text-orange-600"
+                  >
+                    contact@vinhworks.com
+                  </a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Clock size={18} className="text-orange-500 shrink-0" />
+                  <span className="text-xs text-slate-500">
+                    Thứ 2 - Thứ 6: 8:00 - 17:30
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Compact Newsletter */}
+            <div className="p-4 bg-white border shadow-sm border-slate-200 rounded-2xl">
+              <p className="mb-2 text-xs font-bold text-slate-700">
+                Đăng ký nhận báo giá & tài liệu
+              </p>
+              <form className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Email doanh nghiệp..."
+                  className="w-full px-3 py-2 text-xs transition-all border rounded-lg bg-slate-50 border-slate-200 focus:outline-none focus:border-orange-400"
+                />
+                <button className="p-2 text-white transition-colors bg-orange-500 rounded-lg hover:bg-orange-600">
+                  <Send size={16} />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM BAR: COPYRIGHT & LEGAL & PAYMENTS */}
+        <div className="py-8 mt-16 border-t border-slate-200">
+          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+            {/* Left: Copyright */}
+            <div className="text-center md:text-left">
+              <p className="text-xs font-medium text-slate-500">
+                © {new Date().getFullYear()}{" "}
+                <span className="font-bold text-slate-700">
+                  VinhWorks Technology JSC
+                </span>
+                . All rights reserved.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs md:justify-start text-slate-400">
+                {legal.map((l) => (
+                  <Link
+                    key={l.name}
+                    href={l.href}
+                    className="transition-all hover:text-orange-500 hover:underline"
+                  >
+                    {l.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Payment & Global */}
+            <div className="flex flex-col items-center gap-3 md:items-end">
+              <div className="flex items-center gap-2">
+                {/* Fake Payment Icons */}
+                <div className="flex gap-2 transition-all duration-300 opacity-70 grayscale hover:grayscale-0">
+                  <div className="h-6 w-10 bg-slate-200 rounded flex items-center justify-center text-[8px] font-bold text-slate-500">
+                    VISA
+                  </div>
+                  <div className="h-6 w-10 bg-slate-200 rounded flex items-center justify-center text-[8px] font-bold text-slate-500">
+                    MC
+                  </div>
+                  <div className="h-6 w-10 bg-slate-200 rounded flex items-center justify-center text-[8px] font-bold text-slate-500">
+                    MOMO
+                  </div>
+                  <div className="h-6 w-10 bg-slate-200 rounded flex items-center justify-center text-[8px] font-bold text-slate-500">
+                    ATM
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-full text-slate-400 bg-slate-50">
+                <Globe size={12} />
+                <span>Vietnam (Tiếng Việt)</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Enhanced Scroll to Top Button */}
+      {/* Scroll Top */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             onClick={scrollToTop}
-            className="fixed z-50 p-4 text-white transition-all duration-300 rounded-full shadow-2xl bottom-8 right-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-            aria-label="Lên đầu trang"
+            className="fixed z-40 p-3 text-white transition-colors duration-300 shadow-xl bottom-6 right-6 rounded-xl bg-slate-800 hover:bg-orange-500"
           >
-            <ArrowUp size={24} />
+            <ArrowUp size={20} />
           </motion.button>
         )}
       </AnimatePresence>

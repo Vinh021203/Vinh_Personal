@@ -1,556 +1,683 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import Head from "next/head";
+import Link from "next/link";
 import {
-  CheckCircle,
+  motion,
+  useScroll,
+  useTransform,
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+  AnimatePresence,
+} from "framer-motion";
+import {
   Code2,
-  ChevronDown,
-  Monitor,
   Sparkles,
   ArrowRight,
   MessageCircle,
   Star,
   Zap,
   Shield,
-  Globe,
   Rocket,
-  Clock,
   Award,
-  Users,
   TrendingUp,
+  Smartphone,
+  Search,
+  LayoutTemplate,
+  Palette,
+  CheckCircle2,
+  Layers,
+  Globe,
+  Server,
+  Database,
+  ShoppingCart,
 } from "lucide-react";
-import { ServiceCard } from "@/components/ServiceCard";
-import Head from "next/head";
-import Link from "next/link";
 import { iconMap } from "@/components/admin/SelectIconField";
 
+// --- TYPES ---
 interface IService {
   _id: string;
   name: string;
   description: string;
   icon: string;
-  createdAt: string;
   status: "Hiển thị" | "Ẩn";
-  category?: string;
   isNew?: boolean;
 }
 
+// --- DATA ---
 const benefits = [
-  { text: "Tối ưu SEO & Core Web Vitals", icon: TrendingUp },
-  { text: "Responsive mọi thiết bị", icon: Globe },
-  { text: "Kết nối backend/API linh hoạt", icon: Code2 },
-  { text: "Thiết kế chuẩn thương hiệu", icon: Award },
-  { text: "Giao diện đẹp, dễ dùng", icon: Star },
-  { text: "Dễ mở rộng, bảo trì", icon: Shield },
-];
-
-const faqData = [
   {
-    question: "Chi phí thiết kế website là bao nhiêu?",
-    answer:
-      "Chi phí tùy vào tính năng và độ phức tạp. Từ 5-50 triệu tùy dự án. Hãy liên hệ để nhận báo giá chi tiết và tư vấn miễn phí.",
+    text: "Tối ưu SEO & Core Web Vitals",
+    desc: "Leo top Google bền vững với cấu trúc code chuẩn SEO.",
+    icon: TrendingUp,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    border: "border-emerald-100",
   },
   {
-    question: "Thời gian hoàn thành dự án?",
-    answer:
-      "Landing page: 3-7 ngày. Website phức tạp: 2-4 tuần. E-commerce: 3-6 tuần. Chúng tôi đảm bảo đúng tiến độ cam kết.",
+    text: "Responsive mọi thiết bị",
+    desc: "Hiển thị hoàn hảo trên Mobile, Tablet và Desktop.",
+    icon: Smartphone,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    border: "border-blue-100",
   },
   {
-    question: "Có hỗ trợ bảo trì sau khi bàn giao?",
-    answer:
-      "Có! Chúng tôi hỗ trợ bảo trì miễn phí 3-6 tháng đầu, bao gồm fix bug, cập nhật nội dung và hỗ trợ kỹ thuật.",
+    text: "Công nghệ mới nhất",
+    desc: "Next.js 14, React Server Components, TypeScript.",
+    icon: Zap,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    border: "border-amber-100",
   },
   {
-    question: "Website có tối ưu SEO không?",
-    answer:
-      "Tất cả website đều được tối ưu SEO cơ bản: meta tags, sitemap, schema markup, tốc độ tải, mobile-friendly và Core Web Vitals.",
+    text: "Bảo mật đa lớp",
+    desc: "Chống tấn công XSS, CSRF, SQL Injection.",
+    icon: Shield,
+    color: "text-violet-600",
+    bg: "bg-violet-50",
+    border: "border-violet-100",
+  },
+  {
+    text: "UI/UX Đẳng cấp",
+    desc: "Thiết kế hiện đại, tập trung vào trải nghiệm người dùng.",
+    icon: Palette,
+    color: "text-pink-600",
+    bg: "bg-pink-50",
+    border: "border-pink-100",
+  },
+  {
+    text: "Hỗ trợ 24/7",
+    desc: "Đội ngũ kỹ thuật luôn sẵn sàng khi bạn cần.",
+    icon: MessageCircle,
+    color: "text-cyan-600",
+    bg: "bg-cyan-50",
+    border: "border-cyan-100",
   },
 ];
 
 const processSteps = [
   {
     step: "01",
-    title: "Tư vấn & Phân tích",
-    desc: "Lắng nghe nhu cầu, phân tích yêu cầu và đưa ra giải pháp tối ưu",
-    icon: MessageCircle,
+    title: "Khám phá",
+    desc: "Lắng nghe ý tưởng, phân tích yêu cầu và tư vấn giải pháp tối ưu ngân sách.",
+    icon: Search,
+    color: "from-blue-400 to-cyan-400",
   },
   {
     step: "02",
-    title: "Thiết kế UI/UX",
-    desc: "Tạo wireframe, mockup và prototype để bạn hình dung rõ sản phẩm",
-    icon: Monitor,
+    title: "Thiết kế",
+    desc: "Phác thảo Wireframe và UI chi tiết. Bạn sẽ thấy sản phẩm trước khi code.",
+    icon: LayoutTemplate,
+    color: "from-cyan-400 to-teal-400",
   },
   {
     step: "03",
-    title: "Lập trình & Phát triển",
-    desc: "Code clean, tối ưu performance và tích hợp các tính năng cần thiết",
+    title: "Phát triển",
+    desc: "Lập trình với mã nguồn sạch, bảo mật và hiệu năng cao nhất.",
     icon: Code2,
+    color: "from-teal-400 to-emerald-400",
   },
   {
     step: "04",
-    title: "Test & Bàn giao",
-    desc: "Kiểm tra kỹ lưỡng, training sử dụng và hỗ trợ triển khai",
+    title: "Bàn giao",
+    desc: "Kiểm thử, deploy lên server và hướng dẫn quản trị chi tiết.",
     icon: Rocket,
+    color: "from-emerald-400 to-green-400",
   },
 ];
 
+const faqData = [
+  {
+    question: "Chi phí thiết kế website là bao nhiêu?",
+    answer:
+      "Chi phí tùy thuộc vào tính năng. Gói Landing Page từ 5tr, Website doanh nghiệp từ 10tr, Web App/E-commerce từ 20tr. Liên hệ để có báo giá chính xác nhất.",
+  },
+  {
+    question: "Thời gian hoàn thành dự án?",
+    answer:
+      "Landing page: 3-5 ngày. Website công ty: 2 tuần. Dự án phức tạp: 4-8 tuần. Chúng tôi cam kết đúng tiến độ hợp đồng.",
+  },
+  {
+    question: "Website có chuẩn SEO không?",
+    answer:
+      "Chắc chắn! 100% website bàn giao đều đạt điểm xanh Google PageSpeed và tối ưu thẻ meta, sitemap, schema chuẩn SEO.",
+  },
+  {
+    question: "Có bảo hành sau bàn giao không?",
+    answer:
+      "Có! Bảo hành kỹ thuật 12 tháng miễn phí. Hỗ trợ fix lỗi và hướng dẫn sử dụng trọn đời.",
+  },
+];
+
+// --- COMPONENTS ---
+
+const ServiceCard = ({
+  service,
+  index,
+}: {
+  service: IService;
+  index: number;
+}) => {
+  const Icon = iconMap[service.icon] || Layers;
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({
+    currentTarget,
+    clientX,
+    clientY,
+  }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      viewport={{ once: true }}
+      onMouseMove={handleMouseMove}
+      className="relative h-full group"
+    >
+      {/* Animated Gradient Border Background */}
+      <div className="absolute -inset-[1px] bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 rounded-[2rem] opacity-0 group-hover:opacity-100 blur-sm transition duration-500 group-hover:duration-200" />
+
+      {/* Main Card Content */}
+      <div className="relative h-full bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex flex-col overflow-hidden">
+        {/* Spotlight Effect inside card */}
+        <motion.div
+          className="absolute transition duration-300 opacity-0 pointer-events-none -inset-px group-hover:opacity-100"
+          style={{
+            background: useMotionTemplate`
+              radial-gradient(
+                400px circle at ${mouseX}px ${mouseY}px,
+                rgba(139, 92, 246, 0.05),
+                transparent 80%
+              )
+            `,
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Icon Box */}
+          <div className="inline-flex p-4 mb-6 transition-all duration-300 rounded-2xl bg-slate-50 text-slate-600 group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-violet-500 group-hover:to-fuchsia-500 group-hover:text-white group-hover:shadow-lg group-hover:shadow-violet-500/30">
+            <Icon size={32} strokeWidth={1.5} />
+          </div>
+
+          <h3 className="mb-3 text-2xl font-bold transition-all duration-300 text-slate-900 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-fuchsia-600">
+            {service.name}
+          </h3>
+
+          <p className="flex-grow mb-8 text-sm font-medium leading-relaxed text-slate-500">
+            {service.description}
+          </p>
+
+          {service.isNew && (
+            <div className="absolute top-6 right-6">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-md shadow-rose-500/20">
+                New
+              </span>
+            </div>
+          )}
+
+          <div className="pt-6 mt-auto border-t border-slate-100 group-hover:border-slate-200/50">
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 text-sm font-bold transition-colors text-slate-600 group-hover:text-violet-600"
+            >
+              Tư vấn ngay
+              <ArrowRight
+                size={16}
+                className="transition-transform group-hover:translate-x-1"
+              />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// --- MAIN PAGE ---
+
 export default function ServicesPage() {
   const [services, setServices] = useState<IService[]>([]);
-  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    setIsClient(true);
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
-
-  useEffect(() => {
+    setMounted(true);
     fetch("/api/services")
       .then((res) => res.json())
       .then((data) => setServices(data))
-      .catch((err) => console.error("Lỗi tải dịch vụ:", err))
+      .catch((err) => {
+        console.error("Error:", err);
+        // Mock data fallback
+        setServices([
+          {
+            _id: "1",
+            name: "Web Design",
+            description:
+              "Thiết kế giao diện độc quyền, sáng tạo, tập trung vào nhận diện thương hiệu.",
+            icon: "LayoutTemplate",
+            status: "Hiển thị",
+            isNew: true,
+          },
+          {
+            _id: "2",
+            name: "Web Development",
+            description:
+              "Lập trình website trọn gói với công nghệ Next.js, React, Node.js.",
+            icon: "Code2",
+            status: "Hiển thị",
+          },
+          {
+            _id: "3",
+            name: "E-commerce",
+            description:
+              "Hệ thống bán hàng online đa kênh, tích hợp thanh toán, vận chuyển.",
+            icon: "ShoppingCart",
+            status: "Hiển thị",
+          },
+          {
+            _id: "4",
+            name: "SEO & Marketing",
+            description:
+              "Tối ưu hóa công cụ tìm kiếm, đưa website lên Top Google bền vững.",
+            icon: "TrendingUp",
+            status: "Hiển thị",
+          },
+        ] as any);
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  // Pre-generate particle positions
-  const particlePositions = [
-    { left: 10, top: 20 },
-    { left: 80, top: 30 },
-    { left: 15, top: 70 },
-    { left: 90, top: 60 },
-    { left: 45, top: 15 },
-    { left: 70, top: 85 },
-    { left: 25, top: 40 },
-    { left: 85, top: 75 },
-  ];
+  if (!mounted) return null;
+
+  // Schema.org for Services
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    serviceType: "Web Development",
+    provider: {
+      "@type": "Organization",
+      name: "VinhWorks",
+      url: "https://vinhworks.com",
+    },
+    areaServed: "Vietnam",
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Web Design Services",
+      itemListElement: services.map((s) => ({
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: s.name,
+          description: s.description,
+        },
+      })),
+    },
+  };
 
   return (
     <>
       <Head>
-        <title>Dịch vụ lập trình | VinhWorks</title>
+        <title>
+          Dịch vụ Thiết kế Website & App - VinhWorks | Giải pháp Công nghệ
+        </title>
         <meta
           name="description"
-          content="Thiết kế website, tối ưu SEO, lập trình Frontend/Backend chuyên nghiệp với công nghệ hiện đại."
+          content="Dịch vụ thiết kế website, lập trình ứng dụng web (Web App), tối ưu SEO và Marketing Online chuyên nghiệp tại VinhWorks. Cam kết chất lượng và tiến độ."
         />
-        <meta property="og:title" content="Dịch vụ lập trình | VinhWorks" />
+
+        {/* Open Graph */}
+        <meta
+          property="og:title"
+          content="Dịch vụ Thiết kế Website & App - VinhWorks"
+        />
         <meta
           property="og:description"
-          content="Thiết kế website, tối ưu SEO, lập trình Frontend/Backend chuyên nghiệp với công nghệ hiện đại."
+          content="Giải pháp công nghệ toàn diện: Web Design, E-commerce, SEO. Tư vấn miễn phí."
         />
-        <meta property="og:image" content="/seo-thumbnail.jpg" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://vinhworks.com/services" />
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="og:image" content="/seo-services-og.jpg" />
+
+        {/* JSON-LD Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </Head>
 
-      {/* Add CSS for grid animation */}
-      <style jsx>{`
-        @keyframes grid-move {
-          0% {
-            transform: translate(0, 0);
-          }
-          100% {
-            transform: translate(50px, 50px);
-          }
-        }
-      `}</style>
+      {/* Scroll Progress Bar */}
+      <motion.div
+        style={{ scaleX }}
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 origin-left z-[100]"
+      />
 
-      <section className="relative min-h-screen px-4 py-20 pt-32 overflow-hidden md:pt-28 lg:pt-24 bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
-        {/* Animated Grid Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(147, 51, 234, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(147, 51, 234, 0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "50px 50px",
-              animation: "grid-move 20s linear infinite",
-            }}
-          />
-        </div>
-
-        {/* Dynamic Gradient Orbs */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute rounded-full w-96 h-96 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%)",
-              left: `${mousePosition.x * 0.02}px`,
-              top: `${mousePosition.y * 0.02}px`,
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.div
-            className="absolute rounded-full w-80 h-80 blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)",
-              right: `${mousePosition.x * 0.015}px`,
-              bottom: `${mousePosition.y * 0.015}px`,
-            }}
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
-
-        {/* Floating Tech Elements */}
-        {isClient && (
-          <div className="absolute inset-0 overflow-hidden">
-            {particlePositions.map((position, i) => (
-              <motion.div
-                key={i}
-                className="absolute"
-                style={{
-                  left: `${position.left}%`,
-                  top: `${position.top}%`,
-                }}
-                animate={{
-                  y: [0, -30, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{
-                  duration: 8 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
-              >
-                <div className="w-2 h-2 rounded-full bg-purple-400/20" />
-              </motion.div>
-            ))}
+      <main className="min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-violet-200 selection:text-violet-900">
+        {/* ================= HERO SECTION ================= */}
+        <section className="relative pt-32 pb-20 overflow-hidden lg:pt-48 lg:pb-32">
+          {/* Bright Gradient Blobs */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-cyan-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-fuchsia-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-2000" />
+            <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-violet-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-4000" />
+            {/* Grid Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px]" />
           </div>
-        )}
 
-        <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Enhanced Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-16 text-center md:mb-20"
-          >
-            {/* Header Badge */}
+          <div className="container relative z-10 max-w-5xl px-6 mx-auto text-center">
             <motion.div
-              className="inline-flex items-center gap-3 px-6 py-3 mb-8 text-purple-300 border rounded-full bg-purple-500/10 border-purple-500/20 backdrop-blur-sm"
-              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              <Zap className="w-5 h-5 text-yellow-400 animate-pulse" />
-              <span className="text-sm font-medium tracking-wide uppercase">
-                Dịch vụ chuyên nghiệp
-              </span>
-              <Sparkles className="w-4 h-4 text-yellow-400" />
-            </motion.div>
-
-            <h1 className="mb-6 text-4xl font-bold text-transparent md:text-6xl lg:text-7xl bg-gradient-to-r from-purple-400 via-blue-400 to-indigo-400 bg-clip-text">
-              Giải pháp công nghệ hiện đại
-            </h1>
-            <p className="max-w-3xl mx-auto text-lg leading-relaxed text-gray-300 md:text-xl">
-              Tập trung vào{" "}
-              <strong className="text-white">
-                hiệu suất, SEO, trải nghiệm người dùng
-              </strong>{" "}
-              và khả năng mở rộng để phù hợp mọi loại hình kinh doanh.
-              <br />
-              <span className="font-medium text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
-                Biến ý tưởng thành sản phẩm số hoàn hảo! 🚀
-              </span>
-            </p>
-          </motion.div>
-
-          {/* Enhanced Services Grid */}
-          {loading ? (
-            <div className="flex justify-center mt-20">
-              <div className="relative">
-                <div className="w-12 h-12 border-4 rounded-full border-purple-500/30"></div>
-                <div className="absolute top-0 left-0 w-12 h-12 border-4 border-purple-500 rounded-full border-t-transparent animate-spin"></div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold border border-white rounded-full shadow-sm bg-white/80 backdrop-blur-md text-violet-600 ring-1 ring-violet-100">
+                <Sparkles size={16} className="fill-violet-500" />
+                <span>Dịch vụ chất lượng cao</span>
               </div>
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="mb-20"
-            >
-              <div className="grid grid-cols-1 gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-2">
-                {services.map((svc, i) => {
-                  const Icon = iconMap[svc.icon] || Code2;
-                  return (
-                    <motion.div
-                      key={svc._id}
-                      initial={{ opacity: 0, y: 40 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1, duration: 0.5 }}
-                      viewport={{ once: true }}
-                      whileHover={{ scale: 1.02, y: -5 }}
-                    >
-                      <div className="relative p-6 transition-all duration-300 border group md:p-8 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10 hover:border-purple-400/40">
-                        <div className="relative">
-                          <Icon className="w-12 h-12 mb-4 text-purple-400 transition-transform group-hover:scale-110" />
-                          <h3 className="mb-3 text-xl font-bold text-white">
-                            {svc.name}
-                          </h3>
-                          <p className="leading-relaxed text-gray-300">
-                            {svc.description}
-                          </p>
-                        </div>
-                        {svc.isNew && (
-                          <span className="absolute px-3 py-1 text-xs font-medium text-white rounded-full top-4 right-4 bg-gradient-to-r from-pink-500 to-purple-500">
-                            Mới
-                          </span>
-                        )}
-                        <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-3xl group-hover:opacity-100" />
-                      </div>
-                    </motion.div>
-                  );
-                })}
+
+              <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-[1.1]">
+                Giải pháp số <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500">
+                  Đột phá & Hiệu quả
+                </span>
+              </h1>
+
+              <p className="max-w-3xl mx-auto mb-12 text-xl font-medium leading-relaxed text-slate-600">
+                Chúng tôi không chỉ tạo ra website, chúng tôi kiến tạo những{" "}
+                <span className="font-bold text-slate-900">
+                  cỗ máy tăng trưởng
+                </span>{" "}
+                doanh thu cho doanh nghiệp của bạn.
+              </p>
+
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="#services">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-2 px-8 py-4 font-bold text-white transition-all shadow-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl shadow-violet-500/20 hover:shadow-violet-500/40"
+                  >
+                    Khám phá dịch vụ
+                    <ArrowRight size={18} />
+                  </motion.button>
+                </Link>
+                <Link href="/contact">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-8 py-4 font-bold transition-all bg-white border-2 shadow-sm text-slate-700 border-slate-100 rounded-2xl hover:border-violet-200 hover:text-violet-600"
+                  >
+                    Nhận báo giá
+                  </motion.button>
+                </Link>
               </div>
             </motion.div>
-          )}
+          </div>
+        </section>
 
-          {/* Enhanced Benefits Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="mb-12 text-center">
-              <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                ✨ Lợi ích khi chọn VinhWorks
+        {/* ================= SERVICES GRID ================= */}
+        <section id="services" className="relative py-24">
+          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
+            <div className="mb-20 text-center">
+              <h2 className="mb-4 text-3xl font-black md:text-5xl text-slate-900">
+                Dịch vụ cung cấp
               </h2>
-              <p className="max-w-2xl mx-auto text-gray-300">
-                Những giá trị cốt lõi chúng tôi mang lại cho mỗi dự án
-              </p>
+              <div className="h-1.5 w-24 bg-gradient-to-r from-cyan-400 to-fuchsia-400 rounded-full mx-auto" />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {benefits.map((benefit, i) => {
-                const IconComponent = benefit.icon;
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -5 }}
-                    className="flex items-center gap-4 p-4 transition-all duration-300 border md:p-6 rounded-2xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10 hover:border-purple-400/40 group"
-                  >
-                    <IconComponent className="flex-shrink-0 w-6 h-6 text-purple-400 transition-colors group-hover:text-blue-400" />
-                    <span className="text-gray-300 transition-colors group-hover:text-white">
-                      {benefit.text}
-                    </span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <div className="w-12 h-12 border-4 rounded-full border-violet-500 border-t-transparent animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {services.map((service, idx) => (
+                  <ServiceCard
+                    key={service._id || idx}
+                    service={service}
+                    index={idx}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
 
-          {/* Enhanced Process Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="mb-12 text-center">
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                🎯 Quy trình làm việc chuyên nghiệp
-              </h3>
-              <p className="max-w-2xl mx-auto text-gray-300">
-                Quy trình 4 bước đảm bảo chất lượng và tiến độ dự án
-              </p>
-            </div>
+        {/* ================= BENEFITS SECTION ================= */}
+        <section className="relative py-24 overflow-hidden bg-white">
+          {/* Diagonal background shape */}
+          <div className="absolute top-0 right-0 w-2/3 h-full -skew-x-12 pointer-events-none bg-slate-50/50 translate-x-1/4" />
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {processSteps.map((step, i) => {
-                const IconComponent = step.icon;
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -5 }}
-                    className="relative p-6 text-center transition-all duration-300 border rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10 hover:border-purple-400/40 group"
-                  >
-                    <div className="relative mb-4">
-                      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl">
-                        <IconComponent className="w-8 h-8 text-white" />
+          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
+            <div className="flex flex-col gap-16 lg:flex-row">
+              {/* Text Side */}
+              <div className="lg:w-1/2">
+                <span className="block mb-2 text-sm font-bold tracking-wider uppercase text-violet-600">
+                  Tại sao chọn chúng tôi?
+                </span>
+                <h2 className="mb-8 text-4xl font-black leading-tight text-slate-900">
+                  Mang lại giá trị thực <br /> cho khoản đầu tư của bạn.
+                </h2>
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  {benefits.map((benefit, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      viewport={{ once: true }}
+                      className={`p-5 rounded-2xl border ${benefit.bg} ${benefit.border} hover:shadow-md transition-shadow cursor-default`}
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-xl ${benefit.color} bg-white flex items-center justify-center mb-3 shadow-sm`}
+                      >
+                        <benefit.icon size={20} />
                       </div>
-                      <span className="absolute flex items-center justify-center w-8 h-8 text-xs font-bold text-black rounded-full -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-400">
-                        {step.step}
-                      </span>
+                      <h4 className="mb-1 font-bold text-slate-900">
+                        {benefit.text}
+                      </h4>
+                      <p className="text-xs font-medium leading-relaxed text-slate-500">
+                        {benefit.desc}
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stats Side (Right) */}
+              <div className="flex items-center justify-center lg:w-1/2">
+                <div className="relative w-full max-w-md">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-fuchsia-500 rounded-[3rem] rotate-6 blur-lg opacity-30" />
+                  <div className="relative bg-white rounded-[3rem] p-10 shadow-2xl border border-slate-100">
+                    <div className="space-y-10 text-center divide-y divide-slate-100">
+                      <div className="pt-4">
+                        <h3 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">
+                          99%
+                        </h3>
+                        <p className="mt-2 text-sm font-bold tracking-widest uppercase text-slate-400">
+                          Khách hàng hài lòng
+                        </p>
+                      </div>
+                      <div className="pt-10">
+                        <h3 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-500">
+                          24/7
+                        </h3>
+                        <p className="mt-2 text-sm font-bold tracking-widest uppercase text-slate-400">
+                          Hỗ trợ kỹ thuật
+                        </p>
+                      </div>
+                      <div className="pt-10 pb-4">
+                        <div className="flex justify-center gap-1 mb-3 text-amber-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="fill-current" size={24} />
+                          ))}
+                        </div>
+                        <p className="italic font-medium text-slate-600">
+                          "Chất lượng vượt xa mong đợi!"
+                        </p>
+                      </div>
                     </div>
-                    <h4 className="mb-2 text-lg font-bold text-white">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================= PROCESS SECTION (Light Mode) ================= */}
+        <section className="relative py-24 overflow-hidden bg-slate-50">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.03] bg-[url('/grid.svg')] pointer-events-none" />
+
+          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
+            <div className="mb-20 text-center">
+              <h2 className="text-4xl font-black md:text-5xl text-slate-900">
+                Quy trình tinh gọn
+              </h2>
+              <p className="mt-4 font-medium text-slate-500">
+                4 Bước để biến ý tưởng thành hiện thực
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+              {processSteps.map((step, idx) => (
+                <div key={idx} className="relative group">
+                  {/* Step Number Big - Light Mode Style */}
+                  <div className="absolute font-black transition-colors select-none opacity-10 text-8xl text-slate-900 -top-10 -left-4 group-hover:text-violet-600 group-hover:opacity-20">
+                    {step.step}
+                  </div>
+
+                  <div className="relative z-10 pt-8">
+                    <div
+                      className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-lg shadow-slate-200 group-hover:scale-110 transition-transform duration-300 group-hover:shadow-xl`}
+                    >
+                      <step.icon size={32} className="text-white" />
+                    </div>
+                    <h3 className="mb-3 text-xl font-bold transition-colors text-slate-900 group-hover:text-violet-600">
                       {step.title}
-                    </h4>
-                    <p className="text-sm leading-relaxed text-gray-300">
+                    </h3>
+                    <p className="pl-4 text-sm leading-relaxed transition-colors border-l-2 text-slate-500 border-slate-200 group-hover:border-violet-500 group-hover:text-slate-700">
                       {step.desc}
                     </p>
-                  </motion.div>
-                );
-              })}
+                  </div>
+                </div>
+              ))}
             </div>
-          </motion.div>
+          </div>
+        </section>
 
-          {/* Enhanced FAQ Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            viewport={{ once: true }}
-            className="mb-20"
-          >
-            <div className="mb-12 text-center">
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                ❓ Câu hỏi thường gặp
-              </h3>
-              <p className="max-w-2xl mx-auto text-gray-300">
-                Những thắc mắc phổ biến từ khách hàng
-              </p>
-            </div>
-
-            <div className="max-w-4xl mx-auto space-y-4">
+        {/* ================= FAQ SECTION ================= */}
+        <section className="py-24">
+          <div className="container max-w-3xl px-6 mx-auto">
+            <h2 className="mb-12 text-3xl font-black text-center text-slate-900">
+              Câu hỏi thường gặp
+            </h2>
+            <div className="space-y-4">
               {faqData.map((faq, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="p-6 transition-all duration-300 border rounded-2xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 to-blue-500/10 hover:border-purple-400/40"
+                  initial={false}
+                  className="overflow-hidden transition-colors bg-white border border-slate-200 rounded-2xl hover:border-violet-200"
                 >
                   <button
                     onClick={() =>
                       setFaqOpenIndex(faqOpenIndex === i ? null : i)
                     }
-                    className="flex items-center justify-between w-full text-left group"
+                    className="flex items-center justify-between w-full p-6 text-left"
                   >
-                    <span className="pr-4 font-semibold text-white transition-colors group-hover:text-purple-300">
+                    <span
+                      className={`font-bold text-lg ${
+                        faqOpenIndex === i
+                          ? "text-violet-600"
+                          : "text-slate-700"
+                      }`}
+                    >
                       {faq.question}
                     </span>
-                    <ChevronDown
-                      size={20}
-                      className={`text-purple-400 transition-all duration-300 flex-shrink-0 ${
+                    <div
+                      className={`p-2 rounded-full transition-colors ${
                         faqOpenIndex === i
-                          ? "rotate-180 text-blue-400"
-                          : "group-hover:text-purple-300"
+                          ? "bg-violet-100 text-violet-600"
+                          : "bg-slate-100 text-slate-500"
                       }`}
-                    />
+                    >
+                      <ArrowRight
+                        size={16}
+                        className={`transition-transform duration-300 ${
+                          faqOpenIndex === i ? "rotate-90" : ""
+                        }`}
+                      />
+                    </div>
                   </button>
                   <AnimatePresence>
                     {faqOpenIndex === i && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                       >
-                        <p className="pl-1 mt-4 leading-relaxed text-gray-300">
+                        <div className="px-6 pt-4 pb-6 mt-2 leading-relaxed border-t text-slate-600 border-slate-50">
                           {faq.answer}
-                        </p>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </motion.div>
               ))}
             </div>
-          </motion.div>
+          </div>
+        </section>
 
-          {/* Enhanced CTA Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <div className="relative p-8 border md:p-12 rounded-3xl border-purple-500/20 backdrop-blur-sm bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10">
-              <h3 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-                🚀 Sẵn sàng bắt đầu dự án?
-              </h3>
-              <p className="max-w-2xl mx-auto mb-8 text-gray-300">
-                Hãy cùng chúng tôi biến ý tưởng của bạn thành hiện thực với công
-                nghệ hiện đại nhất
-              </p>
+        {/* ================= CTA ================= */}
+        <section className="relative py-24 overflow-hidden">
+          <div className="container relative z-10 max-w-5xl px-6 mx-auto">
+            <div className="bg-gradient-to-br from-slate-50 to-white rounded-[3rem] p-12 md:p-20 text-center shadow-xl border border-slate-100 relative overflow-hidden">
+              {/* Abstract Glows */}
+              <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[120px] pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-fuchsia-500/20 rounded-full blur-[120px] pointer-events-none" />
 
-              <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    href="/contact"
-                    className="inline-flex items-center gap-3 px-8 py-4 font-semibold text-white transition-all duration-300 shadow-lg rounded-2xl bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:from-purple-600 hover:via-blue-600 hover:to-indigo-600 hover:shadow-2xl"
-                  >
-                    <MessageCircle size={20} />
-                    <span>Nhận tư vấn miễn phí</span>
-                    <ArrowRight size={16} />
+              <div className="relative z-10">
+                <h2 className="mb-8 text-4xl font-black leading-tight md:text-6xl text-slate-900">
+                  Sẵn sàng{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">
+                    bứt phá
+                  </span>{" "}
+                  doanh thu?
+                </h2>
+                <p className="max-w-2xl mx-auto mb-12 text-xl font-medium text-slate-600">
+                  Đừng để website lỗi thời kìm hãm sự phát triển của bạn. Hãy để
+                  chúng tôi giúp bạn xây dựng đế chế số ngay hôm nay.
+                </p>
+                <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                  <Link href="/contact">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-10 py-5 text-lg font-bold text-white transition-all shadow-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl shadow-violet-500/30 hover:shadow-violet-500/50"
+                    >
+                      Liên hệ tư vấn miễn phí
+                    </motion.button>
                   </Link>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Link
-                    href="/pricing"
-                    className="inline-flex items-center gap-3 px-8 py-4 font-semibold text-purple-400 transition-all duration-300 border rounded-2xl border-purple-500/30 bg-purple-500/10 hover:border-purple-400/50 hover:bg-purple-500/20 backdrop-blur-sm"
-                  >
-                    <Star size={20} />
-                    <span>Xem bảng giá</span>
-                  </Link>
-                </motion.div>
-              </div>
-
-              {/* Trust indicators */}
-              <div className="flex items-center justify-center gap-8 mt-8 text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-purple-400" />
-                  <span>50+ Khách hàng</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  <span>Giao hàng đúng hẹn</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-yellow-400" />
-                  <span>Chất lượng cao</span>
                 </div>
               </div>
             </div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+      </main>
     </>
   );
 }
