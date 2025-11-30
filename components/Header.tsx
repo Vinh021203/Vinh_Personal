@@ -34,7 +34,7 @@ export const Header = () => {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const { user, setUser } = useUser();
-  const { lang } = useLanguage(); // Đã bỏ setLang vì không dùng nút đổi ngôn ngữ nữa
+  const { lang } = useLanguage();
   const t = text[lang];
 
   useEffect(() => {
@@ -45,6 +45,8 @@ export const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Logic fetch user này có thể đã được UserContext xử lý rồi,
+  // nhưng nếu bạn muốn giữ lại ở đây cũng được để chắc chắn.
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -109,7 +111,7 @@ export const Header = () => {
           y: 0,
           opacity: 1,
           marginTop: scrolled ? "1rem" : "0rem",
-          maxWidth: scrolled ? "95%" : "100%", // Để rộng hơn chút cho thoáng
+          maxWidth: scrolled ? "95%" : "100%",
           borderRadius: scrolled ? "9999px" : "0px",
         }}
         transition={{
@@ -124,7 +126,7 @@ export const Header = () => {
             : "bg-white/70 backdrop-blur-lg border-b border-white/30"
         }`}
       >
-        {/* Background Mesh Gradient: Vàng - Cam - Hồng Phấn */}
+        {/* Background Mesh Gradient */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[inherit]">
           <div className="absolute -top-[50%] -left-[10%] w-[60%] h-[200%] bg-gradient-to-r from-orange-100/40 to-amber-100/40 blur-3xl rotate-12" />
           <div className="absolute -bottom-[50%] -right-[10%] w-[60%] h-[200%] bg-gradient-to-l from-rose-100/40 to-pink-100/40 blur-3xl -rotate-12" />
@@ -135,7 +137,7 @@ export const Header = () => {
             scrolled ? "px-8 py-2.5" : "px-6 py-4"
           }`}
         >
-          {/* Logo Section: Tone Cam Vàng */}
+          {/* Logo Section: Đã merge giao diện mới VinhWorks */}
           <motion.div
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400 }}
@@ -145,12 +147,17 @@ export const Header = () => {
               href="/"
               className="flex items-center gap-3 text-xl font-bold tracking-wide group"
             >
-              <div className="relative">
-                <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-orange-400 to-rose-400 rounded-xl blur-lg group-hover:opacity-40" />
-                <span className="relative flex items-center justify-center w-10 h-10 text-white transition-transform duration-300 shadow-lg bg-gradient-to-br from-orange-500 via-amber-500 to-rose-500 rounded-xl group-hover:rotate-3">
-                  <Monitor size={20} />
-                </span>
-              </div>
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-orange-400 to-rose-400 rounded-xl blur-lg group-hover:opacity-40" />
+                  <span className="relative flex items-center justify-center w-10 h-10 text-white transition-transform duration-300 shadow-lg bg-gradient-to-br from-orange-500 via-amber-500 to-rose-500 rounded-xl group-hover:rotate-3">
+                    <Monitor size={20} />
+                  </span>
+                </div>
+              </motion.div>
               <div className="flex flex-col">
                 <span className="text-lg font-extrabold text-transparent bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 bg-clip-text">
                   VinhWorks
@@ -194,7 +201,6 @@ export const Header = () => {
                       style={{ borderRadius: 9999 }}
                     />
                   )}
-
                   <span
                     className={`relative flex items-center gap-1.5 transition-colors duration-200 z-10 ${
                       isActive
@@ -219,8 +225,6 @@ export const Header = () => {
 
           {/* User & Actions Section */}
           <div className="relative z-10 flex items-center flex-shrink-0 gap-3">
-            {/* Đã xóa phần chuyển đổi ngôn ngữ */}
-
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <motion.button
