@@ -1,62 +1,86 @@
-"use client";
-
-import { HeroSection } from "@/components/HeroSection";
-import { ServiceSection } from "@/components/ServiceSection";
-import { ProjectSection } from "@/components/ProjectSection";
-import { TestimonialSection } from "@/components/TestimonialSection";
-import { ProcessSection } from "@/components/ProcessSection";
-import { FAQSection } from "@/components/FAQSection";
+import { Suspense } from "react";
+import { Metadata } from "next";
+import HomeClient from "./HomeClient";
 import Script from "next/script";
 
-export default function HomePage() {
-  // Schema JSON-LD cho SEO
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ProfessionalService",
-    name: "VinhWorks",
-    image: "https://vinhworks.com/logo.png", // Thay link logo thật của bạn
-    description:
-      "Dịch vụ thiết kế website, lập trình Web App và UI/UX chuyên nghiệp.",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Quảng Ninh",
-      addressCountry: "VN",
-    },
-    priceRange: "$$",
-  };
+export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "VinhWorks - Thiết kế Website & Giải pháp Số Chuyên nghiệp",
+  description:
+    "Dịch vụ thiết kế website trọn gói, lập trình Web App, UI/UX và giải pháp công nghệ tối ưu cho doanh nghiệp. Uy tín - Chất lượng - Tận tâm.",
+  openGraph: {
+    title: "VinhWorks - Đối tác Công nghệ Tin cậy",
+    description:
+      "Biến ý tưởng thành hiện thực với dịch vụ thiết kế website và phần mềm chất lượng cao.",
+    url: "https://vinhworks.com",
+    siteName: "VinhWorks",
+    locale: "vi_VN",
+    type: "website",
+    images: [
+      {
+        url: "https://vinhworks.com/og-home.jpg",
+        width: 1200,
+        height: 630,
+        alt: "VinhWorks Homepage",
+      },
+    ],
+  },
+  alternates: {
+    canonical: "https://vinhworks.com",
+  },
+};
+
+// 2. Schema JSON-LD
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "VinhWorks",
+  image: "https://vinhworks.com/logo.png",
+  description:
+    "Dịch vụ thiết kế website, lập trình Web App và UI/UX chuyên nghiệp.",
+  url: "https://vinhworks.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Hạ Long",
+    addressRegion: "Quảng Ninh",
+    addressCountry: "VN",
+  },
+  priceRange: "$$",
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ],
+    opens: "08:00",
+    closes: "22:00",
+  },
+};
+
+export default function HomePage() {
   return (
     <>
-      {/* Inject Schema SEO */}
       <Script
         id="json-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <main className="min-h-screen bg-white text-slate-900 selection:bg-purple-100 selection:text-purple-900">
-        {/* 1. Hero: Gây ấn tượng ban đầu */}
-        <HeroSection />
-
-        {/* 2. Services: Bạn làm được gì? */}
-        <ServiceSection />
-
-        {/* 3. Process: Cách bạn làm việc (Tăng độ uy tín) */}
-        <ProcessSection />
-
-        {/* 4. Projects: Bằng chứng năng lực */}
-        <ProjectSection />
-
-        {/* 5. Testimonials: Khách hàng nói gì (Social Proof) */}
-        <TestimonialSection />
-
-        {/* 6. FAQ: Xử lý từ chối & SEO từ khóa */}
-        <FAQSection />
-
-        {/* Lưu ý: ProjectSection và ServiceSection đã có CTA button rồi, 
-            nhưng nếu muốn bạn có thể thêm 1 section CTA riêng biệt ở đây 
-            trước khi hết trang */}
-      </main>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen bg-white">
+            <div className="w-12 h-12 border-4 rounded-full border-violet-200 border-t-violet-600 animate-spin" />
+          </div>
+        }
+      >
+        <HomeClient />
+      </Suspense>
     </>
   );
 }
