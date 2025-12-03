@@ -1,132 +1,88 @@
 # 🚀 VinhWorks - Personal Dashboard & Admin Panel
 
-Một ứng dụng Full-stack Web hiện đại được xây dựng bằng **Next.js 14+ (App Router)**, cung cấp giải pháp quản lý người dùng, bảng điều khiển cá nhân và tích hợp các tính năng bảo mật mạnh mẽ.
+Hệ thống Full-stack Web hiện đại quản lý người dùng và nội dung cá nhân, xây dựng trên nền tảng **Next.js 14+ (App Router)** và **MongoDB**.
 
-## ✨ Tính năng nổi bật
+🔗 **Live Demo:** [https://vinhwork.vercel.app](https://vinhwork.vercel.app)
 
-### 🔐 Xác thực & Bảo mật (Authentication)
+## ✨ Tính năng cốt lõi
 
-- **Đăng nhập/Đăng xuất:** Sử dụng JWT (JSON Web Token) lưu trữ an toàn trong Cookies (HTTP-only).
-- **Middleware:** Bảo vệ các Route (Admin/User), tự động chuyển hướng khi chưa đăng nhập.
-- **Mã hóa mật khẩu:** Sử dụng `bcryptjs` để hash mật khẩu trước khi lưu vào database.
-
-### 👤 Quản lý Người dùng (User Management)
-
-- **CRUD:** Admin có thể Xem danh sách, Tạo mới, Chỉnh sửa và Xóa người dùng.
-- **Tìm kiếm & Lọc:** Tìm kiếm theo tên/email và lọc theo vai trò (Admin/User).
-- **Phân trang:** Hiển thị danh sách người dùng mượt mà.
-
-### ⚙️ Cài đặt Tài khoản (Settings Page)
-
-- **Cập nhật thông tin:** Thay đổi tên hiển thị.
-- **Upload Avatar:** Tích hợp **Cloudinary** để upload và lưu trữ ảnh đại diện.
-- **Đổi mật khẩu:** Xác thực mật khẩu cũ/mới an toàn.
-- **Cache Busting:** Cơ chế tự động cập nhật ảnh đại diện ngay lập tức sau khi upload (tránh cache trình duyệt).
-
-### 🎨 Giao diện (UI/UX)
-
-- **Responsive:** Tương thích hoàn toàn trên Mobile và Desktop.
-- **Animations:** Hiệu ứng mượt mà với `Framer Motion`.
-- **Thông báo:** Hệ thống Toast notification (`react-hot-toast`) phản hồi thao tác người dùng.
-- **Chatbot UI:** Giao diện hỗ trợ trực tuyến tích hợp sẵn.
+*   **🔐 Authentication:** Đăng nhập/Đăng xuất an toàn với JWT (HTTP-only Cookies) & Mã hóa mật khẩu (`bcryptjs`).
+*   **🛡️ Middleware:** Bảo vệ routes Admin/User, điều hướng thông minh theo phân quyền.
+*   **👤 User Management (CRUD):** Admin quản lý toàn bộ người dùng (Xem, Thêm, Sửa, Xóa, Tìm kiếm, Phân trang).
+*   **⚙️ Settings & Profile:** Người dùng tự cập nhật thông tin, đổi mật khẩu và **Upload Avatar** (tích hợp Cloudinary).
+*   **🎨 Modern UI/UX:** Giao diện Responsive, hiệu ứng mượt mà (`Framer Motion`), thông báo Toast và chế độ Dark/Light mode.
 
 ---
 
-## 🛠️ Công nghệ sử dụng
+## 🛠️ Tech Stack
 
-### Frontend
-
-- **Framework:** [Next.js 14](https://nextjs.org/) (App Router)
-- **Language:** TypeScript
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Icons:** [Lucide React](https://lucide.dev/)
-- **Motion:** [Framer Motion](https://www.framer.com/motion/)
-- **State:** React Context API (`UserContext`)
-
-### Backend
-
-- **Runtime:** Next.js API Routes (Route Handlers)
-- **Database:** [MongoDB](https://www.mongodb.com/) (thông qua [Mongoose](https://mongoosejs.com/))
-- **Auth:** `jose` (JWT handling), `bcryptjs`
-- **Storage:** [Cloudinary](https://cloudinary.com/) (Image hosting)
+*   **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, Framer Motion.
+*   **Backend:** Next.js API Routes (Serverless Functions).
+*   **Database:** MongoDB (Mongoose ODM).
+*   **Storage:** Cloudinary (Image Upload).
+*   **Auth:** `jose` (JWT), `bcryptjs`.
 
 ---
 
-## 🚀 Cài đặt và Chạy dự án
+## 🚀 Cài đặt & Chạy dự án
 
-### 1. Clone dự án
-
-git clone https://github.com/username/project-name.git
-cd project-name
-
-text
-
-### 2. Cài đặt dependencies
-
+### 1. Khởi tạo
+git clone https://github.com/Vinh021203/Vinh_Personal.git
+cd Vinh_Personal
 npm install
 
-hoặc
-yarn install
-
 text
 
-### 3. Cấu hình biến môi trường (.env)
+### 2. Cấu hình môi trường (`.env.local`)
+Tạo file `.env.local` tại thư mục gốc:
 
-Tạo file `.env` tại thư mục gốc và điền các thông tin sau:
+Database
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/vinhworks_db
 
-Kết nối MongoDB
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/your-db-name
-
-JWT Secret (Chuỗi ngẫu nhiên bảo mật)
-JWT_SECRET=your_super_secret_random_string
+Auth Secret
+JWT_SECRET=chuoi_bao_mat_ngau_nhien_cua_ban
 
 Cloudinary (Upload ảnh)
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 
-Base URL (Localhost)
+App Config
 NEXT_PUBLIC_API_URL=http://localhost:3000
 
 text
 
-### 4. Chạy dự án
-
+### 3. Chạy Dev Server
 npm run dev
 
 text
-Truy cập `http://localhost:3000` để xem kết quả.
+Truy cập: `http://localhost:3000`
 
 ---
 
-## 📂 Cấu trúc thư mục chính
+## 📂 Cấu trúc thư mục (App Router)
 
 ├── app/
-│ ├── api/ # Backend API Routes
-│ │ ├── auth/ # Login, Logout, Me
-│ │ └── users/ # User CRUD
-│ ├── (auth)/ # Login Page
-│ ├── admin/ # Admin Dashboard Pages
-│ ├── settings/ # User Settings Page
-│ └── layout.tsx # Root Layout & Providers
-├── components/ # Reusable UI Components
-├── contexts/ # React Context (UserContext)
-├── libs/ # Utility functions (MongoDB connect, Cloudinary config)
-├── models/ # Mongoose Schemas (User)
-└── public/ # Static assets
+│ ├── api/ # Backend Routes (REST API)
+│ ├── (public)/ # Các trang công khai (Home, Blog, Pricing...)
+│ ├── (auth)/ # Trang đăng nhập/đăng ký
+│ ├── admin/ # Dashboard quản trị (Protected)
+│ └── settings/ # Cài đặt tài khoản cá nhân
+├── components/ # UI Components tái sử dụng
+├── contexts/ # Global State (UserContext)
+├── libs/ # Database connect, Auth helpers
+└── models/ # Mongoose Schemas
 
 text
 
 ---
 
-## ⚠️ Các lưu ý quan trọng khi phát triển
+## ⚠️ Lưu ý phát triển
 
-1.  **Next.js Image:** Khi hiển thị ảnh từ Cloudinary hoặc nguồn ngoài, cần thêm cấu hình `images.remotePatterns` trong `next.config.js` hoặc sử dụng thuộc tính `unoptimized={true}` trong thẻ `<Image />`.
-2.  **MongoDB ObjectId:** Khi truyền ID vào URL API, hãy đảm bảo ép kiểu về String (`String(user._id)`) để tránh lỗi `[object Object]`.
-3.  **Context Refresh:** Sau khi cập nhật dữ liệu user (như avatar), cần gọi hàm `refreshUser()` để đồng bộ lại UI header và sidebar.
+1.  **Middleware (Proxy):** File `proxy.ts` (cũ là `middleware.ts`) xử lý logic chặn truy cập Admin.
+2.  **SEO:** File `robots.ts` và `sitemap.ts` được cấu hình tự động chặn bot vào trang Admin/API.
+3.  **Deploy:** Đã cấu hình chuẩn cho Vercel (`force-dynamic` ở các trang cần thiết).
 
 ---
 
-## 🤝 Đóng góp
-
-Dự án được phát triển bởi **VinhWorks Enterprise**. Mọi đóng góp vui lòng tạo Pull Request hoặc Issues.
+© 2025 **VinhWorks**. Developed by Luong Vinh.
