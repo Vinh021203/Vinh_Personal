@@ -18,7 +18,7 @@
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.488.0",
     "mongoose": "^8.13.2",
-    "next": "latest",
+    "next": "15.5.8",
     "nextjs-toploader": "^3.9.17",
     "nprogress": "^0.2.0",
     "react": "latest",
