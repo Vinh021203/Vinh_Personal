@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   Menu,
   X,
-  Monitor,
   ChevronDown,
   User,
   LogOut,
@@ -34,7 +34,7 @@ export const Header = () => {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const { user, setUser } = useUser();
-  const { lang } = useLanguage(); // Đã bỏ setLang vì không dùng nút đổi ngôn ngữ nữa
+  const { lang } = useLanguage();
   const t = text[lang];
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export const Header = () => {
           y: 0,
           opacity: 1,
           marginTop: scrolled ? "1rem" : "0rem",
-          maxWidth: scrolled ? "95%" : "100%", // Để rộng hơn chút cho thoáng
+          maxWidth: scrolled ? "95%" : "100%",
           borderRadius: scrolled ? "9999px" : "0px",
         }}
         transition={{
@@ -124,7 +124,7 @@ export const Header = () => {
             : "bg-white/70 backdrop-blur-lg border-b border-white/30"
         }`}
       >
-        {/* Background Mesh Gradient: Vàng - Cam - Hồng Phấn */}
+        {/* Background Mesh Gradient */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[inherit]">
           <div className="absolute -top-[50%] -left-[10%] w-[60%] h-[200%] bg-gradient-to-r from-orange-100/40 to-amber-100/40 blur-3xl rotate-12" />
           <div className="absolute -bottom-[50%] -right-[10%] w-[60%] h-[200%] bg-gradient-to-l from-rose-100/40 to-pink-100/40 blur-3xl -rotate-12" />
@@ -132,10 +132,10 @@ export const Header = () => {
 
         <div
           className={`flex items-center justify-between mx-auto max-w-7xl ${
-            scrolled ? "px-8 py-2.5" : "px-6 py-4"
+            scrolled ? "px-8 py-2" : "px-6 py-3"
           }`}
         >
-          {/* Logo Section: Tone Cam Vàng */}
+          {/* Logo Section - Lớn hơn khi scroll */}
           <motion.div
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400 }}
@@ -143,28 +143,46 @@ export const Header = () => {
           >
             <Link
               href="/"
-              className="flex items-center gap-3 text-xl font-bold tracking-wide group"
+              className={`flex group ${
+                scrolled ? "items-center" : "flex-col items-center"
+              }`}
             >
-              <div className="relative">
-                <div className="absolute inset-0 transition-opacity opacity-0 bg-gradient-to-r from-orange-400 to-rose-400 rounded-xl blur-lg group-hover:opacity-40" />
-                <span className="relative flex items-center justify-center w-10 h-10 text-white transition-transform duration-300 shadow-lg bg-gradient-to-br from-orange-500 via-amber-500 to-rose-500 rounded-xl group-hover:rotate-3">
-                  <Monitor size={20} />
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-extrabold text-transparent bg-gradient-to-r from-orange-500 via-rose-500 to-amber-500 bg-clip-text">
-                  VinhWorks
-                </span>
-                {!scrolled && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="-mt-0.5 text-[10px] font-bold text-orange-300/80 uppercase tracking-widest"
-                  >
-                    Tech Solutions
-                  </motion.span>
-                )}
-              </div>
+              {/* Logo SVG - Lớn hơn khi scroll */}
+              <motion.div
+                animate={{
+                  height: scrolled ? "40px" : "24px",
+                }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
+                <Image
+                  src="/logo.svg"
+                  alt="VinhWorks"
+                  width={scrolled ? 160 : 140}
+                  height={scrolled ? 40 : 24}
+                  className="object-contain transition-all duration-300"
+                  priority
+                />
+              </motion.div>
+
+              {/* Solution SVG - Ẩn khi scroll */}
+              {!scrolled && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="relative h-4 mt-1"
+                >
+                  <Image
+                    src="/solution.svg"
+                    alt="Tech Solutions"
+                    width={110}
+                    height={16}
+                    className="object-contain"
+                    priority
+                  />
+                </motion.div>
+              )}
             </Link>
           </motion.div>
 
@@ -219,8 +237,6 @@ export const Header = () => {
 
           {/* User & Actions Section */}
           <div className="relative z-10 flex items-center flex-shrink-0 gap-3">
-            {/* Đã xóa phần chuyển đổi ngôn ngữ */}
-
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <motion.button
@@ -300,6 +316,7 @@ export const Header = () => {
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  className="hidden md:block"
                 >
                   <Link
                     href="/register"

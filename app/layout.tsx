@@ -25,7 +25,7 @@ export const metadata = {
     "typescript",
   ],
   authors: [{ name: "VinhWorks Team", url: "https://vinhwork.vercel.app" }], // Đã sửa lại link cho đúng domain mới
-  
+
   // 👇 QUAN TRỌNG: Thêm mã xác minh Google ở đây
   verification: {
     google: "-elT34SlFd-jN8jKj04dMDqIwcUy-DV2eEIc3k90uLQ",

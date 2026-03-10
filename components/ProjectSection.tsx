@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowUpRight,
-  Github,
   Code2,
   Loader2,
   Rocket,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import toast from "react-hot-toast";
 
 interface Project {
   _id: string;
@@ -49,12 +47,11 @@ export const ProjectSection = () => {
         const data = await res.json();
         const sorted = data.sort(
           (a: any, b: any) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
         setProjects(sorted.slice(0, 6));
       } catch (error) {
         console.error(error);
-        // Mock data fallback
         const mockProjects: Project[] = [
           {
             _id: "1",
@@ -109,59 +106,50 @@ export const ProjectSection = () => {
   return (
     <section
       id="projects"
-      className="relative py-24 overflow-hidden bg-slate-50"
+      className="relative py-10 overflow-hidden md:py-16 lg:py-8 bg-white"
       suppressHydrationWarning
     >
-      {/* Decorative Background Blobs (Light Mode) */}
+      {/* Decorative Background Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-blue-200/20 rounded-full blur-3xl mix-blend-multiply animate-blob" />
         <div className="absolute bottom-[10%] right-[-10%] w-[600px] h-[600px] bg-purple-200/20 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-2000" />
       </div>
 
       <div className="container relative z-10 px-6 mx-auto max-w-7xl">
-        {/* SECTION HEADER */}
-        <div className="flex flex-col justify-between gap-6 mb-16 md:flex-row md:items-end">
-          <div className="max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-white border border-slate-200 shadow-sm text-sm font-bold text-slate-600"
-            >
-              <Code2 size={16} className="text-blue-500" />
-              <span>Dự án tiêu biểu</span>
-            </motion.div>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl"
-            >
-              Selected{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                Works.
-              </span>
-            </motion.h2>
-          </div>
-
+        {/* CENTERED SECTION HEADER */}
+        <div className="max-w-3xl mx-auto mb-16 text-center">
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-white border border-slate-200 shadow-sm text-sm font-bold text-slate-600"
           >
-            <Link
-              href="/projects"
-              className="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors bg-white px-5 py-2.5 rounded-full shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-100"
-            >
-              <span>Xem tất cả dự án</span>
-              <ArrowUpRight
-                size={16}
-                className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
-              />
-            </Link>
+            <Code2 size={16} className="text-blue-500" />
+            <span>Dự án tiêu biểu</span>
           </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="mb-4 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl"
+          >
+            Selected{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              Works.
+            </span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-base text-slate-600"
+          >
+            Các dự án tiêu biểu được tuyển chọn từ portfolio của chúng tôi
+          </motion.p>
         </div>
 
         {/* Main Project Grid */}
@@ -170,7 +158,7 @@ export const ProjectSection = () => {
             <Loader2 size={40} className="animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 mb-20 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2 lg:grid-cols-3">
             {projects.map((project, idx) => (
               <motion.div
                 key={project._id || idx}
@@ -270,7 +258,7 @@ export const ProjectSection = () => {
           </div>
         )}
 
-        {/* STATS BAR & CTA (Floating) */}
+        {/* CTA BOX with "Xem tất cả" button */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -281,6 +269,7 @@ export const ProjectSection = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 blur-2xl opacity-20 rounded-[2rem]" />
 
           <div className="relative bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
+            {/* Left: Icon & Text */}
             <div className="flex items-center w-full gap-6 md:w-auto">
               <div className="p-4 text-blue-600 bg-blue-50 rounded-2xl">
                 <LayoutTemplate size={32} />
@@ -295,12 +284,13 @@ export const ProjectSection = () => {
               </div>
             </div>
 
-            <div className="flex w-full gap-4 md:w-auto">
+            {/* Right: 3 Buttons */}
+            <div className="flex flex-col w-full gap-3 sm:flex-row md:w-auto">
               <Link href="/projects" className="flex-1 md:flex-none">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center w-full gap-2 px-6 py-3 font-bold transition-all bg-white border shadow-sm text-slate-700 rounded-xl border-slate-200 hover:border-blue-200 hover:text-blue-600"
+                  className="flex items-center justify-center w-full gap-2 px-5 py-3 text-sm font-bold transition-all bg-white border shadow-sm text-slate-700 rounded-xl border-slate-200 hover:border-slate-300 hover:shadow-md whitespace-nowrap"
                 >
                   <Rocket size={18} />
                   Xem Portfolio
@@ -311,7 +301,7 @@ export const ProjectSection = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center w-full gap-2 px-6 py-3 font-bold text-white transition-all shadow-lg bg-slate-900 rounded-xl hover:shadow-xl"
+                  className="flex items-center justify-center w-full gap-2 px-5 py-3 text-sm font-bold text-white transition-all shadow-lg bg-slate-900 rounded-xl hover:shadow-xl whitespace-nowrap"
                 >
                   <Zap size={18} className="text-yellow-400 fill-yellow-400" />
                   Bắt đầu ngay

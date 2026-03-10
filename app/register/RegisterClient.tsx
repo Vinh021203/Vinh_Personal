@@ -60,8 +60,8 @@ const PasswordStrength = ({ password }: { password: string }) => {
               ? score <= 2
                 ? "bg-red-400"
                 : score <= 3
-                ? "bg-yellow-400"
-                : "bg-green-400"
+                  ? "bg-yellow-400"
+                  : "bg-green-400"
               : "bg-slate-100"
           }`}
         />
@@ -146,7 +146,7 @@ export default function RegisterClient() {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate loading
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -305,11 +305,8 @@ export default function RegisterClient() {
         className="flex w-full lg:w-5/12 items-center justify-center p-6 md:p-12 bg-white relative shadow-[-20px_0_40px_rgba(0,0,0,0.02)]"
       >
         <div className="w-full max-w-md space-y-8">
-          {/* Header */}
+          {/* Header - ĐÃ BỎ ICON */}
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center justify-center mb-6 text-white transition-transform duration-300 transform shadow-lg w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-purple-500/30 -rotate-3 hover:rotate-0">
-              <User size={24} />
-            </div>
             <h2 className="text-3xl font-black tracking-tight md:text-4xl text-slate-900">
               Tạo tài khoản
             </h2>

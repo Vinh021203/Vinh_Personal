@@ -246,8 +246,9 @@ export default function AboutClient() {
       />
 
       <main className="min-h-screen overflow-hidden font-sans bg-white text-slate-900">
-        {/* ================= HERO SECTION ================= */}
-        <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32">
+        {/* ================= HERO SECTION (MOBILE OPTIMIZED) ================= */}
+        <section className="relative pt-12 pb-8 lg:py-8">
+          {/* Background Effects */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-orange-300/20 rounded-full blur-[120px] animate-blob mix-blend-multiply" />
             <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-purple-300/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply" />
@@ -255,28 +256,40 @@ export default function AboutClient() {
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]" />
           </div>
 
-          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
-            <div className="flex flex-col items-center gap-16 lg:flex-row">
+          <div className="container relative z-10 px-4 sm:px-6 mx-auto max-w-7xl">
+            <div className="flex flex-col items-center gap-8 lg:gap-16 lg:flex-row">
+              {/* Left Content */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
                 className="flex-1 text-center lg:text-left"
               >
+                {/* Badge */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold text-orange-600 bg-white border border-orange-100 rounded-full shadow-sm"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 mb-6 sm:mb-8 text-xs sm:text-sm font-bold text-orange-600 bg-white border border-orange-100 rounded-full shadow-sm"
                 >
-                  <Sparkles size={16} className="fill-orange-500" />
-                  <span>Creative Developer & UI Designer</span>
+                  <Sparkles
+                    size={14}
+                    className="fill-orange-500 sm:w-4 sm:h-4"
+                  />
+                  <span className="hidden sm:inline">
+                    Creative Developer & UI Designer
+                  </span>
+                  <span className="sm:hidden">Dev & Designer</span>
                 </motion.div>
 
-                <h1 className="text-5xl font-black tracking-tight text-slate-900 sm:text-7xl mb-6 leading-[1.1]">
+                {/* Heading */}
+                <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 lg:text-7xl mb-4 sm:mb-6 leading-[1.1]">
                   Tôi là <span className={gradients.text}>Vinh.</span> <br />
-                  Xây dựng thế giới số.
+                  <span className="text-2xl sm:text-3xl lg:text-5xl">
+                    Xây dựng thế giới số.
+                  </span>
                 </h1>
 
-                <p className="max-w-2xl mx-auto mb-10 text-xl font-medium leading-relaxed text-slate-600 lg:mx-0">
+                {/* Description */}
+                <p className="max-w-2xl mx-auto mb-6 sm:mb-10 text-sm sm:text-lg lg:text-xl font-medium leading-relaxed text-slate-600 lg:mx-0">
                   Kết hợp tư duy logic của một{" "}
                   <span className="font-bold text-blue-600">
                     Lập trình viên
@@ -287,28 +300,32 @@ export default function AboutClient() {
                   đến cảm xúc.
                 </p>
 
-                <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
-                  <Link href="/contact">
+                {/* CTA Buttons - 2 NÚT NGANG MOBILE */}
+                <div className="flex items-center justify-center gap-3 sm:gap-4 lg:justify-start mb-8 sm:mb-12">
+                  <Link href="/contact" className="flex-1 sm:flex-none">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className={`px-8 py-4 ${gradients.primary} text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center gap-3 text-lg`}
+                      className={`w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 ${gradients.primary} text-white font-bold rounded-xl sm:rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 transition-all flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base lg:text-lg`}
                     >
-                      <Mail size={20} />
-                      Liên hệ hợp tác
+                      <Mail size={16} className="sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline">Liên hệ hợp tác</span>
+                      <span className="sm:hidden">Liên hệ</span>
                     </motion.button>
                   </Link>
+
                   <motion.button
                     whileHover={{ scale: 1.05, backgroundColor: "#F8FAFC" }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-3 px-8 py-4 text-lg font-bold transition-all bg-white border-2 text-slate-700 border-slate-100 rounded-2xl hover:border-purple-200 hover:text-purple-600"
+                    className="flex-1 sm:flex-none w-full sm:w-auto flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base lg:text-lg font-bold transition-all bg-white border-2 text-slate-700 border-slate-100 rounded-xl sm:rounded-2xl hover:border-purple-200 hover:text-purple-600"
                   >
-                    <Download size={20} />
-                    Tải CV
+                    <Download size={16} className="sm:w-5 sm:h-5" />
+                    <span>Tải CV</span>
                   </motion.button>
                 </div>
 
-                <div className="flex items-center justify-center gap-8 mt-12 lg:justify-start text-slate-400">
+                {/* Social Links */}
+                <div className="flex items-center justify-center gap-6 sm:gap-8 lg:justify-start text-slate-400">
                   <SocialLink
                     icon={Github}
                     href="#"
@@ -327,17 +344,20 @@ export default function AboutClient() {
                 </div>
               </motion.div>
 
+              {/* Right - Avatar with Floating Badges */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative flex-1 w-full max-w-lg"
+                className="relative flex-1 w-full max-w-sm lg:max-w-lg"
               >
                 <div className="relative aspect-square">
-                  <div className="absolute inset-0 border-[3px] border-dashed border-orange-200 rounded-full animate-[spin_20s_linear_infinite]" />
-                  <div className="absolute inset-4 border-[3px] border-dashed border-purple-200 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
+                  {/* Spinning Borders */}
+                  <div className="absolute inset-0 border-[2px] sm:border-[3px] border-dashed border-orange-200 rounded-full animate-[spin_20s_linear_infinite]" />
+                  <div className="absolute inset-3 sm:inset-4 border-[2px] sm:border-[3px] border-dashed border-purple-200 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
 
-                  <div className="absolute flex items-center justify-center overflow-hidden border-8 border-white rounded-full shadow-2xl inset-8 bg-gradient-to-br from-orange-100 via-white to-purple-100">
+                  {/* Avatar Image */}
+                  <div className="absolute flex items-center justify-center overflow-hidden border-4 sm:border-8 border-white rounded-full shadow-2xl inset-6 sm:inset-8 bg-gradient-to-br from-orange-100 via-white to-purple-100">
                     <Image
                       src="/me.jpg"
                       alt="Vinh Avatar"
@@ -349,30 +369,40 @@ export default function AboutClient() {
                     />
                   </div>
 
-                  <FloatingBadge className="top-10 right-10 bg-white/90">
-                    <div className="flex items-center gap-2 font-bold text-orange-600">
-                      <Zap size={20} className="fill-orange-500" />
-                      <span>Fast & Furious</span>
+                  {/* Floating Badges - MOBILE OPTIMIZED */}
+                  <FloatingBadge className="top-8 sm:top-10 right-8 sm:right-10 bg-white/90">
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-bold text-orange-600 text-xs sm:text-sm">
+                      <Zap
+                        size={16}
+                        className="fill-orange-500 sm:w-5 sm:h-5"
+                      />
+                      <span className="hidden sm:inline">Fast & Furious</span>
+                      <span className="sm:hidden">Fast</span>
                     </div>
                   </FloatingBadge>
 
                   <FloatingBadge
-                    className="left-0 bottom-20 bg-white/90"
+                    className="left-0 bottom-16 sm:bottom-20 bg-white/90"
                     delay={0.2}
                   >
-                    <div className="flex items-center gap-2 font-bold text-purple-600">
-                      <Code2 size={20} />
-                      <span>Clean Code</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-bold text-purple-600 text-xs sm:text-sm">
+                      <Code2 size={16} className="sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline">Clean Code</span>
+                      <span className="sm:hidden">Code</span>
                     </div>
                   </FloatingBadge>
 
                   <FloatingBadge
-                    className="top-1/2 -right-8 bg-white/90"
+                    className="top-1/2 -right-4 sm:-right-8 bg-white/90"
                     delay={0.4}
                   >
-                    <div className="flex items-center gap-2 font-bold text-pink-600">
-                      <Heart size={20} className="fill-pink-500" />
-                      <span>UI/UX Lover</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-bold text-pink-600 text-xs sm:text-sm">
+                      <Heart
+                        size={16}
+                        className="fill-pink-500 sm:w-5 sm:h-5"
+                      />
+                      <span className="hidden sm:inline">UI/UX Lover</span>
+                      <span className="sm:hidden">UI/UX</span>
                     </div>
                   </FloatingBadge>
                 </div>
@@ -414,9 +444,9 @@ export default function AboutClient() {
         </section>
 
         {/* ================= SKILLS BENTO GRID ================= */}
-        <section className="relative py-24">
+        <section className="relative py-8">
           <div className="container max-w-6xl px-6 mx-auto">
-            <div className="mb-20 text-center">
+            <div className="mb-10 text-center">
               <motion.span
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
@@ -438,9 +468,9 @@ export default function AboutClient() {
         </section>
 
         {/* ================= JOURNEY TIMELINE ================= */}
-        <section className="relative py-24 overflow-hidden bg-slate-50/50">
+        <section className="relative py-8 overflow-hidden bg-slate-50/50">
           <div className="container relative z-10 max-w-5xl px-6 mx-auto">
-            <div className="mb-20 text-center">
+            <div className="mb-10 text-center">
               <h2 className="text-4xl font-black md:text-5xl text-slate-900">
                 Hành trình <span className="text-blue-600">phát triển</span>
               </h2>
@@ -518,7 +548,7 @@ export default function AboutClient() {
         </section>
 
         {/* ================= QUOTE / PHILOSOPHY ================= */}
-        <section className="py-24">
+        <section className="py-8">
           <div className="container max-w-5xl px-6 mx-auto">
             <div className="relative rounded-[3rem] bg-white border border-slate-100 p-12 md:p-20 text-center overflow-hidden shadow-2xl shadow-slate-200/50">
               <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
@@ -555,7 +585,7 @@ export default function AboutClient() {
         </section>
 
         {/* ================= CTA ================= */}
-        <section className="relative py-24 overflow-hidden text-center">
+        <section className="relative py-8 overflow-hidden text-center">
           <div className="container relative z-10 px-6 mx-auto">
             <h2 className="mb-8 text-4xl font-black md:text-6xl text-slate-900">
               Sẵn sàng tạo nên <br /> điều{" "}

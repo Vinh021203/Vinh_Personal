@@ -16,11 +16,8 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  ShieldCheck,
   Zap,
   Github,
-  Fingerprint,
-  LayoutTemplate,
   CheckCircle2,
   XCircle,
   Globe,
@@ -64,8 +61,8 @@ const PasswordStrength = ({ password }: { password: string }) => {
               ? score <= 2
                 ? "bg-red-400"
                 : score <= 3
-                ? "bg-yellow-400"
-                : "bg-green-400"
+                  ? "bg-yellow-400"
+                  : "bg-green-400"
               : "bg-slate-200"
           }`}
         />
@@ -97,6 +94,43 @@ const FeatureItem = ({
     </div>
   </motion.div>
 );
+
+// 4. TEXT ROTATOR - Animated Text Switcher
+const TextRotator = () => {
+  const words = [
+    "Next Generation",
+    "Future",
+    "AI-Powered Era",
+    "Smart Solution",
+  ];
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % words.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="relative inline-block">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={index}
+          initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
+        >
+          {words[index]}
+        </motion.span>
+      </AnimatePresence>
+      {/* Placeholder for layout stability */}
+      <span className="invisible">Next Generation</span>
+    </span>
+  );
+};
 
 // --- MAIN CLIENT COMPONENT ---
 
@@ -149,7 +183,6 @@ export default function LoginClient() {
     setLoading(true);
 
     try {
-      // Simulate API delay for better UX visualization
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       const res = await fetch("/api/auth/login", {
@@ -214,7 +247,7 @@ export default function LoginClient() {
         if (userData?.user) {
           setUser(userData.user);
           router.push(
-            userData.user.role === "admin" ? "/admin/dashboard" : "/"
+            userData.user.role === "admin" ? "/admin/dashboard" : "/",
           );
         } else {
           router.push("/");
@@ -247,7 +280,6 @@ export default function LoginClient() {
           <BackgroundBlob className="bg-purple-300 top-0 left-0 w-[800px] h-[800px] animate-blob" />
           <BackgroundBlob className="bg-blue-300 bottom-0 right-0 w-[800px] h-[800px] animate-blob animation-delay-2000" />
           <BackgroundBlob className="bg-pink-300 top-[40%] left-[40%] w-[600px] h-[600px] animate-blob animation-delay-4000" />
-          {/* Grid Pattern Overlay */}
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
         </div>
 
@@ -273,10 +305,7 @@ export default function LoginClient() {
 
               <h1 className="text-5xl font-black text-slate-900 leading-[1.1] mb-4">
                 Experience the <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient-x">
-                  Next Generation
-                </span>{" "}
-                <br />
+                <TextRotator /> <br />
                 of Management.
               </h1>
               <p className="max-w-lg text-lg text-slate-600">
@@ -306,32 +335,17 @@ export default function LoginClient() {
             </div>
           </div>
 
-          {/* Floating Elements (Decorations) */}
-          <motion.div
-            animate={{ y: [0, -20, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute z-20 p-4 bg-white border shadow-xl -top-10 -right-10 rounded-2xl border-slate-100"
-          >
-            <Fingerprint size={32} className="text-blue-500" />
-          </motion.div>
-
-          <motion.div
-            animate={{ y: [0, 20, 0] }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1,
-            }}
-            className="absolute z-20 p-4 bg-white border shadow-xl -bottom-10 -left-10 rounded-2xl border-slate-100"
-          >
-            <ShieldCheck size={32} className="text-green-500" />
-          </motion.div>
+          {/* BỎ CÁC FLOATING ELEMENTS (Fingerprint & ShieldCheck) */}
         </motion.div>
 
         {/* Bottom info */}
         <div className="absolute flex items-center gap-2 text-sm font-medium bottom-8 left-12 text-slate-500">
-          <LayoutTemplate size={16} />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <Cpu size={16} />
+          </motion.div>
           <span>Designed by VinhWorks Creative Team</span>
         </div>
       </motion.div>
@@ -344,11 +358,8 @@ export default function LoginClient() {
         className="flex w-full lg:w-5/12 items-center justify-center p-6 md:p-12 bg-white relative shadow-[-20px_0_40px_rgba(0,0,0,0.02)]"
       >
         <div className="w-full max-w-md space-y-8">
-          {/* Brand Header (Mobile visible) */}
+          {/* Brand Header - ĐÃ BỎ ICON */}
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center justify-center mb-6 text-white transition-transform duration-300 transform shadow-lg w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-blue-500/30 rotate-3 hover:rotate-0">
-              <LogIn size={24} />
-            </div>
             <h2 className="text-3xl font-black tracking-tight md:text-4xl text-slate-900">
               Welcome Back!
             </h2>
@@ -390,7 +401,6 @@ export default function LoginClient() {
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 />
-                {/* Validation Check Icon */}
                 {email.includes("@") && email.includes(".") && (
                   <div className="absolute text-green-500 -translate-y-1/2 right-4 top-1/2">
                     <CheckCircle2 size={18} />
@@ -446,7 +456,6 @@ export default function LoginClient() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {/* Password Strength Meter */}
               <AnimatePresence>
                 {password.length > 0 && (
                   <motion.div
@@ -471,7 +480,6 @@ export default function LoginClient() {
               type="submit"
               className="relative w-full py-4 overflow-hidden font-bold text-white transition-all shadow-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl shadow-blue-500/20 hover:shadow-purple-500/40 group disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {/* Button Shine Effect */}
               <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-10" />
 
               <div className="relative flex items-center justify-center gap-2">

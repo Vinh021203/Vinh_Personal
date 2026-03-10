@@ -91,7 +91,7 @@ export const ServiceSection = () => {
   return (
     <section
       id="services"
-      className="relative py-24 overflow-hidden bg-slate-50"
+      className="relative py-10 overflow-hidden md:py-20 lg:py-8 bg-slate-50"
     >
       {/* Decorative Background Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
@@ -100,15 +100,15 @@ export const ServiceSection = () => {
       </div>
 
       <div className="container relative z-10 px-6 mx-auto max-w-7xl">
-        {/* SECTION HEADER */}
-        <div className="max-w-3xl mx-auto mb-20 text-center">
+        {/* SECTION HEADER - Compact on mobile */}
+        <div className="max-w-3xl mx-auto mb-10 text-center md:mb-16 lg:mb-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-white border border-slate-200 shadow-sm text-sm font-bold text-slate-600"
+            className="inline-flex items-center gap-2 px-3 py-1 mb-4 text-xs font-bold border rounded-full md:px-4 md:py-1.5 md:mb-6 bg-white border-slate-200 shadow-sm md:text-sm text-slate-600"
           >
-            <LayoutTemplate size={16} className="text-violet-500" />
+            <LayoutTemplate size={14} className="text-violet-500 md:size-4" />
             <span>Dịch vụ toàn diện</span>
           </motion.div>
 
@@ -117,7 +117,7 @@ export const ServiceSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="mb-6 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl"
+            className="mb-3 text-3xl font-black tracking-tight md:mb-6 text-slate-900 sm:text-4xl lg:text-5xl"
           >
             Giải pháp công nghệ <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">
@@ -130,15 +130,15 @@ export const ServiceSection = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-lg leading-relaxed text-slate-600"
+            className="text-sm leading-relaxed md:text-base lg:text-lg text-slate-600"
           >
             Không chỉ là viết code, tôi mang đến giải pháp số giúp doanh nghiệp
             của bạn tăng trưởng, tối ưu vận hành và chinh phục khách hàng.
           </motion.p>
         </div>
 
-        {/* BENTO GRID SERVICES */}
-        <div className="grid grid-cols-1 gap-8 mb-20 md:grid-cols-2 lg:grid-cols-3">
+        {/* BENTO GRID SERVICES - Compact on mobile */}
+        <div className="grid grid-cols-1 gap-4 mb-6 md:gap-6 lg:gap-8 md:grid-cols-2 lg:grid-cols-3 md:mb-16 lg:mb-20">
           {services.map((service, idx) => (
             <motion.div
               key={service.id}
@@ -147,38 +147,42 @@ export const ServiceSection = () => {
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1 }}
               whileHover={{ y: -10 }}
-              className={`group relative bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-300 overflow-hidden ${service.colSpan}`}
+              className={`group relative bg-white rounded-2xl md:rounded-[2rem] p-5 md:p-6 lg:p-8 shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-300 overflow-hidden ${service.colSpan}`}
             >
               {/* Hover Gradient Border Effect */}
               <div
                 className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${service.gradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`}
               />
 
-              {/* Icon Box */}
+              {/* Icon Box - Smaller on mobile */}
               <div
-                className={`w-14 h-14 rounded-2xl ${service.bgColor} ${service.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+                className={`w-11 h-11 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl md:rounded-2xl ${service.bgColor} ${service.color} flex items-center justify-center mb-4 md:mb-5 lg:mb-6 group-hover:scale-110 transition-transform duration-300`}
               >
-                <service.icon size={28} strokeWidth={2.5} />
+                <service.icon
+                  size={22}
+                  strokeWidth={2.5}
+                  className="md:w-6 md:h-6 lg:w-7 lg:h-7"
+                />
               </div>
 
-              <h3 className="mb-3 text-2xl font-bold transition-colors text-slate-900 group-hover:text-violet-700">
+              <h3 className="mb-2 text-xl font-bold transition-colors md:mb-3 md:text-2xl text-slate-900 group-hover:text-violet-700">
                 {service.title}
               </h3>
 
-              <p className="mb-6 leading-relaxed text-slate-600">
+              <p className="mb-4 text-sm leading-relaxed md:mb-6 text-slate-600">
                 {service.description}
               </p>
 
-              {/* Feature List */}
-              <ul className="mb-8 space-y-3">
+              {/* Feature List - Compact on mobile */}
+              <ul className="mb-5 space-y-2 md:mb-6 lg:mb-8 md:space-y-3">
                 {service.features.map((feature, fIdx) => (
                   <li
                     key={fIdx}
-                    className="flex items-center gap-3 text-sm font-medium text-slate-500"
+                    className="flex items-center gap-2 text-xs font-medium md:gap-3 md:text-sm text-slate-500"
                   >
                     <CheckCircle2
-                      size={16}
-                      className="text-emerald-500 shrink-0"
+                      size={14}
+                      className="text-emerald-500 shrink-0 md:size-4"
                     />
                     {feature}
                   </li>
@@ -186,19 +190,19 @@ export const ServiceSection = () => {
               </ul>
 
               {/* Link Button */}
-              <div className="flex items-center justify-between pt-6 mt-auto border-t border-slate-100">
+              <div className="flex items-center justify-between pt-4 mt-auto border-t md:pt-6 border-slate-100">
                 <Link
                   href="/contact"
-                  className="flex items-center gap-2 text-sm font-bold transition-colors text-slate-900 group-hover:text-violet-600"
+                  className="flex items-center gap-2 text-xs font-bold transition-colors md:text-sm text-slate-900 group-hover:text-violet-600"
                 >
                   Tư vấn ngay
                   <ArrowRight
-                    size={16}
-                    className="transition-transform group-hover:translate-x-1"
+                    size={14}
+                    className="transition-transform md:size-4 group-hover:translate-x-1"
                   />
                 </Link>
                 <div
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-2xl font-black text-slate-100 absolute bottom-4 right-6 -z-10 select-none scale-150 origin-bottom-right`}
+                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xl md:text-2xl font-black text-slate-100 absolute bottom-3 right-4 md:bottom-4 md:right-6 -z-10 select-none scale-150 origin-bottom-right`}
                 >
                   {idx + 1}
                 </div>
@@ -207,41 +211,47 @@ export const ServiceSection = () => {
           ))}
         </div>
 
-        {/* STATS BAR (Floating) */}
+        {/* STATS BAR (Floating) - Compact on mobile */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="relative max-w-4xl mx-auto"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 blur-2xl opacity-20 rounded-[2rem]" />
-          <div className="relative bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-            {additionalStats.map((stat, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col items-center w-full pt-4 first:pt-0 md:pt-0"
-              >
-                <div className={`mb-2 ${stat.color}`}>
-                  <stat.icon size={24} />
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 blur-2xl opacity-20 rounded-2xl md:rounded-[2rem]" />
+          <div className="relative bg-white rounded-2xl md:rounded-[2rem] p-5 md:p-6 lg:p-8 shadow-xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-5 md:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+            {/* Stats Grid - 3 columns on mobile */}
+            <div className="grid grid-cols-3 gap-3 w-full md:contents">
+              {additionalStats.map((stat, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-col items-center w-full md:pt-0"
+                >
+                  <div className={`mb-1 md:mb-2 ${stat.color}`}>
+                    <stat.icon size={18} className="md:size-6" />
+                  </div>
+                  <div className="mb-0.5 md:mb-1 text-xl md:text-3xl font-black text-slate-900">
+                    {stat.value}
+                  </div>
+                  <div className="text-[10px] md:text-sm font-medium tracking-wider uppercase text-slate-500 text-center leading-tight">
+                    {stat.label}
+                  </div>
                 </div>
-                <div className="mb-1 text-3xl font-black text-slate-900">
-                  {stat.value}
-                </div>
-                <div className="text-sm font-medium tracking-wider uppercase text-slate-500">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
 
-            {/* CTA Button in Stats Bar */}
-            <div className="w-full pt-6 pl-0 md:w-auto md:pt-0 md:pl-8">
+            {/* CTA Button in Stats Bar - Full width on mobile */}
+            <div className="w-full pl-0 md:w-auto md:pt-0 md:pl-8">
               <Link href="/contact">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center w-full gap-2 px-6 py-4 font-bold text-white transition-all shadow-lg whitespace-nowrap bg-slate-900 rounded-xl shadow-slate-900/20 hover:shadow-xl"
+                  className="flex items-center justify-center w-full gap-2 px-5 py-3 text-sm font-bold text-white transition-all shadow-lg md:px-6 md:py-4 whitespace-nowrap bg-slate-900 rounded-xl shadow-slate-900/20 hover:shadow-xl"
                 >
-                  <Zap size={18} className="text-yellow-400 fill-yellow-400" />
+                  <Zap
+                    size={16}
+                    className="text-yellow-400 fill-yellow-400 md:size-[18px]"
+                  />
                   Bắt đầu ngay
                 </motion.button>
               </Link>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus, HelpCircle } from "lucide-react";
+import { Plus, Minus, HelpCircle, Sparkles } from "lucide-react";
 
 const faqs = [
   {
@@ -38,26 +38,53 @@ const faqs = [
 ];
 
 export const FAQSection = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // Mặc định mở câu đầu tiên
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <section className="relative py-24 overflow-hidden bg-slate-50">
-      {/* Decorative Blobs */}
+    <section className="relative py-10 overflow-hidden md:py-16 lg:py-8 bg-slate-50">
+      {/* Animated Background Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[20%] left-[-10%] w-[500px] h-[500px] bg-blue-200/30 rounded-full blur-[100px] mix-blend-multiply" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[500px] h-[500px] bg-purple-200/30 rounded-full blur-[100px] mix-blend-multiply" />
+        <motion.div
+          className="absolute top-[20%] left-[-10%] w-[500px] h-[500px] bg-blue-200/30 rounded-full blur-[100px] mix-blend-multiply"
+          animate={{
+            x: [0, 50, 0],
+            y: [0, 30, 0],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-[10%] right-[-10%] w-[500px] h-[500px] bg-purple-200/30 rounded-full blur-[100px] mix-blend-multiply"
+          animate={{
+            x: [0, -50, 0],
+            y: [0, -30, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+        />
       </div>
 
       <div className="container relative z-10 max-w-4xl px-6 mx-auto">
         {/* Header */}
-        <div className="mb-16 text-center">
+        <div className="mb-10 text-center md:mb-12 lg:mb-14">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-white border border-blue-100 shadow-sm text-sm font-bold text-blue-600"
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="inline-flex items-center gap-2 px-3 py-1 mb-4 text-xs font-bold border rounded-full md:px-4 md:py-1.5 bg-white border-blue-100 shadow-sm md:text-sm text-blue-600"
           >
-            <HelpCircle size={16} />
+            <HelpCircle size={14} className="md:size-4" />
             <span>Hỗ trợ khách hàng</span>
           </motion.div>
 
@@ -65,64 +92,125 @@ export const FAQSection = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl"
+            transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
+            className="mb-3 text-3xl font-black tracking-tight md:mb-4 text-slate-900 sm:text-4xl lg:text-5xl"
           >
             Câu hỏi{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
               thường gặp
             </span>
           </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-sm md:text-base text-slate-600"
+          >
+            Tất cả thông tin bạn cần biết trước khi bắt đầu dự án
+          </motion.p>
         </div>
 
         {/* FAQ List */}
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
+            const isHovered = hoveredIndex === idx;
+
             return (
               <motion.div
                 key={faq.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className={`group relative overflow-hidden rounded-2xl transition-all duration-300 ${
-                  isOpen
-                    ? "shadow-lg bg-white"
-                    : "hover:bg-white hover:shadow-md bg-white/60"
-                }`}
+                transition={{
+                  delay: idx * 0.1,
+                  type: "spring",
+                  stiffness: 100,
+                }}
+                onMouseEnter={() => setHoveredIndex(idx)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                className="relative"
               >
-                {/* Gradient Border Animation */}
-                <div
-                  className={`absolute inset-0 p-[2px] rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 transition-opacity duration-300 pointer-events-none ${
-                    isOpen ? "opacity-100" : "group-hover:opacity-50"
+                {/* Animated Gradient Border */}
+                <motion.div
+                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 blur-sm"
+                  animate={{
+                    opacity: isOpen ? 0.3 : isHovered ? 0.2 : 0,
+                  }}
+                  transition={{ duration: 0.3 }}
+                />
+
+                <motion.div
+                  animate={{
+                    scale: isOpen ? 1.02 : 1,
+                    y: isOpen ? -4 : 0,
+                  }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className={`relative overflow-hidden rounded-2xl transition-all duration-300 ${
+                    isOpen
+                      ? "shadow-xl bg-white ring-2 ring-blue-100"
+                      : "bg-white shadow-sm hover:shadow-md"
                   }`}
                 >
-                  <div className="h-full w-full bg-white rounded-[14px]" />{" "}
-                  {/* Masking inner */}
-                </div>
+                  {/* Top Gradient Accent */}
+                  {isOpen && (
+                    <motion.div
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+                    />
+                  )}
 
-                {/* Content Container (nằm đè lên border mask) */}
-                <div className="relative z-10 bg-transparent rounded-2xl">
+                  {/* Question Button */}
                   <button
                     onClick={() => setOpenIndex(isOpen ? null : idx)}
-                    className="flex items-center justify-between w-full p-6 text-left focus:outline-none"
+                    className="flex items-center justify-between w-full p-5 text-left focus:outline-none md:p-6 group"
                   >
-                    <span
-                      className={`text-lg font-bold transition-colors duration-300 ${
-                        isOpen
-                          ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
-                          : "text-slate-700 group-hover:text-slate-900"
-                      }`}
-                    >
-                      {faq.question}
-                    </span>
+                    <div className="flex items-start gap-3 flex-1 pr-4">
+                      {/* Question Number Badge */}
+                      <motion.div
+                        animate={{
+                          scale: isOpen ? 1.1 : 1,
+                          rotate: isOpen ? 360 : 0,
+                        }}
+                        transition={{ duration: 0.5, type: "spring" }}
+                        className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold transition-all ${
+                          isOpen
+                            ? "bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg"
+                            : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
+                        }`}
+                      >
+                        {idx + 1}
+                      </motion.div>
 
-                    {/* Icon Button */}
-                    <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
+                      {/* Question Text */}
+                      <span
+                        className={`text-base md:text-lg font-bold transition-colors duration-300 ${
+                          isOpen
+                            ? "text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+                            : "text-slate-800 group-hover:text-slate-900"
+                        }`}
+                      >
+                        {faq.question}
+                      </span>
+                    </div>
+
+                    {/* Toggle Icon */}
+                    <motion.div
+                      animate={{
+                        rotate: isOpen ? 180 : 0,
+                        scale: isOpen ? 1.1 : 1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        type: "spring",
+                        stiffness: 200,
+                      }}
+                      className={`flex-shrink-0 flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl transition-all duration-300 ${
                         isOpen
-                          ? "bg-gradient-to-r from-blue-500 to-purple-500 rotate-180"
+                          ? "bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg"
                           : "bg-slate-100 group-hover:bg-slate-200"
                       }`}
                     >
@@ -131,12 +219,15 @@ export const FAQSection = () => {
                       ) : (
                         <Plus
                           size={20}
-                          className="text-slate-500 group-hover:text-slate-700"
+                          className={`transition-colors ${
+                            isHovered ? "text-slate-700" : "text-slate-500"
+                          }`}
                         />
                       )}
-                    </div>
+                    </motion.div>
                   </button>
 
+                  {/* Answer Section */}
                   <AnimatePresence>
                     {isOpen && (
                       <motion.div
@@ -146,20 +237,89 @@ export const FAQSection = () => {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="px-6 pt-0 pb-6">
-                          <div className="w-full h-px mb-4 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-                          <p className="text-base leading-relaxed text-slate-600">
-                            {faq.answer}
-                          </p>
+                        <div className="px-5 pb-5 md:px-6 md:pb-6">
+                          {/* Divider with gradient */}
+                          <motion.div
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: 0.1, duration: 0.4 }}
+                            className="w-full h-px mb-4 bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+                          />
+
+                          {/* Answer Text */}
+                          <motion.div
+                            initial={{ y: -10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.3 }}
+                            className="pl-11"
+                          >
+                            <p className="text-sm leading-relaxed md:text-base text-slate-600">
+                              {faq.answer}
+                            </p>
+
+                            {/* Sparkle Icon for active item */}
+                            <motion.div
+                              initial={{ scale: 0, rotate: -180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ delay: 0.3, type: "spring" }}
+                              className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-blue-600"
+                            >
+                              <Sparkles size={14} className="fill-blue-200" />
+                              <span>Thông tin hữu ích</span>
+                            </motion.div>
+                          </motion.div>
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+
+                  {/* Shine Effect on Hover */}
+                  {isHovered && !isOpen && (
+                    <motion.div
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "100%" }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
+                    />
+                  )}
+                </motion.div>
               </motion.div>
             );
           })}
         </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="mt-10 text-center md:mt-12"
+        >
+          <div className="inline-flex flex-col items-center gap-3 p-6 bg-white border shadow-sm md:flex-row md:p-8 rounded-2xl border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
+                <HelpCircle size={24} className="text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-base font-bold md:text-lg text-slate-900">
+                  Vẫn còn thắc mắc?
+                </h3>
+                <p className="text-xs md:text-sm text-slate-500">
+                  Liên hệ trực tiếp để được tư vấn chi tiết
+                </p>
+              </div>
+            </div>
+            <motion.a
+              href="/contact"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-3 text-sm font-bold text-white transition-all rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg whitespace-nowrap"
+            >
+              Đặt câu hỏi ngay
+            </motion.a>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

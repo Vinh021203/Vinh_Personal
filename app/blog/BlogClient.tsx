@@ -75,11 +75,11 @@ const BlogCard = ({
       className={`group relative h-full ${isList ? "md:col-span-2" : ""}`}
     >
       {/* Animated Gradient Border Background */}
-      <div className="absolute -inset-[1px] bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 rounded-[2rem] opacity-0 group-hover:opacity-100 blur-sm transition duration-500 group-hover:duration-200" />
+      <div className="absolute -inset-[1px] bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 rounded-[2rem] opacity-0 group-hover:opacity-100 blur-sm transition duration-500 group-hover:duration-200" />
 
       {/* Main Card Content */}
       <div
-        className={`relative h-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden flex ${
+        className={`relative h-full bg-white rounded-[2rem] border border-slate-100 shadow-lg shadow-orange-100/50 group-hover:shadow-orange-200/70 overflow-hidden flex transition-all duration-300 ${
           isList ? "flex-col md:flex-row" : "flex-col"
         }`}
       >
@@ -90,7 +90,7 @@ const BlogCard = ({
             background: useMotionTemplate`
               radial-gradient(
                 600px circle at ${mouseX}px ${mouseY}px,
-                rgba(139, 92, 246, 0.05),
+                rgba(251, 146, 60, 0.08),
                 transparent 80%
               )
             `,
@@ -136,7 +136,7 @@ const BlogCard = ({
             </span>
           </div>
 
-          <h3 className="mb-3 text-xl font-bold transition-all duration-300 text-slate-900 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:to-fuchsia-600">
+          <h3 className="mb-3 text-xl font-bold transition-all duration-300 text-slate-900 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-violet-600 group-hover:via-fuchsia-500 group-hover:to-orange-500">
             <Link href={`/blog/${post.slug}`}>{post.title}</Link>
           </h3>
 
@@ -149,7 +149,7 @@ const BlogCard = ({
             {post.tags?.slice(0, 2).map((tag, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-slate-500 bg-slate-100 rounded-lg group-hover:bg-violet-50 group-hover:text-violet-600 transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-slate-500 bg-slate-100 rounded-lg group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors"
               >
                 <Tag size={10} /> {tag}
               </span>
@@ -158,7 +158,7 @@ const BlogCard = ({
 
           <div className="flex items-center justify-between pt-4 mt-auto border-t border-slate-100 group-hover:border-slate-200/50">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-[10px] font-bold">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white text-[10px] font-bold">
                 {post.author.charAt(0)}
               </div>
               <span className="text-xs font-bold text-slate-600">
@@ -167,7 +167,7 @@ const BlogCard = ({
             </div>
             <Link
               href={`/blog/${post.slug}`}
-              className="flex items-center gap-1 text-xs font-bold transition-all text-slate-400 group-hover:text-violet-600 group-hover:gap-2"
+              className="flex items-center gap-1 text-xs font-bold transition-all text-slate-400 group-hover:text-orange-600 group-hover:gap-2"
             >
               Đọc tiếp <ArrowRight size={14} />
             </Link>
@@ -249,7 +249,7 @@ export default function BlogClient() {
 
     if (selectedCategory !== "all") {
       result = result.filter((p) =>
-        p.category.toLowerCase().includes(selectedCategory.toLowerCase())
+        p.category.toLowerCase().includes(selectedCategory.toLowerCase()),
       );
     }
 
@@ -258,7 +258,7 @@ export default function BlogClient() {
       result = result.filter(
         (p) =>
           p.title.toLowerCase().includes(lowerTerm) ||
-          p.excerpt.toLowerCase().includes(lowerTerm)
+          p.excerpt.toLowerCase().includes(lowerTerm),
       );
     }
 
@@ -268,7 +268,7 @@ export default function BlogClient() {
 
   const paginatedPosts = filteredPosts.slice(
     (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
+    currentPage * POSTS_PER_PAGE,
   );
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
 
@@ -282,105 +282,117 @@ export default function BlogClient() {
       />
       <motion.div
         style={{ scaleX }}
-        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 origin-left z-[100]"
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 origin-left z-[100]"
       />
 
-      <main className="min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-violet-200 selection:text-violet-900">
-        {/* ================= HERO HEADER ================= */}
-        <section className="relative pt-32 pb-12 overflow-hidden lg:pt-40 lg:pb-16">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-fuchsia-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob" />
-            <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-cyan-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-2000" />
-            <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-violet-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-4000" />
-            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-          </div>
+      <main className="relative min-h-screen overflow-hidden font-sans bg-white text-slate-900 selection:bg-orange-100 selection:text-orange-900">
+        {/* ================= BACKGROUND TOÀN TRANG ================= */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-orange-300/30 rounded-full blur-[120px] mix-blend-multiply animate-blob" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[800px] h-[800px] bg-purple-300/30 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-2000" />
+          <div className="absolute top-[40%] left-[30%] w-[600px] h-[600px] bg-pink-300/30 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-4000" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]" />
+        </div>
 
-          <div className="container relative z-10 max-w-5xl px-6 mx-auto text-center">
+        {/* ================= HERO HEADER ================= */}
+        <section className="relative py-10 lg:py-10">
+          <div className="container relative z-10 max-w-5xl px-4 sm:px-6 mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
+              className="flex flex-col items-center"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold border border-white rounded-full shadow-sm bg-white/80 backdrop-blur-md text-violet-600 ring-1 ring-violet-100">
-                <Rss size={16} className="fill-violet-500" />
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-sm font-bold border border-white rounded-full shadow-sm bg-white/80 backdrop-blur-md text-orange-600 ring-1 ring-orange-100">
+                <Rss size={14} className="fill-orange-500" />
                 <span>Blog & News</span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-[1.1]">
+              {/* Tiêu đề */}
+              <h1 className="text-4xl md:text-7xl font-black tracking-tight text-slate-900 mb-4 sm:mb-6 leading-[1.1]">
                 Kiến thức &{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500">
                   Xu hướng
                 </span>
               </h1>
 
-              <p className="max-w-2xl mx-auto mb-12 text-xl font-medium leading-relaxed text-slate-600">
+              {/* Mô tả */}
+              <p className="max-w-2xl mx-auto sm:mb-4 text-base sm:text-xl font-medium leading-relaxed text-slate-600">
                 Khám phá kho tàng kiến thức về lập trình, thiết kế và công nghệ
-                được cập nhật liên tục mỗi ngày.
+                <span className="block mt-1 sm:inline">
+                  {" "}
+                  được cập nhật liên tục mỗi ngày.
+                </span>
               </p>
             </motion.div>
           </div>
         </section>
 
         {/* ================= CONTENT AREA ================= */}
-        <section className="py-12 pb-24">
-          <div className="container px-6 mx-auto max-w-7xl">
+        <section className="relative pb-8">
+          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
             {/* Sticky Toolbar */}
             <div className="sticky z-30 mb-12 top-20">
-              <div className="flex flex-col items-center justify-between gap-4 p-4 border shadow-lg bg-white/80 backdrop-blur-xl rounded-2xl border-white/50 shadow-slate-200/50 lg:flex-row">
-                {/* Search */}
-                <div className="relative w-full lg:w-96 group">
-                  <Search
-                    className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-violet-600"
-                    size={20}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Tìm kiếm bài viết..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full py-3 pl-12 pr-4 text-sm font-medium transition-all border outline-none bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-slate-700 placeholder:text-slate-400"
-                  />
-                </div>
+              <div className="relative">
+                <div className="absolute -inset-[1px] bg-gradient-to-r from-orange-400/20 via-purple-400/20 to-pink-400/20 rounded-2xl blur-sm" />
 
-                {/* Filter & View */}
-                <div className="flex items-center w-full gap-4 pb-2 overflow-x-auto lg:w-auto lg:pb-0 no-scrollbar">
-                  <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                          selectedCategory === cat.id
-                            ? "bg-white text-violet-600 shadow-sm"
-                            : "text-slate-500 hover:text-slate-900"
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
+                <div className="relative flex flex-col items-center justify-between gap-4 p-4 border shadow-lg bg-white/90 backdrop-blur-xl rounded-2xl border-white/50 shadow-slate-200/50 lg:flex-row">
+                  {/* Search */}
+                  <div className="relative w-full lg:w-96 group">
+                    <Search
+                      className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-orange-600"
+                      size={20}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm bài viết..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full py-3 pl-12 pr-4 text-sm font-medium transition-all border outline-none bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-700 placeholder:text-slate-400"
+                    />
                   </div>
 
-                  <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200 shrink-0">
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      className={`p-2 rounded-lg transition-all ${
-                        viewMode === "grid"
-                          ? "bg-white text-violet-600 shadow-sm"
-                          : "text-slate-400 hover:text-slate-600"
-                      }`}
-                    >
-                      <Grid3X3 size={20} />
-                    </button>
-                    <button
-                      onClick={() => setViewMode("list")}
-                      className={`p-2 rounded-lg transition-all ${
-                        viewMode === "list"
-                          ? "bg-white text-violet-600 shadow-sm"
-                          : "text-slate-400 hover:text-slate-600"
-                      }`}
-                    >
-                      <List size={20} />
-                    </button>
+                  {/* Filter & View */}
+                  <div className="flex items-center w-full gap-4 pb-2 overflow-x-auto lg:w-auto lg:pb-0 no-scrollbar">
+                    <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                            selectedCategory === cat.id
+                              ? "bg-white text-orange-600 shadow-sm"
+                              : "text-slate-500 hover:text-slate-900"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200 shrink-0">
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-2 rounded-lg transition-all ${
+                          viewMode === "grid"
+                            ? "bg-white text-orange-600 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        <Grid3X3 size={20} />
+                      </button>
+                      <button
+                        onClick={() => setViewMode("list")}
+                        className={`p-2 rounded-lg transition-all ${
+                          viewMode === "list"
+                            ? "bg-white text-orange-600 shadow-sm"
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        <List size={20} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -426,7 +438,7 @@ export default function BlogClient() {
                     setSearchTerm("");
                     setSelectedCategory("all");
                   }}
-                  className="px-6 py-2 mt-6 font-bold text-white transition-colors rounded-full bg-slate-900 hover:bg-slate-800"
+                  className="px-6 py-2 mt-6 font-bold text-white transition-colors rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 hover:shadow-lg"
                 >
                   Xóa bộ lọc
                 </button>
@@ -439,7 +451,7 @@ export default function BlogClient() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="p-3 transition-all bg-white border shadow-sm rounded-xl border-slate-200 text-slate-500 hover:bg-white hover:border-violet-200 hover:text-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-3 transition-all bg-white border shadow-sm rounded-xl border-slate-200 text-slate-500 hover:bg-white hover:border-orange-200 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={20} />
                 </button>
@@ -450,8 +462,8 @@ export default function BlogClient() {
                     onClick={() => setCurrentPage(i + 1)}
                     className={`w-11 h-11 rounded-xl font-bold text-sm transition-all shadow-sm border ${
                       currentPage === i + 1
-                        ? "bg-violet-600 text-white border-violet-600 shadow-violet-500/30"
-                        : "bg-white text-slate-600 border-slate-200 hover:border-violet-200 hover:text-violet-600"
+                        ? "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 text-white border-transparent shadow-orange-500/30"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-orange-200 hover:text-orange-600"
                     }`}
                   >
                     {i + 1}
@@ -463,7 +475,7 @@ export default function BlogClient() {
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="p-3 transition-all bg-white border shadow-sm rounded-xl border-slate-200 text-slate-500 hover:bg-white hover:border-violet-200 hover:text-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-3 transition-all bg-white border shadow-sm rounded-xl border-slate-200 text-slate-500 hover:bg-white hover:border-orange-200 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -473,50 +485,46 @@ export default function BlogClient() {
         </section>
 
         {/* ================= NEWSLETTER ================= */}
-        <section className="relative py-24 overflow-hidden">
-          <div className="container relative z-10 px-6 mx-auto max-w-7xl">
-            <div className="relative overflow-hidden text-center bg-white border shadow-2xl rounded-[3rem] p-12 md:p-20 border-slate-100">
-              {/* Abstract Glows */}
-              <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-cyan-100/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" />
-              <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-fuchsia-100/50 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" />
-              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
-
+        <section className="relative py-8">
+          <div className="container relative z-10 px-4 sm:px-6 mx-auto max-w-7xl">
+            <div className="relative overflow-hidden text-center bg-white/80 backdrop-blur-xl border shadow-2xl rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 md:p-20 border-white/50">
               <div className="relative z-10 max-w-3xl mx-auto">
-                <div className="inline-flex p-4 mb-8 bg-white border shadow-sm rounded-2xl border-slate-100 text-violet-600">
-                  <Mail size={32} />
+                <div className="inline-flex p-3 sm:p-4 mb-6 sm:mb-8 bg-white border shadow-sm rounded-2xl border-slate-100 text-orange-600">
+                  <Mail size={28} />
                 </div>
 
-                <h2 className="mb-6 text-4xl font-black leading-tight text-slate-900 md:text-6xl">
-                  Đừng bỏ lỡ <br />{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-fuchsia-600">
+                <h2 className="mb-4 sm:mb-6 text-3xl sm:text-4xl md:text-6xl font-black leading-tight text-slate-900">
+                  Đừng bỏ lỡ <br className="hidden sm:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500">
                     Kiến thức mới
                   </span>
                 </h2>
 
-                <p className="mb-10 text-lg font-medium text-slate-500">
+                <p className="mb-8 sm:mb-10 text-base sm:text-lg font-medium text-slate-600">
                   Đăng ký nhận bản tin hàng tuần để cập nhật những bài viết,
                   tutorial và tài nguyên miễn phí chất lượng nhất.
                 </p>
 
+                {/* ✅ flex-row luôn — input co giãn, nút cố định */}
                 <form
-                  className="flex flex-col gap-4 sm:flex-row"
+                  className="flex flex-row gap-2 sm:gap-4"
                   onSubmit={(e) => e.preventDefault()}
                 >
                   <input
                     type="email"
-                    placeholder="Địa chỉ email của bạn"
-                    className="flex-1 px-6 py-4 transition-all bg-white border-2 shadow-sm outline-none text-slate-900 rounded-2xl border-slate-200 placeholder:text-slate-400 focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500"
+                    placeholder="Email của bạn"
+                    className="flex-1 min-w-0 px-4 sm:px-6 py-3.5 sm:py-4 transition-all bg-white border-2 shadow-sm outline-none text-sm sm:text-base text-slate-900 rounded-xl sm:rounded-2xl border-slate-200 placeholder:text-slate-400 focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500"
                   />
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="px-10 py-4 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-2xl hover:shadow-violet-500/30"
+                    className="shrink-0 px-5 sm:px-10 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white transition-all shadow-lg bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 rounded-xl sm:rounded-2xl hover:shadow-orange-500/30 active:scale-95 whitespace-nowrap"
                   >
-                    Đăng ký ngay
+                    Đăng ký
                   </motion.button>
                 </form>
 
-                <p className="mt-6 text-xs font-medium text-slate-400">
+                <p className="mt-4 sm:mt-6 text-xs font-medium text-slate-400">
                   Cam kết không spam. Hủy đăng ký bất cứ lúc nào.
                 </p>
               </div>

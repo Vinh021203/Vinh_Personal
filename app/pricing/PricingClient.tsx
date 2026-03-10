@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import {
@@ -17,7 +17,8 @@ import {
   Clock,
   HelpCircle,
   X,
-  Phone, // Thêm icon Phone nếu thiếu
+  Phone,
+  Send,
 } from "lucide-react";
 
 // --- DATA ---
@@ -86,7 +87,8 @@ const plans = [
     notIncluded: [],
     color: "text-orange-500",
     bg: "bg-orange-50",
-    buttonColor: "bg-orange-500 hover:bg-orange-600",
+    buttonColor:
+      "bg-gradient-to-r from-amber-400 to-orange-500 hover:shadow-orange-200 hover:shadow-lg",
     popular: false,
   },
 ];
@@ -122,35 +124,38 @@ const PricingCard = ({ plan }: { plan: (typeof plans)[0] }) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       whileHover={{ y: -8 }}
-      className={`relative flex flex-col h-full p-8 bg-white border rounded-[2.5rem] transition-all duration-300 ${
+      className={`relative flex flex-col h-full p-6 sm:p-8 bg-white border rounded-[2rem] transition-all duration-300 ${
         plan.popular
-          ? "border-purple-200 shadow-2xl shadow-purple-500/10 scale-105 z-10"
+          ? "border-purple-200 shadow-2xl shadow-purple-500/10 z-10"
           : "border-slate-100 shadow-lg hover:shadow-xl"
       }`}
     >
+      {/* Badge Phổ biến nhất */}
       {plan.popular && (
         <div className="absolute top-0 -translate-x-1/2 -translate-y-1/2 left-1/2">
-          <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold uppercase tracking-wider shadow-lg">
+          <span className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
             <Star size={12} className="fill-white" /> Phổ biến nhất
           </span>
         </div>
       )}
 
-      <div className="mb-6">
+      <div className="mb-5">
         <div
-          className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6 ${plan.bg} ${plan.color}`}
+          className={`inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl mb-4 sm:mb-6 ${plan.bg} ${plan.color}`}
         >
-          <plan.icon size={28} />
+          <plan.icon size={24} />
         </div>
-        <h3 className="mb-2 text-2xl font-black text-slate-900">{plan.name}</h3>
-        <p className="text-slate-500 text-sm leading-relaxed min-h-[40px]">
+        <h3 className="mb-1.5 text-xl sm:text-2xl font-black text-slate-900">
+          {plan.name}
+        </h3>
+        <p className="text-slate-500 text-sm leading-relaxed min-h-[36px]">
           {plan.desc}
         </p>
       </div>
 
-      <div className="pb-8 mb-8 border-b border-slate-100">
-        <div className="flex items-baseline gap-1">
-          <span className={`text-4xl font-black ${plan.color}`}>
+      <div className="pb-5 mb-5 border-b border-slate-100">
+        <div className="flex items-baseline gap-1 flex-wrap">
+          <span className={`text-3xl sm:text-4xl font-black ${plan.color}`}>
             {plan.price}
           </span>
           <span className="text-sm font-medium text-slate-400">
@@ -159,22 +164,22 @@ const PricingCard = ({ plan }: { plan: (typeof plans)[0] }) => {
         </div>
       </div>
 
-      <ul className="flex-grow mb-8 space-y-4">
+      <ul className="flex-grow mb-6 space-y-3">
         {plan.features.map((feature, idx) => (
           <li
             key={idx}
-            className="flex items-start gap-3 text-sm text-slate-600"
+            className="flex items-start gap-2.5 text-sm text-slate-600"
           >
-            <CheckCircle2 className={`w-5 h-5 shrink-0 ${plan.color}`} />
+            <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${plan.color}`} />
             <span>{feature}</span>
           </li>
         ))}
         {plan.notIncluded?.map((feature, idx) => (
           <li
             key={idx}
-            className="flex items-start gap-3 text-sm text-slate-400 opacity-60"
+            className="flex items-start gap-2.5 text-sm text-slate-400 opacity-60"
           >
-            <X className="w-5 h-5 shrink-0" />
+            <X className="w-4 h-4 shrink-0 mt-0.5" />
             <span className="line-through">{feature}</span>
           </li>
         ))}
@@ -182,7 +187,7 @@ const PricingCard = ({ plan }: { plan: (typeof plans)[0] }) => {
 
       <Link href="/contact" className="mt-auto">
         <button
-          className={`w-full py-4 rounded-xl text-white font-bold shadow-md transition-all hover:shadow-xl active:scale-95 ${plan.buttonColor}`}
+          className={`w-full py-3.5 rounded-xl text-white text-sm font-bold shadow-md transition-all hover:shadow-xl active:scale-95 ${plan.buttonColor}`}
         >
           Chọn gói này
         </button>
@@ -204,26 +209,25 @@ const FAQItem = ({
     <div className="overflow-hidden transition-all duration-300 bg-white border border-slate-200 rounded-2xl hover:border-purple-200">
       <button
         onClick={onClick}
-        className="flex items-center justify-between w-full p-6 text-left focus:outline-none"
+        className="flex items-center justify-between w-full p-5 sm:p-6 text-left focus:outline-none gap-3"
       >
         <span
-          className={`font-bold text-lg transition-colors ${
+          className={`font-bold text-base sm:text-lg transition-colors ${
             isOpen ? "text-purple-600" : "text-slate-700"
           }`}
         >
           {item.question}
         </span>
         <div
-          className={`p-2 rounded-full transition-all duration-300 ${
-            isOpen ? "bg-purple-100 rotate-180" : "bg-slate-100"
+          className={`p-1.5 rounded-full shrink-0 transition-all duration-300 ${
+            isOpen ? "bg-purple-100" : "bg-slate-100"
           }`}
         >
           <ArrowRight
-            size={18}
-            className={`transition-colors ${
-              isOpen ? "text-purple-600" : "text-slate-500"
+            size={16}
+            className={`transition-transform duration-300 ${
+              isOpen ? "text-purple-600 rotate-90" : "text-slate-500 rotate-0"
             }`}
-            style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
           />
         </div>
       </button>
@@ -235,9 +239,11 @@ const FAQItem = ({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="px-6 pt-0 pb-6">
+            <div className="px-5 sm:px-6 pt-0 pb-5 sm:pb-6">
               <div className="w-full h-px mb-4 bg-slate-100" />
-              <p className="leading-relaxed text-slate-600">{item.answer}</p>
+              <p className="text-sm sm:text-base leading-relaxed text-slate-600">
+                {item.answer}
+              </p>
             </div>
           </motion.div>
         )}
@@ -250,6 +256,7 @@ const FAQItem = ({
 export default function PricingClient() {
   const [mounted, setMounted] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [activeIndex, setActiveIndex] = useState(0);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
@@ -259,6 +266,11 @@ export default function PricingClient() {
 
   if (!mounted) return null;
 
+  // Card width = 82vw + gap 16px
+  const CARD_WIDTH =
+    typeof window !== "undefined" ? 0.82 * window.innerWidth + 16 : 300;
+  const maxIndex = plans.length - 1;
+
   return (
     <>
       <motion.div
@@ -267,96 +279,196 @@ export default function PricingClient() {
       />
 
       <main className="min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-purple-100 selection:text-purple-900">
-        {/* HEADER */}
-        <section className="relative pt-32 pb-20 overflow-hidden lg:pt-48 lg:pb-32">
+        {/* ================= HEADER ================= */}
+        <section className="relative pt-10 pb-10 overflow-hidden lg:pt-8 lg:pb-8">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob" />
             <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-orange-200/40 rounded-full blur-[120px] mix-blend-multiply animate-blob animation-delay-2000" />
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
           </div>
 
-          <div className="container relative z-10 px-6 mx-auto text-center">
+          <div className="container relative z-10 px-4 sm:px-6 mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
+              className="flex flex-col items-center"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 text-sm font-bold text-purple-600 bg-white border border-purple-100 rounded-full shadow-sm">
-                <Zap size={16} className="fill-purple-500" />
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-sm font-bold text-purple-600 bg-white border border-purple-100 rounded-full shadow-sm">
+                <Zap size={14} className="fill-purple-500" />
                 <span>Đầu tư thông minh</span>
               </div>
 
-              <h1 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 mb-8 leading-[1.1]">
-                Bảng giá <br />
+              <h1 className="text-4xl md:text-7xl font-black tracking-tight text-slate-900 mb-4 sm:mb-6 leading-[1.1]">
+                Bảng giá <br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500">
                   Minh bạch & Linh hoạt
                 </span>
               </h1>
 
-              <p className="max-w-2xl mx-auto mb-12 text-xl font-medium leading-relaxed text-slate-600">
-                Chọn gói dịch vụ phù hợp với nhu cầu của bạn. Không chi phí ẩn,
-                cam kết chất lượng đầu ra.
+              <p className="max-w-2xl mx-auto mb-8 sm:mb-12 text-base sm:text-xl font-medium leading-relaxed text-slate-600">
+                Chọn gói dịch vụ phù hợp với nhu cầu của bạn.{" "}
+                <span className="block mt-1 sm:inline">
+                  Không chi phí ẩn, cam kết chất lượng đầu ra.
+                </span>
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* PRICING CARDS */}
-        <section className="py-10 pb-32">
-          <div className="container px-6 mx-auto max-w-7xl">
-            <div className="grid items-start grid-cols-1 gap-8 md:grid-cols-3 lg:gap-12">
+        {/* ================= PRICING CARDS ================= */}
+        <section className="py-8 pb-8">
+          <div className="container px-4 sm:px-6 mx-auto max-w-7xl">
+            {/* ── MOBILE: snap slider ── */}
+            <div className="md:hidden">
+              {/* overflow-visible để badge "Phổ biến nhất" không bị clip */}
+              <div className="relative overflow-visible">
+                <motion.div
+                  className="flex gap-4 pl-4 cursor-grab active:cursor-grabbing"
+                  drag="x"
+                  dragConstraints={{
+                    left: -(maxIndex * CARD_WIDTH),
+                    right: 0,
+                  }}
+                  dragElastic={0.08}
+                  dragTransition={{ bounceStiffness: 300, bounceDamping: 30 }}
+                  animate={{ x: -(activeIndex * CARD_WIDTH) }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  onDragEnd={(_, info) => {
+                    const threshold = CARD_WIDTH * 0.3;
+                    if (info.offset.x < -threshold) {
+                      setActiveIndex((prev) => Math.min(prev + 1, maxIndex));
+                    } else if (info.offset.x > threshold) {
+                      setActiveIndex((prev) => Math.max(prev - 1, 0));
+                    }
+                  }}
+                  whileTap={{ cursor: "grabbing" }}
+                >
+                  {plans.map((plan, idx) => (
+                    <div
+                      key={plan.id}
+                      className="min-w-[82vw] max-w-[82vw] pt-5"
+                      // pt-5 để badge "Phổ biến nhất" có chỗ hiển thị
+                    >
+                      <PricingCard plan={plan} />
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* Dot indicator — tap để nhảy card */}
+                <div className="flex justify-center gap-2 mt-5">
+                  {plans.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveIndex(i)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        i === activeIndex
+                          ? "w-6 bg-orange-500"
+                          : "w-1.5 bg-slate-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <motion.p
+                  className="mt-2 text-xs font-medium text-center text-slate-400"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  ← Vuốt để xem thêm →
+                </motion.p>
+              </div>
+            </div>
+
+            {/* ── DESKTOP: grid 3 cols ── */}
+            <div className="hidden md:grid items-start grid-cols-3 gap-8 lg:gap-12 pt-6">
               {plans.map((plan, idx) => (
-                <PricingCard key={plan.id} plan={plan} />
+                <motion.div
+                  key={plan.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.15 }}
+                  className={plan.popular ? "mt-[-1.5rem]" : ""}
+                >
+                  <PricingCard plan={plan} />
+                </motion.div>
               ))}
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap justify-center gap-8 pt-10 mt-20 transition-all duration-500 border-t border-slate-200 md:gap-16 grayscale opacity-70 hover:grayscale-0 hover:opacity-100">
-              <div className="flex items-center gap-3">
-                <ShieldCheck size={32} className="text-green-600" />
-                <div>
-                  <p className="font-bold text-slate-900">Bảo hành trọn đời</p>
-                  <p className="text-xs text-slate-500">Cho lỗi kỹ thuật</p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mt-8 pt-8 border-t border-slate-200"
+            >
+              <div className="grid grid-cols-3 gap-3 sm:gap-8 md:gap-16 transition-all duration-500 grayscale opacity-70 hover:grayscale-0 hover:opacity-100">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                  <div className="p-2 rounded-xl bg-green-50 shrink-0">
+                    <ShieldCheck size={20} className="text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
+                      Bảo hành trọn đời
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                      Cho lỗi kỹ thuật
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                  <div className="p-2 rounded-xl bg-blue-50 shrink-0">
+                    <Clock size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
+                      Đúng tiến độ
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                      Cam kết trong hợp đồng
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                  <div className="p-2 rounded-xl bg-purple-50 shrink-0">
+                    <Users size={20} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">
+                      Hỗ trợ 1:1
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                      Qua Zalo/Telegram
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Clock size={32} className="text-blue-600" />
-                <div>
-                  <p className="font-bold text-slate-900">Đúng tiến độ</p>
-                  <p className="text-xs text-slate-500">
-                    Cam kết trong hợp đồng
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Users size={32} className="text-purple-600" />
-                <div>
-                  <p className="font-bold text-slate-900">Hỗ trợ 1:1</p>
-                  <p className="text-xs text-slate-500">Qua Zalo/Telegram</p>
-                </div>
-              </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* FAQ SECTION */}
-        <section className="relative py-24 overflow-hidden bg-white">
+        {/* ================= FAQ ================= */}
+        <section className="relative py-8 overflow-hidden bg-white">
           <div className="absolute top-0 left-0 w-full h-full origin-top-left transform skew-y-3 bg-slate-50 -z-10" />
 
-          <div className="container relative z-10 max-w-3xl px-6 mx-auto">
-            <div className="mb-16 text-center">
+          <div className="container relative z-10 max-w-3xl px-4 sm:px-6 mx-auto">
+            <div className="mb-10 sm:mb-16 text-center">
               <div className="inline-flex p-3 mb-6 text-purple-600 bg-purple-100 rounded-2xl">
-                <HelpCircle size={32} />
+                <HelpCircle size={28} />
               </div>
-              <h2 className="mb-4 text-4xl font-black text-slate-900">
+              <h2 className="mb-3 text-3xl sm:text-4xl font-black text-slate-900">
                 Câu hỏi thường gặp
               </h2>
-              <p className="text-slate-600">
+              <p className="text-sm sm:text-base text-slate-600">
                 Giải đáp những thắc mắc phổ biến nhất của khách hàng
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {faqs.map((faq, idx) => (
                 <FAQItem
                   key={idx}
@@ -371,51 +483,51 @@ export default function PricingClient() {
           </div>
         </section>
 
-        {/* CTA BOTTOM - Light Mode Version */}
-        <section className="relative py-24 overflow-hidden text-center">
-          <div className="container relative z-10 px-6 mx-auto">
-            <div className="bg-gradient-to-br from-slate-50 to-white rounded-[3rem] p-12 md:p-20 relative overflow-hidden shadow-xl border border-slate-100">
-              {/* Decorative Blobs */}
+        {/* ================= CTA BOTTOM ================= */}
+        <section className="relative py-8 overflow-hidden text-center">
+          <div className="container relative z-10 px-4 sm:px-6 mx-auto">
+            <div className="bg-gradient-to-br from-slate-50 to-white rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 md:p-20 relative overflow-hidden shadow-xl border border-slate-100">
               <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-purple-200/30 rounded-full blur-[100px] pointer-events-none" />
               <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-orange-200/30 rounded-full blur-[100px] pointer-events-none" />
               <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
 
               <div className="relative z-10 max-w-3xl mx-auto">
-                <h2 className="mb-8 text-4xl font-black md:text-5xl text-slate-900">
+                <h2 className="mb-4 sm:mb-8 text-3xl sm:text-4xl md:text-5xl font-black text-slate-900">
                   Chưa tìm thấy{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-orange-500">
                     gói phù hợp?
                   </span>
                 </h2>
 
-                <p className="mb-10 text-lg font-medium leading-relaxed text-slate-600">
+                <p className="mb-8 sm:mb-10 text-base sm:text-lg font-medium leading-relaxed text-slate-600">
                   Đừng lo lắng! Chúng tôi sẵn sàng thiết kế một giải pháp riêng
                   biệt, "may đo" chính xác theo nhu cầu và ngân sách của bạn.
                 </p>
 
-                <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                  <Link href="/contact">
+                {/* ✅ flex-row luôn — 2 nút ngang cả mobile lẫn desktop */}
+                <div className="flex flex-row justify-center gap-3 sm:gap-4">
+                  <Link href="/contact" className="flex-1 sm:flex-none">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="flex items-center justify-center gap-2 px-10 py-4 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-purple-600 to-orange-500 rounded-xl shadow-purple-500/20 hover:shadow-purple-500/40"
+                      className="w-full flex items-center justify-center gap-2 px-5 sm:px-10 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white transition-all shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl shadow-orange-500/20 hover:shadow-orange-500/40 active:scale-95"
                     >
-                      <MessageCircle size={20} />
-                      Tư vấn giải pháp riêng
+                      <MessageCircle size={16} />
+                      <span className="truncate">Tư vấn ngay</span>
                     </motion.button>
                   </Link>
 
-                  <Link href="tel:0971386588">
+                  <Link href="tel:0971386588" className="flex-1 sm:flex-none">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="flex items-center justify-center gap-2 px-10 py-4 font-bold transition-all bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:border-purple-200 hover:text-purple-600"
+                      className="w-full flex items-center justify-center gap-2 px-5 sm:px-10 py-3.5 sm:py-4 text-sm sm:text-base font-bold transition-all bg-white border-2 border-slate-200 text-slate-700 rounded-xl hover:border-purple-200 hover:text-purple-600 active:scale-95"
                     >
-                      <span className="relative flex w-3 h-3 mr-1">
-                        <span className="absolute inline-flex w-full h-full bg-green-400 rounded-full opacity-75 animate-ping"></span>
-                        <span className="relative inline-flex w-3 h-3 bg-green-500 rounded-full"></span>
+                      <span className="relative flex w-3 h-3 shrink-0">
+                        <span className="absolute inline-flex w-full h-full bg-green-400 rounded-full opacity-75 animate-ping" />
+                        <span className="relative inline-flex w-3 h-3 bg-green-500 rounded-full" />
                       </span>
-                      Gọi ngay hotline
+                      <span className="truncate">Gọi hotline</span>
                     </motion.button>
                   </Link>
                 </div>

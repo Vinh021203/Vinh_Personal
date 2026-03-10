@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 180" width="600" height="180">
+  <defs>
+    <!-- Gradient màu vàng cam (Orange to Red-Orange) -->
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b" /> <!-- Amber-500 -->
+      <stop offset="50%" style="stop-color:#fb923c" /> <!-- Orange-400 -->
+      <stop offset="100%" style="stop-color:#f97316" /> <!-- Orange-500 -->
+    </linearGradient>
+
+    <!-- Hiệu ứng phát sáng Neon (nhẹ) -->
+    <filter id="orangeGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Gradient cho lớp shine (ánh sáng trên chữ) -->
+    <linearGradient id="textShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff; stop-opacity:0.4" />
+      <stop offset="60%" style="stop-color:#ffffff; stop-opacity:0" />
+    </linearGradient>
+  </defs>
+
+  <!-- CHỮ VIỀN (Border/Stroke) - Màu đậm hơn làm viền -->
+  <text x="300" y="110" 
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        font-weight="700" 
+        font-size="72" 
+        fill="none"
+        stroke="#ea580c"
+        stroke-width="2"
+        text-anchor="middle"
+        letter-spacing="-1"
+        opacity="0.6">
+    VinhWorks
+  </text>
+
+  <!-- CHỮ CHÍNH: VinhWorks (Mỏng hơn - font-weight 700 thay vì 900) -->
+  <text x="300" y="110" 
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        font-weight="700" 
+        font-size="72" 
+        fill="url(#orangeGrad)" 
+        text-anchor="middle"
+        letter-spacing="-1"
+        filter="url(#orangeGlow)">
+    VinhWorks
+  </text>
+
+  <!-- Lớp overlay sáng bóng (Shine layer) -->
+  <text x="300" y="110" 
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+        font-weight="700" 
+        font-size="72" 
+        fill="url(#textShine)" 
+        text-anchor="middle"
+        letter-spacing="-1"
+        opacity="0.25">
+    VinhWorks
+  </text>
+
+  <!-- Dấu gạch dưới chạy sáng (Underline animation) -->
+  <line x1="150" y1="125" x2="450" y2="125" 
+        stroke="url(#orangeGrad)" 
+        stroke-width="3" 
+        stroke-linecap="round"
+        filter="url(#orangeGlow)"
+        opacity="0.4">
+    <animate attributeName="stroke-dasharray" 
+             values="0 300; 300 0; 0 300" 
+             dur="4s" 
+             repeatCount="indefinite" />
+  </line>
+
+  <!-- ICON 1: LIGHTNING BOLT ⚡ (XA HƠN) -->
+  <g transform="translate(495, 30)" filter="url(#orangeGlow)">
+    <path d="M 15 0 L 5 18 L 12 18 L 8 35 L 22 12 L 15 12 Z" 
+          fill="url(#orangeGrad)" 
+          stroke="#fb923c" 
+          stroke-width="1.5"
+          stroke-linejoin="round">
+      <!-- Animation: Nhấp nháy sáng (Flash) -->
+      <animate attributeName="opacity" 
+               values="1;0.4;1;0.4;1" 
+               dur="2s" 
+               repeatCount="indefinite" />
+    </path>
+  </g>
+
+  <!-- ICON 2: CODE BRACKETS </> (XA HƠN) -->
+  <g transform="translate(485, 95)" filter="url(#orangeGlow)">
+    <!-- Dấu < (chevron trái) -->
+    <path d="M 18 0 L 0 20 L 18 40" 
+          fill="none" 
+          stroke="url(#orangeGrad)" 
+          stroke-width="5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round">
+      <!-- Animation: Mở rộng - Thu hẹp -->
+      <animateTransform attributeName="transform"
+                        type="translate"
+                        values="0,0; -3,0; 0,0"
+                        dur="2s"
+                        repeatCount="indefinite" />
+    </path>
+    
+    <!-- Dấu / (slash giữa) -->
+    <line x1="24" y1="5" x2="34" y2="35" 
+          stroke="#fb923c" 
+          stroke-width="4" 
+          stroke-linecap="round"
+          opacity="0.8">
+      <!-- Animation: Nhấp nháy nhẹ -->
+      <animate attributeName="opacity" 
+               values="0.8;0.4;0.8" 
+               dur="1.5s" 
+               repeatCount="indefinite" />
+    </line>
+    
+    <!-- Dấu > (chevron phải) -->
+    <path d="M 40 0 L 58 20 L 40 40" 
+          fill="none" 
+          stroke="url(#orangeGrad)" 
+          stroke-width="5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round">
+      <!-- Animation: Mở rộng - Thu hẹp (ngược chiều) -->
+      <animateTransform attributeName="transform"
+                        type="translate"
+                        values="0,0; 3,0; 0,0"
+                        dur="2s"
+                        repeatCount="indefinite" />
+    </path>
+  </g>
+</svg>

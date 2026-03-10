@@ -6,7 +6,6 @@ import {
   Linkedin,
   Twitter,
   Youtube,
-  Monitor,
   ArrowUp,
   Send,
   MapPin,
@@ -18,14 +17,17 @@ import {
   Clock,
   ChevronRight,
   ExternalLink,
+  ChevronDown,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export const Footer = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [email, setEmail] = useState("");
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
@@ -35,7 +37,10 @@ export const Footer = () => {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // Data cấu trúc theo cột chuyên nghiệp
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
   const solutions = [
     { name: "Thiết kế Website UI/UX", href: "#" },
     { name: "Phát triển Web App", href: "#" },
@@ -62,25 +67,35 @@ export const Footer = () => {
   ];
 
   return (
-    <footer className="relative pt-20 font-sans border-t bg-gradient-to-b from-white via-orange-50/40 to-rose-50/60 text-slate-600 border-orange-100/50">
+    <footer className="relative pt-4 lg:pt-20 font-sans border-t bg-gradient-to-b from-white via-orange-50/40 to-rose-50/60 text-slate-600 border-orange-100/50">
       {/* Decorative Top Border Gradient */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-amber-400 to-rose-400 opacity-80" />
 
       <div className="container px-6 mx-auto max-w-7xl">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-8">
-          {/* COLUMN 1: BRAND & SOCIALS (Col-span-3) */}
-          <div className="space-y-6 lg:col-span-3">
-            <Link href="/" className="flex items-center gap-3 group w-fit">
-              <div className="relative flex items-center justify-center w-12 h-12 text-white transition-transform duration-300 shadow-lg bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl group-hover:rotate-6">
-                <Monitor size={24} />
+        {/* DESKTOP VERSION - Hidden on mobile */}
+        <div className="hidden grid-cols-1 gap-12 lg:grid lg:grid-cols-12 lg:gap-8">
+          {/* COLUMN 1: BRAND & SOCIALS */}
+          <div className="space-y-4 lg:col-span-3">
+            <Link href="/" className="flex flex-col items-center group w-fit">
+              <div className="relative h-10">
+                <Image
+                  src="/logo.svg"
+                  alt="VinhWorks"
+                  width={180}
+                  height={40}
+                  className="object-contain transition-transform duration-300 group-hover:scale-105"
+                  priority
+                />
               </div>
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-800">
-                  VinhWorks
-                </h2>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-500">
-                  Tech Solutions
-                </p>
+              <div className="relative mt-0.5 h-5">
+                <Image
+                  src="/solution.svg"
+                  alt="Tech Solutions"
+                  width={140}
+                  height={20}
+                  className="object-contain"
+                  priority
+                />
               </div>
             </Link>
 
@@ -103,7 +118,7 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMN 2: SOLUTIONS (Col-span-3) */}
+          {/* COLUMN 2: SOLUTIONS */}
           <div className="lg:col-span-3">
             <h3 className="pb-1 mb-6 text-sm font-bold tracking-wider uppercase border-b-2 border-orange-200 text-slate-900 w-fit">
               Giải pháp & Dịch vụ
@@ -131,7 +146,7 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* COLUMN 3: COMPANY (Col-span-3) */}
+          {/* COLUMN 3: COMPANY */}
           <div className="lg:col-span-3">
             <h3 className="pb-1 mb-6 text-sm font-bold tracking-wider uppercase border-b-2 text-slate-900 border-rose-200 w-fit">
               Về công ty
@@ -154,7 +169,6 @@ export const Footer = () => {
               ))}
             </ul>
 
-            {/* Mini Certification Badge Area */}
             <div className="pt-6 mt-8 border-t border-slate-100">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
                 <ShieldCheck size={16} className="text-emerald-500" />
@@ -163,9 +177,8 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMN 4: CONTACT & NEWSLETTER (Col-span-3) */}
+          {/* COLUMN 4: CONTACT & NEWSLETTER */}
           <div className="space-y-6 lg:col-span-3">
-            {/* Contact Info Block */}
             <div>
               <h3 className="pb-1 mb-6 text-sm font-bold tracking-wider uppercase border-b-2 text-slate-900 border-amber-200 w-fit">
                 Trụ sở chính
@@ -207,7 +220,6 @@ export const Footer = () => {
               </ul>
             </div>
 
-            {/* Compact Newsletter */}
             <div className="p-4 bg-white border shadow-sm border-slate-200 rounded-2xl">
               <p className="mb-2 text-xs font-bold text-slate-700">
                 Đăng ký nhận báo giá & tài liệu
@@ -226,10 +238,170 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* BOTTOM BAR: COPYRIGHT & LEGAL & PAYMENTS */}
-        <div className="py-8 mt-16 border-t border-slate-200">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            {/* Left: Copyright */}
+        {/* MOBILE VERSION - Compact & Optimized */}
+        <div className="space-y-4 lg:hidden">
+          {/* Brand - Logo to hơn */}
+          <div className="text-center">
+            <Link href="/" className="inline-flex flex-col items-center group">
+              <div className="relative h-10">
+                <Image
+                  src="/logo.svg"
+                  alt="VinhWorks"
+                  width={170}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div className="relative mt-1 h-5">
+                <Image
+                  src="/solution.svg"
+                  alt="Tech Solutions"
+                  width={135}
+                  height={20}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </Link>
+            <p className="mt-3 text-xs leading-relaxed text-slate-500">
+              Đối tác tin cậy trong chuyển đổi số
+            </p>
+          </div>
+
+          {/* Contact Info - Compact với spacing giảm */}
+          <div className="p-3.5 bg-white border shadow-sm border-slate-200 rounded-2xl">
+            <h4 className="mb-2.5 text-xs font-bold text-slate-700">
+              Liên hệ nhanh
+            </h4>
+            <div className="space-y-2 text-xs">
+              <a
+                href="tel:0971386588"
+                className="flex items-center gap-2 font-semibold text-orange-600"
+              >
+                <Phone size={14} />
+                0971 386 588
+              </a>
+              <a
+                href="mailto:contact@vinhworks.com"
+                className="flex items-center gap-2 text-slate-600"
+              >
+                <Mail size={14} />
+                contact@vinhworks.com
+              </a>
+              <div className="flex items-center gap-2 text-slate-500">
+                <Clock size={14} />
+                Thứ 2 - Thứ 6: 8:00 - 17:30
+              </div>
+            </div>
+          </div>
+
+          {/* Collapsible Sections - Spacing giảm */}
+          <div className="space-y-2">
+            {/* Solutions Accordion */}
+            <div className="overflow-hidden bg-white border border-slate-200 rounded-xl">
+              <button
+                onClick={() => toggleSection("solutions")}
+                className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-bold text-left text-slate-700"
+              >
+                <span>Giải pháp & Dịch vụ</span>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${
+                    expandedSection === "solutions" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {expandedSection === "solutions" && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
+                    exit={{ height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <ul className="px-4 pb-2.5 space-y-1.5 text-xs">
+                      {solutions.slice(0, 4).map((item) => (
+                        <li key={item.name}>
+                          <Link
+                            href={item.href}
+                            className="text-slate-600 hover:text-orange-600"
+                          >
+                            • {item.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Company Accordion */}
+            <div className="overflow-hidden bg-white border border-slate-200 rounded-xl">
+              <button
+                onClick={() => toggleSection("company")}
+                className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-bold text-left text-slate-700"
+              >
+                <span>Về công ty</span>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${
+                    expandedSection === "company" ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {expandedSection === "company" && (
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
+                    exit={{ height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <ul className="px-4 pb-2.5 space-y-1.5 text-xs">
+                      {company.slice(0, 4).map((item) => (
+                        <li key={item.name}>
+                          <Link
+                            href={item.href}
+                            className="text-slate-600 hover:text-rose-600"
+                          >
+                            • {item.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Social Links - Spacing giảm */}
+          <div className="flex justify-center gap-2.5">
+            {[Facebook, Linkedin, Twitter, Youtube].map((Icon, idx) => (
+              <a
+                key={idx}
+                href="#"
+                className="p-2 bg-white border border-slate-200 rounded-full text-slate-400 hover:text-orange-500 hover:border-orange-200 transition-all"
+              >
+                <Icon size={16} />
+              </a>
+            ))}
+          </div>
+
+          {/* ISO Badge */}
+          <div className="flex justify-center">
+            <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-white border rounded-full text-slate-400 border-slate-200">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span>ISO 9001:2015 Certified</span>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM BAR */}
+        <div className="py-4 mt-12 border-t lg:py-8 lg:mt-16 border-slate-200">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row md:gap-6">
             <div className="text-center md:text-left">
               <p className="text-xs font-medium text-slate-500">
                 © {new Date().getFullYear()}{" "}
@@ -251,10 +423,8 @@ export const Footer = () => {
               </div>
             </div>
 
-            {/* Right: Payment & Global */}
-            <div className="flex flex-col items-center gap-3 md:items-end">
+            <div className="flex flex-col items-center gap-2.5 md:items-end md:gap-3">
               <div className="flex items-center gap-2">
-                {/* Fake Payment Icons */}
                 <div className="flex gap-2 transition-all duration-300 opacity-70 grayscale hover:grayscale-0">
                   <div className="h-6 w-10 bg-slate-200 rounded flex items-center justify-center text-[8px] font-bold text-slate-500">
                     VISA
