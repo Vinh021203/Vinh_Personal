@@ -12,31 +12,52 @@ import {
 import {
   Mail,
   Lock,
-  LogIn,
   Eye,
   EyeOff,
   ArrowRight,
-  Zap,
   Github,
   CheckCircle2,
   XCircle,
-  Globe,
-  Cpu,
+  Sparkles,
+  Zap,
+  Code2,
+  Heart,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
+import Image from "next/image";
 import { useUser } from "@/contexts/UserContext";
 
-// --- SUB-COMPONENTS ---
+const gradients = {
+  primary: "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500",
+  text: "text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500",
+  glass: "bg-white/40 backdrop-blur-xl border border-white/60 shadow-xl",
+};
 
-// 1. Animated Background Blob
-const BackgroundBlob = ({ className }: { className?: string }) => (
-  <div
-    className={`absolute rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob ${className}`}
-  />
+const FloatingBadge = ({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay, type: "spring", stiffness: 200 }}
+    className={`absolute z-20 px-4 py-2.5 rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.12)] backdrop-blur-md border border-white/80 bg-white/90 ${className}`}
+  >
+    <motion.div
+      animate={{ y: [0, -6, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay }}
+    >
+      {children}
+    </motion.div>
+  </motion.div>
 );
 
-// 2. Password Strength Indicator
 const PasswordStrength = ({ password }: { password: string }) => {
   const getStrength = (pass: string) => {
     let score = 0;
@@ -47,98 +68,41 @@ const PasswordStrength = ({ password }: { password: string }) => {
     if (/[^A-Za-z0-9]/.test(pass)) score++;
     return score;
   };
-
   const score = getStrength(password);
-  const bars = [1, 2, 3, 4, 5];
-
+  const label = score <= 2 ? "Yếu" : score <= 3 ? "Trung bình" : "Mạnh";
+  const color =
+    score <= 2
+      ? "text-red-400"
+      : score <= 3
+        ? "text-yellow-500"
+        : "text-green-500";
   return (
-    <div className="flex h-1 gap-1 mt-2">
-      {bars.map((level) => (
-        <div
-          key={level}
-          className={`h-full flex-1 rounded-full transition-all duration-300 ${
-            score >= level
-              ? score <= 2
-                ? "bg-red-400"
-                : score <= 3
-                  ? "bg-yellow-400"
-                  : "bg-green-400"
-              : "bg-slate-200"
-          }`}
-        />
-      ))}
+    <div className="mt-1.5 space-y-1">
+      <div className="flex h-1.5 gap-1">
+        {[1, 2, 3, 4, 5].map((level) => (
+          <div
+            key={level}
+            className={`h-full flex-1 rounded-full transition-all duration-500 ${
+              score >= level
+                ? score <= 2
+                  ? "bg-red-400"
+                  : score <= 3
+                    ? "bg-yellow-400"
+                    : "bg-green-400"
+                : "bg-slate-100"
+            }`}
+          />
+        ))}
+      </div>
+      <p className={`text-[10px] font-bold text-right ${color}`}>{label}</p>
     </div>
   );
 };
-
-// 3. Feature Item with Hover Effect
-const FeatureItem = ({
-  icon: Icon,
-  title,
-  desc,
-}: {
-  icon: any;
-  title: string;
-  desc: string;
-}) => (
-  <motion.div
-    whileHover={{ x: 5, backgroundColor: "rgba(255, 255, 255, 0.6)" }}
-    className="flex items-start gap-4 p-4 transition-colors border cursor-default rounded-2xl bg-white/40 border-white/50 backdrop-blur-sm"
-  >
-    <div className="p-3 text-white shadow-lg rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-blue-500/20">
-      <Icon size={20} />
-    </div>
-    <div>
-      <h4 className="font-bold text-slate-800">{title}</h4>
-      <p className="mt-1 text-sm leading-relaxed text-slate-600">{desc}</p>
-    </div>
-  </motion.div>
-);
-
-// 4. TEXT ROTATOR - Animated Text Switcher
-const TextRotator = () => {
-  const words = [
-    "Next Generation",
-    "Future",
-    "AI-Powered Era",
-    "Smart Solution",
-  ];
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % words.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <span className="relative inline-block">
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={index}
-          initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
-        >
-          {words[index]}
-        </motion.span>
-      </AnimatePresence>
-      {/* Placeholder for layout stability */}
-      <span className="invisible">Next Generation</span>
-    </span>
-  );
-};
-
-// --- MAIN CLIENT COMPONENT ---
 
 export default function LoginClient() {
   const router = useRouter();
   const { setUser } = useUser();
 
-  // Form State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -147,14 +111,13 @@ export default function LoginClient() {
   const [passFocused, setPassFocused] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // 3D Tilt Effect Logic
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
+  const mouseXSpring = useSpring(x, { stiffness: 80, damping: 20 });
+  const mouseYSpring = useSpring(y, { stiffness: 80, damping: 20 });
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["8deg", "-8deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-8deg", "8deg"]);
 
   useEffect(() => {
     setMounted(true);
@@ -163,14 +126,8 @@ export default function LoginClient() {
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-    x.set(xPct);
-    y.set(yPct);
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
   };
 
   const handleMouseLeave = () => {
@@ -181,67 +138,47 @@ export default function LoginClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
+      await new Promise((r) => setTimeout(r, 1200));
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
         toast.custom((t) => (
           <div
-            className={`${
-              t.visible ? "animate-enter" : "animate-leave"
-            } max-w-md w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+            className={`${t.visible ? "animate-enter" : "animate-leave"} max-w-sm w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex gap-3 p-4 items-start border border-red-100`}
           >
-            <div className="flex-1 w-0 p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 pt-0.5">
-                  <XCircle className="w-10 h-10 text-red-500" />
-                </div>
-                <div className="flex-1 ml-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    Đăng nhập thất bại
-                  </p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {data.message || "Vui lòng kiểm tra lại thông tin."}
-                  </p>
-                </div>
-              </div>
+            <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-slate-800">
+                Đăng nhập thất bại
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {data.message || "Vui lòng kiểm tra lại thông tin."}
+              </p>
             </div>
           </div>
         ));
       } else {
         toast.custom((t) => (
           <div
-            className={`${
-              t.visible ? "animate-enter" : "animate-leave"
-            } max-w-md w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+            className={`${t.visible ? "animate-enter" : "animate-leave"} max-w-sm w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex gap-3 p-4 items-start border border-green-100`}
           >
-            <div className="flex-1 w-0 p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 pt-0.5">
-                  <CheckCircle2 className="w-10 h-10 text-green-500" />
-                </div>
-                <div className="flex-1 ml-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    Chào mừng trở lại!
-                  </p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Đang chuyển hướng vào hệ thống...
-                  </p>
-                </div>
-              </div>
+            <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-slate-800">
+                Chào mừng trở lại!
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Đang chuyển hướng vào hệ thống...
+              </p>
             </div>
           </div>
         ));
-
         const resUser = await fetch("/api/auth/me");
         const userData = await resUser.json();
         if (userData?.user) {
@@ -253,7 +190,7 @@ export default function LoginClient() {
           router.push("/");
         }
       }
-    } catch (error) {
+    } catch {
       toast.error("Lỗi kết nối máy chủ");
     } finally {
       setLoading(false);
@@ -263,129 +200,305 @@ export default function LoginClient() {
   if (!mounted) return null;
 
   return (
-    <div className="flex w-full min-h-screen overflow-hidden font-sans bg-slate-50 text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+    <div className="fixed inset-0 flex overflow-hidden font-sans bg-white text-slate-900">
       <Toaster position="top-center" />
 
-      {/* --- LEFT COLUMN: Interactive Showcase --- */}
+      {/* ========== LEFT — Visual Showcase ========== */}
       <motion.div
-        initial={{ opacity: 0, x: -100 }}
+        initial={{ opacity: 0, x: -60 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 1, ease: "easeOut" }}
-        className="relative flex-col items-center justify-center hidden p-12 overflow-hidden bg-white lg:flex lg:w-7/12"
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative hidden lg:flex lg:w-[58%] flex-col items-center justify-center overflow-hidden"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Background Blobs Animation */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <BackgroundBlob className="bg-purple-300 top-0 left-0 w-[800px] h-[800px] animate-blob" />
-          <BackgroundBlob className="bg-blue-300 bottom-0 right-0 w-[800px] h-[800px] animate-blob animation-delay-2000" />
-          <BackgroundBlob className="bg-pink-300 top-[40%] left-[40%] w-[600px] h-[600px] animate-blob animation-delay-4000" />
-          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
+        {/* Background blobs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] w-[700px] h-[700px] bg-orange-300/20 rounded-full blur-[120px] animate-blob mix-blend-multiply" />
+          <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] bg-purple-300/20 rounded-full blur-[120px] animate-blob animation-delay-2000 mix-blend-multiply" />
+          <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-pink-300/20 rounded-full blur-[120px] animate-blob animation-delay-4000 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]" />
         </div>
 
-        {/* 3D Content Container */}
+        {/* 3D tilt container — full width tận dụng ngang */}
         <motion.div
           ref={ref}
           style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-          className="relative z-10 w-full max-w-2xl"
+          className="relative z-10 w-full px-10 xl:px-16"
         >
-          {/* Glass Card Container */}
-          <div className="bg-white/30 backdrop-blur-xl border border-white/60 rounded-[3rem] p-10 shadow-2xl shadow-blue-500/10">
-            {/* Header */}
-            <div className="mb-10 transform translate-z-10">
-              <div className="inline-flex items-center gap-3 px-4 py-2 mb-6 border border-white rounded-full shadow-sm bg-white/50">
-                <span className="relative flex w-3 h-3">
-                  <span className="absolute inline-flex w-full h-full bg-green-400 rounded-full opacity-75 animate-ping"></span>
-                  <span className="relative inline-flex w-3 h-3 bg-green-500 rounded-full"></span>
-                </span>
-                <span className="text-sm font-bold tracking-wide text-slate-700">
-                  VinhWorks System v2.0
-                </span>
-              </div>
-
-              <h1 className="text-5xl font-black text-slate-900 leading-[1.1] mb-4">
-                Experience the <br />
-                <TextRotator /> <br />
-                of Management.
-              </h1>
-              <p className="max-w-lg text-lg text-slate-600">
-                Hệ thống quản lý dự án tích hợp AI, giúp tối ưu hóa quy trình
-                làm việc và nâng cao hiệu suất đội nhóm của bạn lên một tầm cao
-                mới.
-              </p>
+          {/* ── TOP ROW: Logo + Badge ── */}
+          <div className="flex items-end justify-between mb-8">
+            <div className="flex flex-col items-start">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Image
+                  src="/logo.svg"
+                  alt="VinhWorks"
+                  width={170}
+                  height={42}
+                  className="object-contain"
+                  priority
+                />
+                <Image
+                  src="/solution.svg"
+                  alt="Tech Solutions"
+                  width={112}
+                  height={16}
+                  className="object-contain mt-1"
+                  priority
+                />
+              </motion.div>
             </div>
 
-            {/* Feature Grid */}
-            <div className="grid gap-4 transform translate-z-20">
-              <FeatureItem
-                icon={Zap}
-                title="Real-time Analytics"
-                desc="Theo dõi chỉ số dự án theo thời gian thực với độ trễ gần như bằng không."
-              />
-              <FeatureItem
-                icon={Globe}
-                title="Global CDN"
-                desc="Truy cập dữ liệu từ bất kỳ đâu trên thế giới với tốc độ ánh sáng."
-              />
-              <FeatureItem
-                icon={Cpu}
-                title="AI Powered"
-                desc="Tự động hóa các tác vụ lặp lại với trợ lý ảo thông minh tích hợp sẵn."
-              />
-            </div>
+            {/* Live badge — góc phải */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, type: "spring" }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 border border-white/80 backdrop-blur-sm shadow-sm"
+            >
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inline-flex w-full h-full bg-green-400 rounded-full opacity-75 animate-ping" />
+                <span className="relative inline-flex w-2 h-2 bg-green-500 rounded-full" />
+              </span>
+              <span className="text-xs font-bold text-slate-600 tracking-wide">
+                System Online
+              </span>
+            </motion.div>
           </div>
 
-          {/* BỎ CÁC FLOATING ELEMENTS (Fingerprint & ShieldCheck) */}
-        </motion.div>
-
-        {/* Bottom info */}
-        <div className="absolute flex items-center gap-2 text-sm font-medium bottom-8 left-12 text-slate-500">
+          {/* ── MAIN GLASS CARD ── */}
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.7 }}
+            className={`relative rounded-[2.5rem] p-8 ${gradients.glass} overflow-hidden`}
           >
-            <Cpu size={16} />
+            {/* Shimmer line top */}
+            <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+
+            {/* Headline + desc nằm ngang */}
+            <div className="flex items-start justify-between gap-8 mb-8">
+              <div className="flex-1">
+                <motion.div
+                  whileHover={{ scale: 1.04 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 mb-5 text-sm font-bold text-orange-600 bg-white border border-orange-100 rounded-full shadow-sm"
+                >
+                  <Sparkles size={14} className="fill-orange-500" />
+                  Nền tảng quản lý thế hệ mới
+                </motion.div>
+
+                <h1 className="text-5xl xl:text-6xl font-black tracking-tight text-slate-900 leading-[1.05]">
+                  Chào mừng <br />
+                  <span className={gradients.text}>trở lại!</span>
+                </h1>
+              </div>
+
+              {/* Stats dọc — bên phải headline */}
+              <div className="flex flex-col gap-3 shrink-0 pt-2">
+                {[
+                  { value: "50+", label: "Dự án", color: "text-orange-500" },
+                  { value: "99%", label: "Uptime", color: "text-purple-500" },
+                  { value: "10k+", label: "Users", color: "text-blue-500" },
+                ].map((s, i) => (
+                  <motion.div
+                    key={s.label}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + i * 0.1 }}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/60 border border-white/70 backdrop-blur-sm min-w-[110px]"
+                  >
+                    <p className={`text-2xl font-black ${s.color}`}>
+                      {s.value}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-tight">
+                      {s.label}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="mb-7 text-base font-medium leading-relaxed text-slate-600 max-w-md">
+              Đăng nhập để tiếp tục hành trình xây dựng{" "}
+              <span className="font-bold text-blue-600">sản phẩm</span> tuyệt
+              vời cùng{" "}
+              <span className="font-bold text-pink-600">VinhWorks</span>.
+            </p>
+
+            {/* ── FEATURE TAGS ROW — tận dụng chiều ngang ── */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {[
+                {
+                  icon: Zap,
+                  label: "Real-time Analytics",
+                  color: "text-orange-500",
+                  bg: "bg-orange-50 border-orange-100",
+                },
+                {
+                  icon: Code2,
+                  label: "Clean Architecture",
+                  color: "text-purple-600",
+                  bg: "bg-purple-50 border-purple-100",
+                },
+                {
+                  icon: Heart,
+                  label: "UI/UX First",
+                  color: "text-pink-500",
+                  bg: "bg-pink-50 border-pink-100",
+                },
+              ].map(({ icon: Icon, label, color, bg }, i) => (
+                <motion.div
+                  key={label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 + i * 0.1 }}
+                  whileHover={{ y: -3, scale: 1.04 }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border ${bg} cursor-default transition-all`}
+                >
+                  <Icon size={15} className={color} />
+                  <span className={`text-sm font-bold ${color}`}>{label}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Shimmer line bottom */}
+            <div className="absolute bottom-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
           </motion.div>
-          <span>Designed by VinhWorks Creative Team</span>
-        </div>
+
+          {/* ── BOTTOM ROW: 2 floating info cards nằm ngang ── */}
+          <div className="flex gap-4 mt-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+              className="flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/60 border border-white/80 backdrop-blur-sm shadow-sm"
+            >
+              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-100 to-fuchsia-100 text-violet-600">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-800">AI-Powered</p>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Tự động hóa thông minh
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+              className="flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/60 border border-white/80 backdrop-blur-sm shadow-sm"
+            >
+              <div className="p-2 rounded-xl bg-gradient-to-br from-orange-100 to-amber-100 text-orange-600">
+                <Zap size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-800">Fast Deploy</p>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Zero downtime release
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
       </motion.div>
 
-      {/* --- RIGHT COLUMN: Form Section --- */}
+      {/* ========== RIGHT — Form ========== */}
       <motion.div
-        initial={{ opacity: 0, x: 100 }}
+        initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-        className="flex w-full lg:w-5/12 items-center justify-center p-6 md:p-12 bg-white relative shadow-[-20px_0_40px_rgba(0,0,0,0.02)]"
+        transition={{ duration: 0.8, ease: "easeOut", delay: 0.15 }}
+        className="flex w-full lg:w-[42%] bg-white border-l border-slate-100 items-center justify-center shadow-[-20px_0_60px_rgba(0,0,0,0.03)]"
       >
-        <div className="w-full max-w-md space-y-8">
-          {/* Brand Header - ĐÃ BỎ ICON */}
-          <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-black tracking-tight md:text-4xl text-slate-900">
-              Welcome Back!
+        <div className="w-full max-w-sm px-8 space-y-5">
+          {/* Mobile logo */}
+          <div className="flex flex-col items-center lg:hidden mb-2">
+            <Image
+              src="/logo.svg"
+              alt="VinhWorks"
+              width={140}
+              height={36}
+              className="object-contain"
+              priority
+            />
+            <Image
+              src="/solution.svg"
+              alt="Tech Solutions"
+              width={100}
+              height={14}
+              className="object-contain mt-1"
+              priority
+            />
+          </div>
+
+          {/* Header */}
+          <div>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="inline-flex items-center gap-2 px-4 py-2 mb-4 text-sm font-bold text-orange-600 bg-white border border-orange-100 rounded-full shadow-sm"
+            >
+              <Sparkles size={14} className="fill-orange-500" />
+              Đăng nhập tài khoản
+            </motion.div>
+
+            {/* Animated heading — stagger từng từ */}
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-tight overflow-hidden">
+              <motion.span
+                className="block"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+              >
+                Xin chào,{" "}
+              </motion.span>
+              <motion.span
+                className={`block ${gradients.text}`}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5, ease: "easeOut" }}
+              >
+                chào mừng!
+              </motion.span>
             </h2>
-            <p className="mt-3 font-medium text-slate-500">
-              Vui lòng nhập thông tin đăng nhập của bạn.
-            </p>
+
+            {/* Subtitle — fade + blur in */}
+            <motion.p
+              className="mt-2 text-sm font-medium text-slate-500"
+              initial={{ opacity: 0, filter: "blur(6px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, delay: 0.75 }}
+            >
+              Nhập thông tin để truy cập hệ thống.
+            </motion.p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.45, duration: 0.4 }}
+              className="space-y-1.5"
+            >
               <label
-                className={`text-sm font-bold transition-colors ${
-                  emailFocused ? "text-blue-600" : "text-slate-700"
-                }`}
+                className={`text-xs font-bold uppercase tracking-wider transition-colors ${emailFocused ? "text-violet-600" : "text-slate-500"}`}
               >
-                Email Address
+                Email
               </label>
-              <div className="relative group">
+              <div className="relative">
                 <div
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-                    emailFocused ? "text-blue-600" : "text-slate-400"
-                  }`}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${emailFocused ? "text-violet-500" : "text-slate-400"}`}
                 >
-                  <Mail size={20} />
+                  <Mail size={17} />
                 </div>
                 <input
                   type="email"
@@ -395,44 +508,53 @@ export default function LoginClient() {
                   onBlur={() => setEmailFocused(false)}
                   required
                   placeholder="name@example.com"
-                  className={`w-full pl-12 pr-4 py-4 bg-slate-50 border rounded-xl transition-all outline-none font-medium text-slate-900 placeholder:text-slate-400 ${
+                  className={`w-full pl-11 pr-10 py-3.5 bg-slate-50 border rounded-2xl transition-all outline-none font-medium text-slate-900 placeholder:text-slate-300 text-sm ${
                     emailFocused
-                      ? "bg-white border-blue-500 ring-4 ring-blue-500/10 shadow-lg shadow-blue-500/5"
+                      ? "bg-white border-violet-400 ring-4 ring-violet-500/10 shadow-lg shadow-violet-500/5"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 />
-                {email.includes("@") && email.includes(".") && (
-                  <div className="absolute text-green-500 -translate-y-1/2 right-4 top-1/2">
-                    <CheckCircle2 size={18} />
-                  </div>
-                )}
+                <AnimatePresence>
+                  {email.includes("@") && email.includes(".") && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500"
+                    >
+                      <CheckCircle2 size={16} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Password Field */}
-            <div className="space-y-2">
+            {/* Password */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.55, duration: 0.4 }}
+              className="space-y-1.5"
+            >
               <div className="flex items-center justify-between">
                 <label
-                  className={`text-sm font-bold transition-colors ${
-                    passFocused ? "text-blue-600" : "text-slate-700"
-                  }`}
+                  className={`text-xs font-bold uppercase tracking-wider transition-colors ${passFocused ? "text-violet-600" : "text-slate-500"}`}
                 >
-                  Password
+                  Mật khẩu
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs font-bold text-blue-600 transition-colors hover:text-purple-600"
+                  className="text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors"
                 >
                   Quên mật khẩu?
                 </Link>
               </div>
-              <div className="relative group">
+              <div className="relative">
                 <div
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${
-                    passFocused ? "text-blue-600" : "text-slate-400"
-                  }`}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${passFocused ? "text-violet-500" : "text-slate-400"}`}
                 >
-                  <Lock size={20} />
+                  <Lock size={17} />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -442,18 +564,18 @@ export default function LoginClient() {
                   onBlur={() => setPassFocused(false)}
                   required
                   placeholder="••••••••"
-                  className={`w-full pl-12 pr-12 py-4 bg-slate-50 border rounded-xl transition-all outline-none font-medium text-slate-900 placeholder:text-slate-400 ${
+                  className={`w-full pl-11 pr-11 py-3.5 bg-slate-50 border rounded-2xl transition-all outline-none font-medium text-slate-900 placeholder:text-slate-300 text-sm ${
                     passFocused
-                      ? "bg-white border-blue-500 ring-4 ring-blue-500/10 shadow-lg shadow-blue-500/5"
+                      ? "bg-white border-violet-400 ring-4 ring-violet-500/10 shadow-lg shadow-violet-500/5"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute p-1 transition-colors -translate-y-1/2 rounded-md right-4 top-1/2 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-100"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               <AnimatePresence>
@@ -462,67 +584,100 @@ export default function LoginClient() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <PasswordStrength password={password} />
-                    <p className="text-[10px] text-slate-400 mt-1 text-right">
-                      Độ mạnh mật khẩu
-                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
 
-            {/* Submit Button */}
+            {/* Submit — 1 màu orange solid */}
             <motion.button
-              whileHover={{ scale: 1.02, translateY: -2 }}
-              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65 }}
+              whileHover={{
+                scale: 1.02,
+                boxShadow: "0 20px 40px -12px rgba(249,115,22,0.45)",
+              }}
+              whileTap={{ scale: 0.97 }}
               disabled={loading}
               type="submit"
-              className="relative w-full py-4 overflow-hidden font-bold text-white transition-all shadow-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl shadow-blue-500/20 hover:shadow-purple-500/40 group disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+              className="relative w-full py-3.5 font-bold text-white rounded-2xl bg-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-3 text-sm disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden group"
             >
-              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-10" />
-
-              <div className="relative flex items-center justify-center gap-2">
+              {/* Shimmer sweep */}
+              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <AnimatePresence mode="wait">
                 {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 rounded-full border-white/30 border-t-white animate-spin" />
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <div className="w-4 h-4 border-2 rounded-full border-white/30 border-t-white animate-spin" />
                     <span>Đang xác thực...</span>
-                  </>
+                  </motion.div>
                 ) : (
-                  <>
+                  <motion.div
+                    key="idle"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
                     <span>Đăng nhập ngay</span>
                     <ArrowRight
-                      size={20}
+                      size={16}
                       className="transition-transform group-hover:translate-x-1"
                     />
-                  </>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
             </motion.button>
           </form>
 
           {/* Divider */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs font-bold tracking-wider uppercase text-slate-400">
-              <span className="px-4 bg-white">Hoặc đăng nhập với</span>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="flex items-center gap-3"
+          >
+            <div className="flex-1 h-px bg-slate-100" />
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              hoặc
+            </span>
+            <div className="flex-1 h-px bg-slate-100" />
+          </motion.div>
 
-          {/* Social Buttons */}
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-3 px-4 py-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-700 group">
+          {/* Social */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75 }}
+            className="grid grid-cols-2 gap-3"
+          >
+            <motion.button
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white border-2 border-slate-100 hover:border-slate-200 hover:shadow-md transition-all font-bold text-slate-700 text-sm group"
+            >
               <Github
-                size={22}
+                size={18}
                 className="transition-transform group-hover:scale-110"
               />
-              <span className="hidden sm:inline">GitHub</span>
-            </button>
-            <button className="flex items-center justify-center gap-3 px-4 py-3.5 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-700 group">
+              GitHub
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white border-2 border-slate-100 hover:border-slate-200 hover:shadow-md transition-all font-bold text-slate-700 text-sm group"
+            >
               <svg
-                className="w-5 h-5 transition-transform group-hover:scale-110"
+                className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -542,28 +697,36 @@ export default function LoginClient() {
                   fill="#EA4335"
                 />
               </svg>
-              <span className="hidden sm:inline">Google</span>
-            </button>
-          </div>
+              Google
+            </motion.button>
+          </motion.div>
 
-          {/* Footer Link */}
-          <div className="pt-4 text-center">
-            <p className="text-sm font-medium text-slate-500">
-              Chưa có tài khoản thành viên?{" "}
-              <Link
-                href="/register"
-                className="font-bold text-blue-600 transition-colors hover:text-purple-600 hover:underline"
-              >
-                Đăng ký tài khoản mới
-              </Link>
-            </p>
-          </div>
+          {/* Footer */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.85 }}
+            className="text-center text-sm font-medium text-slate-500"
+          >
+            Chưa có tài khoản?{" "}
+            <Link
+              href="/register"
+              className="font-bold text-violet-600 hover:text-orange-500 transition-colors hover:underline"
+            >
+              Đăng ký miễn phí
+            </Link>
+          </motion.p>
 
-          {/* Security Note */}
-          <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 uppercase tracking-widest font-bold pt-8 opacity-60">
-            <Lock size={10} />
-            <span>Secured by 256-bit Encryption</span>
-          </div>
+          {/* Security */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.95 }}
+            className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-widest"
+          >
+            <Lock size={9} />
+            <span>Protected by 256-bit TLS Encryption</span>
+          </motion.div>
         </div>
       </motion.div>
     </div>
