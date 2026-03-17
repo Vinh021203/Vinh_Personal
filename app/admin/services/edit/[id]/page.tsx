@@ -181,7 +181,7 @@ export default function EditServicePage() {
     );
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-8 px-8">
       <Toaster position="top-right" />
 
       {/* 1. HEADER */}
@@ -488,7 +488,7 @@ export default function EditServicePage() {
                   </h3>
                   <span
                     className={`inline-block mb-4 px-3 py-1 rounded-full text-xs font-bold border uppercase ${getStatusColor(
-                      status
+                      status,
                     )}`}
                   >
                     {status}

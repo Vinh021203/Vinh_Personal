@@ -135,7 +135,7 @@ export default function CreateServiceClient() {
       : "bg-slate-50 text-slate-500 border-slate-200";
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-8 px-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -462,7 +462,7 @@ export default function CreateServiceClient() {
                 <div className="flex justify-center mb-4">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusColor(
-                      status
+                      status,
                     )}`}
                   >
                     {status}

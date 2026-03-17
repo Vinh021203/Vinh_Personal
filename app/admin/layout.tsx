@@ -182,9 +182,7 @@ export default function AdminLayout({
       {/* Main Content */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header onToggleSidebar={() => setMobileOpen(!mobileOpen)} />
-        <main className="relative z-10 flex-1 p-4 overflow-y-auto md:p-8">
-          {children}
-        </main>
+        <main className="relative z-10 flex-1 overflow-y-auto">{children}</main>
       </div>
 
       <Toaster />

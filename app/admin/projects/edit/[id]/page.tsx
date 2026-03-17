@@ -273,7 +273,7 @@ export default function EditProjectPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-8 px-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -725,14 +725,14 @@ export default function EditProjectPage() {
                   <div className="absolute z-10 flex items-start justify-between top-4 left-4 right-4">
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm backdrop-blur-md ${getStatusColor(
-                        status
+                        status,
                       )}`}
                     >
                       {status}
                     </span>
                     <span
                       className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border shadow-sm backdrop-blur-md flex items-center gap-1 ${getPriorityColor(
-                        priority
+                        priority,
                       )}`}
                     >
                       <Activity size={12} /> {priority}

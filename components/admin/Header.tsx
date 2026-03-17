@@ -89,7 +89,7 @@ export default function Header({
     };
     const timeout = setTimeout(
       () => document.addEventListener("click", handleClickOutside),
-      100
+      100,
     );
     return () => {
       clearTimeout(timeout);

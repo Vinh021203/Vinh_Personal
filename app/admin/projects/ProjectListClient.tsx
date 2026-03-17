@@ -59,11 +59,11 @@ export default function ProjectListClient() {
   const filteredProjects = projects.filter(
     (project) =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterStatus === "all" || project.status === filterStatus)
+      (filterStatus === "all" || project.status === filterStatus),
   );
   const currentProjects = filteredProjects.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   useEffect(() => {
@@ -196,7 +196,7 @@ export default function ProjectListClient() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen p-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -353,7 +353,7 @@ export default function ProjectListClient() {
                   <div className="absolute z-10 flex items-start justify-between top-4 left-4 right-4">
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm backdrop-blur-md ${getStatusColor(
-                        project.status
+                        project.status,
                       )}`}
                     >
                       {project.status}
@@ -361,7 +361,7 @@ export default function ProjectListClient() {
                     {project.priority && (
                       <span
                         className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border shadow-sm backdrop-blur-md flex items-center gap-1 ${getPriorityColor(
-                          project.priority
+                          project.priority,
                         )}`}
                       >
                         <Activity size={12} /> {project.priority}
@@ -424,7 +424,7 @@ export default function ProjectListClient() {
                       <span className="flex items-center gap-1">
                         <Calendar size={14} className="text-blue-500" />{" "}
                         {new Date(project.createdAt).toLocaleDateString(
-                          "vi-VN"
+                          "vi-VN",
                         )}
                       </span>
                     </div>
@@ -515,7 +515,7 @@ export default function ProjectListClient() {
                       <td className="px-6 py-4">
                         <span
                           className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(
-                            project.status
+                            project.status,
                           )}`}
                         >
                           {project.status}

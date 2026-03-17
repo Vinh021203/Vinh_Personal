@@ -158,8 +158,8 @@ const generateTransactions = (count: number): Transaction[] => {
       Math.random() > 0.8
         ? "Failed"
         : Math.random() > 0.6
-        ? "Pending"
-        : "Completed",
+          ? "Pending"
+          : "Completed",
     date: new Date(Date.now() - Math.random() * 1000000000).toISOString(),
     method: methods[i % methods.length],
   }));
@@ -332,7 +332,7 @@ export default function AdminDashboardClient() {
   useEffect(() => {
     const points = chartPeriod === "week" ? 7 : 30;
     setChartData(
-      generateChartData(points, chartPeriod === "week" ? 2000 : 500)
+      generateChartData(points, chartPeriod === "week" ? 2000 : 500),
     );
   }, [chartPeriod]);
 
@@ -361,7 +361,7 @@ export default function AdminDashboardClient() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-10 bg-gradient-to-br from-[#fff7ed] via-[#fff1f2] to-[#fefce8] pb-32">
+    <div className="min-h-screen p-8 bg-gradient-to-br from-[#fff7ed] via-[#fff1f2] to-[#fefce8]">
       {/* HEADER SECTION */}
       <header className="flex flex-col justify-between gap-6 mb-12 lg:flex-row lg:items-center">
         <motion.div
@@ -739,8 +739,8 @@ export default function AdminDashboardClient() {
                           trx.status === "Completed"
                             ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                             : trx.status === "Pending"
-                            ? "bg-amber-50 text-amber-600 border-amber-100"
-                            : "bg-red-50 text-red-600 border-red-100"
+                              ? "bg-amber-50 text-amber-600 border-amber-100"
+                              : "bg-red-50 text-red-600 border-red-100"
                         }`}
                       >
                         <span
@@ -748,8 +748,8 @@ export default function AdminDashboardClient() {
                             trx.status === "Completed"
                               ? "bg-emerald-500"
                               : trx.status === "Pending"
-                              ? "bg-amber-500"
-                              : "bg-red-500"
+                                ? "bg-amber-500"
+                                : "bg-red-500"
                           }`}
                         />
                         {trx.status}
@@ -809,7 +809,7 @@ export default function AdminDashboardClient() {
       </div>
 
       {/* Footer */}
-      <footer className="py-8 mt-12 text-center border-t border-slate-200/60">
+      <footer className="py-2 mt-6 text-center border-t border-slate-200/60">
         <p className="text-xs font-bold tracking-widest uppercase text-slate-400">
           © 2025 VinhWorks Enterprise System
         </p>

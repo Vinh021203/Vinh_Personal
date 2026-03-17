@@ -187,7 +187,7 @@ export default function EditUserPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-8 px-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -493,7 +493,7 @@ export default function EditUserPage() {
                 <div className="flex gap-2 mb-8">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider flex items-center gap-1 ${getRoleColor(
-                      role
+                      role,
                     )}`}
                   >
                     {role === "admin" ? (
@@ -505,7 +505,7 @@ export default function EditUserPage() {
                   </span>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider flex items-center gap-1 ${getStatusColor(
-                      status
+                      status,
                     )}`}
                   >
                     <CheckCircle2 size={12} /> {status}

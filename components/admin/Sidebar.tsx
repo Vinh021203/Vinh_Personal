@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -13,7 +14,6 @@ import {
   Settings,
   Wrench,
   Home,
-  Monitor,
   ChevronRight,
   LogOut,
   Bell,
@@ -27,7 +27,7 @@ import {
   Star,
 } from "lucide-react";
 
-// --- TYPES & INTERFACES ---
+// --- TYPES ---
 type MenuItem = {
   id: string;
   label: string;
@@ -42,7 +42,7 @@ type MenuGroup = {
   items: MenuItem[];
 };
 
-// --- MOCK DATA ---
+// --- DATA ---
 const menuGroups: MenuGroup[] = [
   {
     title: "Overview",
@@ -113,148 +113,121 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-// --- UTILITY COMPONENTS ---
+// --- SUB COMPONENTS ---
 
-// 1. Revenue Widget (Đã fix màu nền Gradient Cam)
-const RevenueWidget = () => {
-  return (
-    <div className="relative flex-shrink-0 p-4 mx-4 mt-6 mb-2 overflow-hidden text-white shadow-xl rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 shadow-orange-500/30 group">
-      {/* Background Decoration */}
-      <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 transition-all rounded-full bg-white/20 blur-2xl group-hover:bg-white/30" />
-
-      <div className="relative z-10">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-[10px] font-bold text-orange-100 uppercase tracking-wider">
-              Revenue Today
-            </p>
-            <h4 className="text-xl font-extrabold text-white mt-0.5">
-              $2,450.50
-            </h4>
-          </div>
-          <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-            <TrendingUpIcon className="w-4 h-4 text-white" />
-          </div>
+const RevenueWidget = () => (
+  <div className="relative flex-shrink-0 p-4 mx-4 mt-6 mb-2 overflow-hidden text-white shadow-xl rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 shadow-orange-500/30 group">
+    <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 transition-all rounded-full bg-white/20 blur-2xl group-hover:bg-white/30" />
+    <div className="relative z-10">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <p className="text-[10px] font-bold text-orange-100 uppercase tracking-wider">
+            Revenue Today
+          </p>
+          <h4 className="text-xl font-extrabold text-white mt-0.5">
+            $2,450.50
+          </h4>
         </div>
-
-        {/* SVG Chart */}
-        <div className="flex items-end w-full h-12 gap-1">
-          {[40, 65, 45, 70, 50, 80, 60, 90, 75, 100].map((h, i) => (
-            <motion.div
-              key={i}
-              initial={{ height: 0 }}
-              animate={{ height: `${h}%` }}
-              transition={{ delay: i * 0.05, duration: 0.5 }}
-              className="flex-1 transition-opacity bg-white rounded-t-sm opacity-60 group-hover:opacity-100"
-            />
-          ))}
-        </div>
-
-        <div className="mt-3 flex items-center gap-2 text-[10px] text-orange-100 font-medium">
-          <span className="px-1 font-bold text-white rounded bg-white/20">
-            +12.5%
-          </span>
-          <span>vs yesterday</span>
+        <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+          <TrendingUpIcon className="w-4 h-4 text-white" />
         </div>
       </div>
-    </div>
-  );
-};
-
-// 2. Storage Usage Widget
-const StorageWidget = () => {
-  return (
-    <div className="flex-shrink-0 px-4 py-2">
-      <div className="p-3 border border-dashed border-orange-200/60 rounded-xl bg-white/60 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-            <Database size={12} className="text-orange-600" />
-            Storage
-          </span>
-          <span className="text-[10px] font-bold text-orange-700">75%</span>
-        </div>
-        {/* Progress Bar */}
-        <div className="h-1.5 w-full bg-orange-100 rounded-full overflow-hidden">
+      <div className="flex items-end w-full h-12 gap-1">
+        {[40, 65, 45, 70, 50, 80, 60, 90, 75, 100].map((h, i) => (
           <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: "75%" }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500"
+            key={i}
+            initial={{ height: 0 }}
+            animate={{ height: `${h}%` }}
+            transition={{ delay: i * 0.05, duration: 0.5 }}
+            className="flex-1 transition-opacity bg-white rounded-t-sm opacity-60 group-hover:opacity-100"
           />
-        </div>
-        <p className="text-[10px] text-slate-500 mt-1.5 font-medium">
-          Using 15GB of 20GB plan
-        </p>
-
-        <button className="mt-2 w-full py-1.5 text-[10px] font-bold text-orange-700 bg-white border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors shadow-sm">
-          Upgrade Plan
-        </button>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2 text-[10px] text-orange-100 font-medium">
+        <span className="px-1 font-bold text-white rounded bg-white/20">
+          +12.5%
+        </span>
+        <span>vs yesterday</span>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// 3. Search Input
-const SearchInput = () => {
-  return (
-    <div className="flex-shrink-0 px-4 mb-2">
-      <div className="relative group">
-        <Search className="absolute w-4 h-4 transition-colors -translate-y-1/2 left-3 top-1/2 text-slate-400 group-hover:text-orange-600" />
-        <input
-          type="text"
-          placeholder="Search anything..."
-          className="w-full pl-9 pr-9 py-2.5 text-sm bg-white border border-orange-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400 transition-all placeholder:text-slate-400 text-slate-700 font-medium shadow-sm"
+const StorageWidget = () => (
+  <div className="flex-shrink-0 px-4 py-2">
+    <div className="p-3 border border-dashed border-orange-200/60 rounded-xl bg-white/60 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+          <Database size={12} className="text-orange-600" /> Storage
+        </span>
+        <span className="text-[10px] font-bold text-orange-700">75%</span>
+      </div>
+      <div className="h-1.5 w-full bg-orange-100 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: "75%" }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 border border-slate-100 rounded px-1.5 py-0.5 bg-slate-50">
-          <Command size={10} className="text-slate-400" />
-          <span className="text-[10px] font-bold text-slate-400">K</span>
-        </div>
+      </div>
+      <p className="text-[10px] text-slate-500 mt-1.5 font-medium">
+        Using 15GB of 20GB plan
+      </p>
+      <button className="mt-2 w-full py-1.5 text-[10px] font-bold text-orange-700 bg-white border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors shadow-sm">
+        Upgrade Plan
+      </button>
+    </div>
+  </div>
+);
+
+const SearchInput = () => (
+  <div className="flex-shrink-0 px-4 mb-2">
+    <div className="relative group">
+      <Search className="absolute w-4 h-4 transition-colors -translate-y-1/2 left-3 top-1/2 text-slate-400 group-hover:text-orange-600" />
+      <input
+        type="text"
+        placeholder="Search anything..."
+        className="w-full pl-9 pr-9 py-2.5 text-sm bg-white border border-orange-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400 transition-all placeholder:text-slate-400 text-slate-700 font-medium shadow-sm"
+      />
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 border border-slate-100 rounded px-1.5 py-0.5 bg-slate-50">
+        <Command size={10} className="text-slate-400" />
+        <span className="text-[10px] font-bold text-slate-400">K</span>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// --- MAIN COMPONENT ---
-
-type SidebarProps = {
-  onClose?: () => void;
-};
+// --- MAIN ---
+type SidebarProps = { onClose?: () => void };
 
 export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeGroup, setActiveGroup] = useState<string | null>("Overview");
-
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
-    // MAIN CONTAINER: h-screen ensures full height, no black gaps
     <aside className="flex flex-col w-[280px] h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-100 border-r border-orange-100/50 shadow-2xl shadow-orange-500/5 z-50 overflow-hidden">
       {/* --- 1. HEADER BRANDING --- */}
       <div className="flex-shrink-0 px-5 pt-6 pb-4">
-        <div className="flex items-center gap-3">
-          {/* Logo */}
-          <div className="relative w-10 h-10">
-            <div className="absolute inset-0 bg-orange-500 rounded-xl rotate-6 opacity-20"></div>
-            <div className="absolute inset-0 bg-orange-500 rounded-xl -rotate-6 opacity-20"></div>
-            <div className="absolute inset-0 flex items-center justify-center shadow-lg bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-orange-500/30">
-              <Monitor className="w-5 h-5 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="absolute -top-1 -right-1 bg-white p-[2px] rounded-full shadow-sm border border-orange-100">
-              <Crown size={10} className="text-yellow-500 fill-yellow-500" />
-            </div>
-          </div>
-
-          <div>
-            <h1 className="text-lg font-extrabold leading-none tracking-tight text-slate-900">
-              VinhWorks
-            </h1>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-amber-700/70 uppercase tracking-wider">
-                Enterprise
-              </span>
-            </div>
+        <div className="flex flex-col items-center gap-1">
+          <Image
+            src="/logo.svg"
+            alt="VinhWorks"
+            width={250}
+            height={22}
+            className="object-contain"
+            priority
+          />
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+            <Image
+              src="/solution.svg"
+              alt="Tech Solutions"
+              width={170}
+              height={11}
+              className="object-contain"
+              priority
+            />
           </div>
         </div>
       </div>
@@ -263,12 +236,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
       <SearchInput />
 
       {/* --- 3. SCROLLABLE CONTENT --- */}
-      {/* Hidden scrollbar style applied here */}
-      <div className="flex-1 py-2 space-y-6 overflow-y-auto custom-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* Revenue Chart Widget */}
+      <div className="flex-1 py-2 space-y-6 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <RevenueWidget />
 
-        {/* Navigation Groups */}
         <div className="px-3 space-y-6">
           {menuGroups.map((group) => (
             <div key={group.title}>
@@ -317,9 +287,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                         </div>
 
                         <span
-                          className={`text-sm font-medium flex-1 ${
-                            active ? "font-bold" : ""
-                          }`}
+                          className={`text-sm font-medium flex-1 ${active ? "font-bold" : ""}`}
                         >
                           {item.label}
                         </span>
@@ -330,13 +298,11 @@ export default function Sidebar({ onClose }: SidebarProps) {
                               NEW
                             </span>
                           )}
-
                           {item.badge && (
                             <span className="px-1.5 py-0.5 text-[10px] font-bold text-orange-700 bg-orange-100 rounded-md border border-orange-200">
                               {item.badge}
                             </span>
                           )}
-
                           {active && (
                             <ChevronRight
                               size={14}
@@ -353,7 +319,6 @@ export default function Sidebar({ onClose }: SidebarProps) {
           ))}
         </div>
 
-        {/* Storage Widget */}
         <StorageWidget />
       </div>
 
@@ -367,37 +332,54 @@ export default function Sidebar({ onClose }: SidebarProps) {
           >
             <Home size={18} />
           </Link>
+
           <button
             className="p-2 transition-colors rounded-lg shadow-sm text-slate-500 hover:text-blue-600 hover:bg-white hover:shadow"
             title="Notifications"
           >
             <div className="relative">
               <Bell size={18} />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
+              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 border-2 border-white rounded-full" />
             </div>
           </button>
 
-          {/* --- UPDATED SETTINGS BUTTON --- */}
           <Link
-            href="/admin/settings" // Đường dẫn đến trang Settings
-            onClick={onClose} // Đóng sidebar nếu ở mobile (tuỳ chọn)
+            href="/admin/settings"
+            onClick={onClose}
             className="p-2 transition-colors rounded-lg shadow-sm text-slate-500 hover:text-slate-900 hover:bg-white hover:shadow"
             title="Settings"
           >
             <Settings size={18} />
           </Link>
-          {/* -------------------------------- */}
         </div>
 
         <div className="flex items-center gap-3 p-3 transition-all bg-white border shadow-sm cursor-pointer border-orange-100/50 rounded-xl hover:shadow-md hover:border-orange-300 group">
-          <div className="relative">
-            {/* SVG Avatar Ring */}
-            <svg className="w-10 h-10 transform -rotate-90">
-              ircle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2"
-              fill="transparent" className="text-slate-100" / ircle cx="20"
-              cy="20" r="18" stroke="currentColor" strokeWidth="2"
-              fill="transparent" strokeDasharray={113} strokeDashoffset={20}{" "}
-              className="text-orange-500" /
+          {/* Avatar with progress ring */}
+          <div className="relative flex-shrink-0 w-10 h-10">
+            <svg
+              className="absolute inset-0 w-10 h-10 -rotate-90"
+              viewBox="0 0 40 40"
+            >
+              <circle
+                cx="20"
+                cy="20"
+                r="18"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="transparent"
+                className="text-slate-100"
+              />
+              <circle
+                cx="20"
+                cy="20"
+                r="18"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="transparent"
+                strokeDasharray={113}
+                strokeDashoffset={20}
+                className="text-orange-500"
+              />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <img
@@ -406,7 +388,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                 className="rounded-full w-7 h-7 bg-slate-100"
               />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -433,7 +415,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   );
 }
 
-// Icon helper
+// --- ICON HELPER ---
 function TrendingUpIcon(props: any) {
   return (
     <svg

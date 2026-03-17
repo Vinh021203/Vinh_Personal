@@ -58,13 +58,13 @@ export default function UserListClient() {
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterRole === "all" || user.role === filterRole)
+      (filterRole === "all" || user.role === filterRole),
   );
 
   const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
   const currentData = filteredUsers.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function UserListClient() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen p-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -432,14 +432,14 @@ export default function UserListClient() {
                           <p className="flex items-center gap-1">
                             <Calendar size={12} /> Created:{" "}
                             {new Date(user.createdAt).toLocaleDateString(
-                              "vi-VN"
+                              "vi-VN",
                             )}
                           </p>
                           <p className="flex items-center gap-1 mt-0.5">
                             <Activity size={12} className="text-orange-400" />{" "}
                             Last login:{" "}
                             {new Date(user.lastLogin!).toLocaleDateString(
-                              "vi-VN"
+                              "vi-VN",
                             )}
                           </p>
                         </div>
@@ -630,7 +630,7 @@ export default function UserListClient() {
                   <div className="flex items-center flex-1 gap-1 text-xs text-slate-400">
                     <Activity size={14} /> Last login:{" "}
                     {new Date(selectedUser.lastLogin!).toLocaleDateString(
-                      "vi-VN"
+                      "vi-VN",
                     )}
                   </div>
                   <Link href={`/admin/users/edit/${selectedUser._id}`}>

@@ -146,7 +146,7 @@ export default function CreatePostClient() {
 
   const insertMarkdown = (prefix: string, suffix: string = "") => {
     const textarea = document.getElementById(
-      "content-editor"
+      "content-editor",
     ) as HTMLTextAreaElement;
     if (!textarea) return;
 
@@ -162,7 +162,7 @@ export default function CreatePostClient() {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-8 px-8">
       <Toaster
         position="top-right"
         toastOptions={{

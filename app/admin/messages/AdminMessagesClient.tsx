@@ -151,12 +151,12 @@ export default function AdminMessagesClient() {
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (filterStatus === "all" ||
-        (filterStatus === "unread" && user.unreadCount! > 0))
+        (filterStatus === "unread" && user.unreadCount! > 0)),
   );
 
   const filteredMessages = selectedUser
     ? messages.filter(
-        (m) => m.senderId === selectedUser || m.receiverId === selectedUser
+        (m) => m.senderId === selectedUser || m.receiverId === selectedUser,
       )
     : [];
 
@@ -231,7 +231,7 @@ export default function AdminMessagesClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-40px)] flex flex-col pb-4">
+    <div className="h-[calc(100vh-40px)] flex flex-col p-8">
       <Toaster position="top-right" />
 
       {/* 1. HEADER */}

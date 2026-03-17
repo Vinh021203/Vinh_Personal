@@ -95,13 +95,13 @@ export default function ServiceListClient() {
   const filteredServices = services.filter(
     (service) =>
       service.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterStatus === "all" || service.status === filterStatus)
+      (filterStatus === "all" || service.status === filterStatus),
   );
 
   const totalPages = Math.ceil(filteredServices.length / PAGE_SIZE);
   const currentData = filteredServices.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   const getStatusColor = (status: string) => {
@@ -148,7 +148,7 @@ export default function ServiceListClient() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen p-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -360,7 +360,7 @@ export default function ServiceListClient() {
                       <div className="flex items-center justify-between">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(
-                            service.status
+                            service.status,
                           )}`}
                         >
                           {service.status}
@@ -457,7 +457,7 @@ export default function ServiceListClient() {
                         <td className="px-6 py-4">
                           <span
                             className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(
-                              service.status
+                              service.status,
                             )}`}
                           >
                             {service.status}
@@ -637,7 +637,7 @@ export default function ServiceListClient() {
                 <div className="flex items-center justify-between pt-6 border-t border-slate-100">
                   <span
                     className={`px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(
-                      selected.status
+                      selected.status,
                     )}`}
                   >
                     {selected.status}

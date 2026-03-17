@@ -54,7 +54,7 @@ export default function EditPostPage() {
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [status, setStatus] = useState<"published" | "draft" | "archived">(
-    "draft"
+    "draft",
   );
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
@@ -186,7 +186,7 @@ export default function EditPostPage() {
   // Helper for editor
   const insertMarkdown = (prefix: string, suffix: string = "") => {
     const textarea = document.getElementById(
-      "editor-textarea"
+      "editor-textarea",
     ) as HTMLTextAreaElement;
     if (!textarea) return;
     const start = textarea.selectionStart;
@@ -214,7 +214,7 @@ export default function EditPostPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-8 px-8">
       <Toaster
         position="top-right"
         toastOptions={{

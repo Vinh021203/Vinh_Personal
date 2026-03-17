@@ -135,13 +135,13 @@ export default function PostListClient() {
   const filteredPosts = posts.filter(
     (post) =>
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterStatus === "all" || post.status === filterStatus)
+      (filterStatus === "all" || post.status === filterStatus),
   );
 
   const totalPages = Math.ceil(filteredPosts.length / PAGE_SIZE);
   const currentData = filteredPosts.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   // --- API EFFECT ---
@@ -211,7 +211,7 @@ export default function PostListClient() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen p-8">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -334,7 +334,7 @@ export default function PostListClient() {
                     <div className="absolute z-10 flex items-start justify-between w-full px-4 top-4">
                       <div
                         className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm backdrop-blur-md flex items-center gap-1.5 ${getStatusStyles(
-                          post.status
+                          post.status,
                         )}`}
                       >
                         {getStatusIcon(post.status)}
@@ -469,7 +469,7 @@ export default function PostListClient() {
                               <span>•</span>
                               <span>
                                 {new Date(post.date).toLocaleDateString(
-                                  "vi-VN"
+                                  "vi-VN",
                                 )}
                               </span>
                             </div>
@@ -501,7 +501,7 @@ export default function PostListClient() {
                       <td className="px-6 py-4">
                         <div
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusStyles(
-                            post.status
+                            post.status,
                           )}`}
                         >
                           {getStatusIcon(post.status)}
