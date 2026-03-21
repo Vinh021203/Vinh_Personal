@@ -411,19 +411,7 @@ export default function CreateProjectClient() {
                   suppressContentEditableWarning
                   onInput={(e) => setDescription(e.currentTarget.innerHTML)}
                   data-placeholder="Mô tả chi tiết về dự án..."
-                  className="
-      w-full min-h-[120px] px-4 py-3 text-sm font-medium
-      bg-slate-50 border border-slate-200 rounded-b-xl
-      text-slate-700 outline-none transition-all
-      focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10
-      [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
-      [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1
-      [&_b]:font-bold [&_strong]:font-bold
-      [&_i]:italic [&_em]:italic
-      [&_u]:underline
-      empty:before:content-[attr(data-placeholder)]
-      empty:before:text-slate-400 empty:before:pointer-events-none
-    "
+                  className={`w-full min-h-[120px] px-4 py-3 text-sm font-medium bg-slate-50 border border-slate-200 rounded-b-xl text-slate-700 outline-none transition-all focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 empty:before:pointer-events-none`}
                 />
               </div>
             </div>
