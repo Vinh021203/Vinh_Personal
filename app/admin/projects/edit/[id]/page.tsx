@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -65,6 +65,8 @@ export default function EditProjectPage() {
   const [githubUrl, setGithubUrl] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
 
+  const descriptionRef = useRef<HTMLDivElement>(null);
+
   // Image State
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState("");
@@ -93,6 +95,11 @@ export default function EditProjectPage() {
         setStatus(data.status || "Đang triển khai");
         setTags(data.tags || []);
         setDescription(data.description || "");
+        setTimeout(() => {
+          if (descriptionRef.current) {
+            descriptionRef.current.innerHTML = data.description || "";
+          }
+        }, 0);
         setBudget(data.budget || 0);
         setProgress(data.progress || 0);
         setPriority(data.priority || "medium");
@@ -419,14 +426,87 @@ export default function EditProjectPage() {
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
                   Mô tả
                 </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
+
+                {/* Toolbar */}
+                <div className="flex items-center gap-1 px-3 py-2 bg-slate-50 border border-slate-200 border-b-0 rounded-t-xl">
+                  {[
+                    {
+                      cmd: "bold",
+                      icon: "B",
+                      cls: "font-black text-xs w-7 h-7",
+                    },
+                    { cmd: "italic", icon: "I", cls: "italic text-xs w-7 h-7" },
+                    {
+                      cmd: "underline",
+                      icon: "U",
+                      cls: "underline text-xs w-7 h-7",
+                    },
+                  ].map(({ cmd, icon, cls }) => (
+                    <button
+                      key={cmd}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        document.execCommand(cmd, false);
+                      }}
+                      className={`${cls} flex items-center justify-center rounded-lg text-slate-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+
+                  <div className="w-px h-4 bg-slate-200 mx-1" />
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      document.execCommand("insertUnorderedList", false);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200 text-sm"
+                    title="Danh sách dấu chấm"
+                  >
+                    ≡
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      document.execCommand("insertOrderedList", false);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200 text-xs font-bold"
+                    title="Danh sách số"
+                  >
+                    1.
+                  </button>
+
+                  <div className="w-px h-4 bg-slate-200 mx-1" />
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      document.execCommand("removeFormat", false);
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200 text-xs"
+                    title="Xóa định dạng"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+
+                {/* Editable area */}
+                <div
+                  ref={descriptionRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={(e) => {
+                    setDescription(e.currentTarget.innerHTML);
                     setIsDirty(true);
                   }}
-                  rows={4}
-                  className="w-full px-4 py-3 text-sm font-medium transition-all border outline-none resize-none bg-slate-50 border-slate-200 rounded-xl text-slate-700 focus:bg-white focus:border-orange-400"
+                  data-placeholder="Mô tả chi tiết về dự án..."
+                  className="w-full min-h-[120px] px-4 py-3 text-sm font-medium bg-slate-50 border border-slate-200 rounded-b-xl text-slate-700 outline-none transition-all focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 empty:before:pointer-events-none"
                 />
               </div>
             </div>
@@ -751,9 +831,13 @@ export default function EditProjectPage() {
                     </div>
                     <Star size={16} className="text-slate-200" />
                   </div>
-                  <p className="flex-1 mb-4 text-sm text-slate-500 line-clamp-2">
-                    {description || "Mô tả dự án sẽ hiển thị tại đây..."}
-                  </p>
+                  <div
+                    className="flex-1 mb-4 text-sm text-slate-500 line-clamp-3 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        description || "Mô tả dự án sẽ hiển thị tại đây...",
+                    }}
+                  />
                   <div className="pt-4 space-y-3 border-t border-slate-50">
                     <div className="flex justify-between text-xs font-bold text-slate-600">
                       <span className="flex items-center gap-1">

@@ -12,9 +12,9 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "VinhWorks | Nền tảng lập trình hiện đại",
+  title: "VinhWorks | Dịch vụ thiết kế Website - Application chuyên nghiệp",
   description:
-    "VinhWorks giúp lập trình viên phát triển sản phẩm nhanh, đẹp, và tối ưu với công nghệ hiện đại.",
+    "VinhWorks dịch vụ hỗ trợ mọi người lập trình viên phát triển sản phẩm nhanh, đẹp, và tối ưu với công nghệ hiện đại.",
   keywords: [
     "VinhWorks",
     "lập trình",

@@ -23,9 +23,12 @@ import {
   Heart,
   BookmarkPlus,
   Copy,
+  Hash,
 } from "lucide-react";
 import { BlogDetailClient, CommentButton } from "@/components/BlogDetailClient";
+import DescriptionToggle from "@/components/DescriptionToggle";
 
+// ── generateMetadata ──────────────────────────────────────────
 export async function generateMetadata({
   params,
 }: {
@@ -35,12 +38,13 @@ export async function generateMetadata({
   await connectDB();
   const post = await Post.findOne({ slug: decodeURIComponent(slug) }).lean();
   if (!post) return {};
+  const desc = (post as any).description || post.content?.slice(0, 150) || "";
   return {
     title: `${post.title} | VinhWorks`,
-    description: post.content?.slice(0, 150) || "",
+    description: desc,
     openGraph: {
       title: `${post.title} | VinhWorks`,
-      description: post.content?.slice(0, 150) || "",
+      description: desc,
       images: post.thumbnail ? [{ url: post.thumbnail }] : [],
       url: `https://vinhworks.com/blog/${slug}`,
       type: "article",
@@ -48,12 +52,13 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: `${post.title} | VinhWorks`,
-      description: post.content?.slice(0, 150) || "",
+      description: desc,
       images: post.thumbnail ? [post.thumbnail] : [],
     },
   };
 }
 
+// ── Page ──────────────────────────────────────────────────────
 export default async function BlogPost({
   params,
 }: {
@@ -70,314 +75,438 @@ export default async function BlogPost({
     .lean();
 
   const encodedUrl = encodeURIComponent(
-    `https://vinhworks.com/blog/${post.slug}`
+    `https://vinhworks.com/blog/${post.slug}`,
   );
   const encodedTitle = encodeURIComponent(post.title);
 
-  // Enhanced Data Mapping
   const postData = {
     ...post,
     readTime: "5 phút đọc",
     views: Math.floor(Math.random() * 1000) + 100,
-    likes: Math.floor(Math.random() * 50) + 10,
-    author: "VinhWorks",
-    category: "Web Development",
-    tags: (post as any).tags || ["React", "Next.js", "TypeScript"],
+    author: (post as any).author || "VinhWorks",
+    category: (post as any).category || "Web Development",
+    tags: (post as any).tags || [],
+    description: (post as any).description || "",
     displayDate:
       (post as any).createdAt || (post as any).date || new Date().toISOString(),
   };
 
   return (
     <>
-      {/* --- FIXED NAVIGATION --- */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 transition-all border-b bg-white/90 backdrop-blur-xl border-slate-200/60">
-        <div className="flex items-center justify-between max-w-5xl mx-auto">
-          <Link href="/blog" className="group">
-            <button className="flex items-center gap-2 px-4 py-2 transition-all rounded-full text-slate-600 hover:text-violet-700 hover:bg-violet-50">
+      {/* ── STICKY NAV ── */}
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/blog">
+            <button className="group flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-violet-50 hover:text-violet-700 rounded-full transition-all">
               <ArrowLeft
-                size={18}
-                className="transition-transform group-hover:-translate-x-1"
+                size={16}
+                className="group-hover:-translate-x-0.5 transition-transform"
               />
-              <span className="text-sm font-bold">Quay lại Blog</span>
+              Quay lại Blog
             </button>
           </Link>
-
           <div className="flex items-center gap-2">
             <button
-              className="p-2.5 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+              className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
               title="Yêu thích"
             >
-              <Heart size={20} />
+              <Heart size={18} />
             </button>
             <button
-              className="p-2.5 text-slate-500 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-all"
+              className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-all"
               title="Lưu bài viết"
             >
-              <BookmarkPlus size={20} />
+              <BookmarkPlus size={18} />
             </button>
-            <div className="w-px h-6 mx-1 bg-slate-200" />
+            <div className="w-px h-5 bg-slate-200 mx-1" />
             <BlogDetailClient
-              postSlug={postData.slug}
-              postTitle={postData.title}
+              postSlug={(postData as any).slug}
+              postTitle={postData.title as string}
             />
           </div>
         </div>
       </nav>
 
-      <main className="min-h-screen bg-[#FAFAFA] pt-24 pb-24 relative selection:bg-violet-200 selection:text-violet-900">
-        {/* Background Decoration */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-[1000px] h-[600px] bg-violet-200/30 rounded-full blur-[120px] mix-blend-multiply" />
-          <div className="absolute top-20 right-0 w-[800px] h-[600px] bg-cyan-200/30 rounded-full blur-[120px] mix-blend-multiply" />
-          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-        </div>
+      <main className="min-h-screen bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6 py-10">
+          {/* ══════════════════════════════════════════
+              HERO — LEFT (title + thumbnail + meta) | RIGHT (sidebar)
+          ══════════════════════════════════════════ */}
+          <div className="grid gap-8 lg:grid-cols-3 mb-10 items-start">
+            {/* ── LEFT ── */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Breadcrumb */}
+              <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                <Link
+                  href="/"
+                  className="hover:text-violet-600 transition-colors"
+                >
+                  Home
+                </Link>
+                <ChevronRight size={12} />
+                <Link
+                  href="/blog"
+                  className="hover:text-violet-600 transition-colors"
+                >
+                  Blog
+                </Link>
+                <ChevronRight size={12} />
+                <span className="text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md font-bold">
+                  {postData.category}
+                </span>
+              </nav>
 
-        <article className="container relative z-10 max-w-4xl px-4 mx-auto">
-          {/* --- HEADER SECTION --- */}
-          <header className="mb-10 text-center">
-            {/* Breadcrumb */}
-            <nav className="flex items-center justify-center gap-2 mb-8 text-sm font-medium text-slate-500">
-              <Link
-                href="/"
-                className="transition-colors hover:text-violet-600"
-              >
-                Home
-              </Link>
-              <ChevronRight size={14} />
-              <Link
-                href="/blog"
-                className="transition-colors hover:text-violet-600"
-              >
-                Blog
-              </Link>
-              <ChevronRight size={14} />
-              <span className="text-violet-600 font-bold bg-violet-50 px-2 py-0.5 rounded-md">
-                {postData.category}
-              </span>
-            </nav>
+              {/* Title */}
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 leading-[1.15]">
+                {postData.title as string}
+              </h1>
 
-            {/* Title */}
-            <h1 className="mb-8 text-4xl font-black leading-tight tracking-tight md:text-5xl lg:text-6xl text-slate-900">
-              {postData.title}
-            </h1>
+              {/* Description */}
+              {postData.description && (
+                <DescriptionToggle
+                  description={postData.description as string}
+                />
+              )}
 
-            {/* Author & Meta Pill */}
-            <div className="inline-flex flex-wrap items-center justify-center gap-4 px-6 py-3 bg-white border rounded-full shadow-sm md:gap-8 border-slate-200/60">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 shrink-0">
-                  {postData.author.charAt(0)}
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold leading-none text-slate-900">
-                    {postData.author}
-                  </p>
-                </div>
-              </div>
-              <div className="hidden w-px h-4 bg-slate-200 md:block" />
-              <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
+              {/* Meta row */}
+              <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-500">
                 <span className="flex items-center gap-1.5">
-                  <Calendar size={16} className="text-violet-500" />
+                  <User size={14} className="text-violet-500" />
+                  <strong className="text-slate-800">
+                    {postData.author as string}
+                  </strong>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={14} className="text-blue-500" />
                   {new Date(postData.displayDate).toLocaleDateString("vi-VN")}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Clock size={16} className="text-pink-500" />
+                  <Clock size={14} className="text-pink-500" />
                   {postData.readTime}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Eye size={16} className="text-amber-500" />
-                  {postData.views}
+                  <Eye size={14} className="text-amber-500" />
+                  {postData.views} lượt xem
                 </span>
               </div>
-            </div>
-          </header>
 
-          {/* --- FEATURED IMAGE --- */}
-          {postData.thumbnail && (
-            <div className="relative mb-12 group">
-              <div className="absolute -inset-2 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 rounded-[2.5rem] opacity-20 blur-2xl group-hover:opacity-30 transition-opacity duration-500" />
-              <div className="relative overflow-hidden rounded-[2rem] shadow-2xl border-4 border-white">
-                <Image
-                  src={postData.thumbnail}
-                  alt={postData.title}
-                  width={1200}
-                  height={630}
-                  className="object-cover w-full h-auto aspect-[16/9] transform transition-transform duration-700 group-hover:scale-105"
-                  priority
-                />
+              {/* Tags */}
+              {postData.tags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Hash size={14} className="text-slate-400" />
+                  {postData.tags.map((tag: string, i: number) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1 text-xs font-bold bg-white border border-slate-200 text-slate-600 rounded-full hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 transition-colors cursor-default"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* ── FEATURED IMAGE trong hero ── */}
+              {postData.thumbnail && (
+                <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-md group mt-2">
+                  <Image
+                    src={postData.thumbnail as string}
+                    alt={postData.title as string}
+                    width={900}
+                    height={500}
+                    className="object-cover w-full aspect-[16/9] group-hover:scale-[1.02] transition-transform duration-700"
+                    priority
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* ── RIGHT: Sidebar sticky ── */}
+            <aside className="lg:col-span-1">
+              <div className="sticky top-24 space-y-4">
+                {/* Info card */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+                    Thông tin bài viết
+                  </h3>
+                  {[
+                    {
+                      label: "Tác giả",
+                      value: postData.author as string,
+                      icon: <User size={13} className="text-violet-400" />,
+                    },
+                    {
+                      label: "Ngày đăng",
+                      value: new Date(postData.displayDate).toLocaleDateString(
+                        "vi-VN",
+                      ),
+                      icon: <Calendar size={13} className="text-blue-400" />,
+                    },
+                    {
+                      label: "Danh mục",
+                      value: postData.category,
+                      icon: <Tag size={13} className="text-fuchsia-400" />,
+                    },
+                    {
+                      label: "Đọc trong",
+                      value: postData.readTime,
+                      icon: <Clock size={13} className="text-pink-400" />,
+                    },
+                    {
+                      label: "Lượt xem",
+                      value: `${postData.views}`,
+                      icon: <Eye size={13} className="text-amber-400" />,
+                    },
+                  ].map(({ label, value, icon }) => (
+                    <div
+                      key={label}
+                      className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0"
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase">
+                        {icon}
+                        {label}
+                      </span>
+                      <span className="text-sm font-bold text-slate-700">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Author card */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl p-6 text-white shadow-lg">
+                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+                  <div className="flex items-center gap-3 mb-3 relative z-10">
+                    <div className="w-11 h-11 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-lg font-black">
+                      {(postData.author as string).charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-black text-sm">
+                        {postData.author as string}
+                      </p>
+                      <p className="text-[10px] text-violet-200 uppercase tracking-wider">
+                        Author
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs leading-relaxed text-violet-100 relative z-10">
+                    Full-stack Developer đam mê chia sẻ kiến thức về Web
+                    Development, UI/UX và công nghệ mới nhất.
+                  </p>
+                </div>
+
+                {/* Share card */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                  <h3 className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-widest mb-4">
+                    <Share2 size={13} className="text-violet-500" /> Chia sẻ
+                  </h3>
+                  <div className="flex gap-2">
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+                      target="_blank"
+                      className="flex-1 flex items-center justify-center p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all"
+                    >
+                      <Facebook size={18} />
+                    </a>
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+                      target="_blank"
+                      className="flex-1 flex items-center justify-center p-3 bg-sky-50 text-sky-500 rounded-xl hover:bg-sky-500 hover:text-white transition-all"
+                    >
+                      <Twitter size={18} />
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+                      target="_blank"
+                      className="flex-1 flex items-center justify-center p-3 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"
+                    >
+                      <Linkedin size={18} />
+                    </a>
+                    <button className="flex-1 flex items-center justify-center p-3 bg-slate-50 text-slate-500 rounded-xl hover:bg-slate-700 hover:text-white transition-all">
+                      <Copy size={18} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            </aside>
+          </div>
 
-          {/* --- MAIN CONTENT --- */}
-          <div className="relative mb-12">
-            <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-12 lg:p-16">
-              {/* Typography Setup */}
-              <div
-                className="prose prose-lg prose-slate max-w-none
-                    prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight
-                    prose-p:text-slate-800 prose-p:leading-8 prose-p:font-medium
-                    prose-li:text-slate-800 prose-li:font-medium
-                    prose-strong:text-slate-900 prose-strong:font-extrabold
-                    prose-a:text-violet-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline hover:prose-a:text-violet-700
-                    prose-img:rounded-2xl prose-img:shadow-lg prose-img:border prose-img:border-slate-100
-                    prose-code:text-violet-700 prose-code:bg-violet-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-semibold
-                    prose-pre:bg-slate-900 prose-pre:shadow-lg prose-pre:rounded-2xl
-                    prose-blockquote:border-l-violet-500 prose-blockquote:bg-violet-50/50 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:text-slate-700
+          {/* ══════════════════════════════════════════
+              CONTENT + SIDEBAR RIGHT (Related + Share)
+          ══════════════════════════════════════════ */}
+          <div className="grid gap-8 lg:grid-cols-3">
+            {/* ── CONTENT ── */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Article body */}
+              <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-8 md:p-12">
+                <div
+                  className="prose prose-lg prose-slate max-w-none
+                  prose-headings:font-black prose-headings:text-slate-900 prose-headings:tracking-tight
+                  prose-p:text-slate-700 prose-p:leading-8 prose-p:font-medium
+                  prose-li:text-slate-700 prose-li:font-medium
+                  prose-strong:text-slate-900 prose-strong:font-extrabold
+                  prose-a:text-violet-600 prose-a:font-bold prose-a:no-underline hover:prose-a:underline hover:prose-a:text-violet-700
+                  prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-100
+                  prose-code:text-violet-700 prose-code:bg-violet-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-semibold prose-code:text-sm
+                  prose-pre:bg-slate-900 prose-pre:shadow-xl prose-pre:rounded-2xl prose-pre:text-sm
+                  prose-blockquote:border-l-4 prose-blockquote:border-violet-400 prose-blockquote:bg-violet-50/60 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
+                  prose-table:text-sm prose-th:bg-slate-50 prose-th:font-black
+                  prose-hr:border-slate-100
                 "
-              >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {postData.content}
-                </ReactMarkdown>
-              </div>
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {postData.content as string}
+                  </ReactMarkdown>
+                </div>
 
-              {/* Tags Footer */}
-              {postData.tags && postData.tags.length > 0 && (
-                <div className="pt-8 mt-12 border-t border-slate-100">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Tag size={18} className="mr-2 text-slate-400" />
-                    {postData.tags.map((tag: string, index: number) => (
+                {/* Tags footer */}
+                {postData.tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 pt-8 mt-10 border-t border-slate-100">
+                    <Tag size={16} className="text-slate-400 mr-1" />
+                    {postData.tags.map((tag: string, i: number) => (
                       <span
-                        key={index}
-                        className="px-4 py-1.5 text-sm font-bold text-slate-600 bg-slate-100 rounded-full hover:bg-violet-100 hover:text-violet-700 transition-colors cursor-pointer"
+                        key={i}
+                        className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 rounded-full hover:bg-violet-100 hover:text-violet-700 transition-colors cursor-pointer"
                       >
                         #{tag}
                       </span>
                     ))}
                   </div>
+                )}
+              </div>
+
+              {/* Author full card */}
+              <div className="relative flex items-center gap-6 p-8 overflow-hidden text-white bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl shadow-xl">
+                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+                <div className="w-20 h-20 shrink-0 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-3xl font-black">
+                  {(postData.author as string).charAt(0)}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* --- SHARE & AUTHOR --- */}
-          <div className="grid gap-8 mb-20 md:grid-cols-3">
-            {/* Share Card */}
-            <div className="flex flex-col justify-center h-full p-6 bg-white border shadow-lg md:col-span-1 rounded-3xl border-slate-100 shadow-slate-200/50">
-              <h3 className="flex items-center gap-2 mb-4 font-bold text-slate-900">
-                <Share2 size={20} className="text-violet-600" /> Chia sẻ ngay
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
-                  target="_blank"
-                  className="p-3 text-blue-600 transition-all bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white"
-                >
-                  <Facebook size={20} />
-                </a>
-                <a
-                  href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
-                  target="_blank"
-                  className="p-3 transition-all bg-sky-50 text-sky-500 rounded-xl hover:bg-sky-500 hover:text-white"
-                >
-                  <Twitter size={20} />
-                </a>
-                <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
-                  target="_blank"
-                  className="p-3 text-indigo-700 transition-all bg-indigo-50 rounded-xl hover:bg-indigo-700 hover:text-white"
-                >
-                  <Linkedin size={20} />
-                </a>
-                {/* Copy Button Logic Placeholder */}
-                <button className="p-3 transition-all bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-600 hover:text-white">
-                  <Copy size={20} />
-                </button>
+                <div className="relative z-10">
+                  <p className="text-xs font-bold text-violet-200 uppercase tracking-widest mb-1">
+                    Tác giả
+                  </p>
+                  <h3 className="text-xl font-black mb-2">
+                    {postData.author as string}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-violet-100 max-w-md">
+                    Full-stack Developer đam mê chia sẻ kiến thức về Web
+                    Development, UI/UX và công nghệ mới nhất. Theo dõi để cập
+                    nhật thêm!
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Author Card */}
-            <div className="relative flex items-center gap-6 p-8 overflow-hidden text-white shadow-xl md:col-span-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl">
-              <div className="absolute top-0 right-0 w-32 h-32 -mt-10 -mr-10 rounded-full bg-white/10 blur-2xl" />
-              <div className="flex items-center justify-center w-20 h-20 border-2 rounded-full shadow-inner bg-white/20 backdrop-blur-sm border-white/30 shrink-0">
-                <span className="text-3xl font-bold">
-                  {postData.author.charAt(0)}
-                </span>
-              </div>
-              <div className="relative z-10">
-                <h3 className="mb-2 text-xl font-bold">
-                  Viết bởi {postData.author}
+              {/* CTA / Comment */}
+              <div className="relative overflow-hidden bg-white border border-slate-100 rounded-2xl p-10 text-center shadow-sm">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
+                <div className="w-14 h-14 mx-auto mb-5 flex items-center justify-center bg-violet-50 rounded-2xl">
+                  <MessageCircle className="text-violet-600" size={28} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">
+                  Thảo luận & Góp ý
                 </h3>
-                <p className="max-w-md text-sm leading-relaxed text-violet-100 opacity-90">
-                  Full-stack Developer đam mê chia sẻ kiến thức về Web
-                  Development, UI/UX và công nghệ mới nhất. Theo dõi để cập nhật
-                  thêm!
+                <p className="text-slate-500 text-sm max-w-md mx-auto mb-8 leading-relaxed">
+                  Bạn thấy bài viết này hữu ích? Hãy để lại bình luận hoặc chia
+                  sẻ ý kiến để cộng đồng cùng phát triển nhé!
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* --- RELATED POSTS --- */}
-          {relatedPosts.length > 0 && (
-            <section className="pt-12 mb-20 border-t border-slate-200">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 rounded-lg bg-violet-100 text-violet-600">
-                  <TrendingUp size={24} />
-                </div>
-                <h3 className="text-3xl font-black text-slate-900">
-                  Bài viết liên quan
-                </h3>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-3">
-                {relatedPosts.map((related: any) => (
-                  <Link
-                    key={related._id}
-                    href={`/blog/${related.slug}`}
-                    className="group"
-                  >
-                    <div className="flex flex-col h-full overflow-hidden transition-all duration-300 transform bg-white border rounded-3xl border-slate-100 hover:shadow-2xl hover:shadow-violet-200/50 hover:-translate-y-1">
-                      {related.thumbnail && (
-                        <div className="relative aspect-[16/10] overflow-hidden">
-                          <Image
-                            src={related.thumbnail}
-                            alt={related.title}
-                            fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-110"
-                          />
-                          <div className="absolute inset-0 transition-all bg-black/10 group-hover:bg-transparent" />
-                        </div>
-                      )}
-                      <div className="flex flex-col flex-grow p-6">
-                        <h4 className="mb-3 text-lg font-bold transition-colors text-slate-900 line-clamp-2 group-hover:text-violet-600">
-                          {related.title}
-                        </h4>
-                        <div className="flex items-center gap-1 pt-4 mt-auto text-xs font-bold border-t text-slate-400 border-slate-100">
-                          <Clock size={12} /> {related.readTime || "5 min"}
-                          <span className="mx-2">•</span>
-                          <span>Đọc tiếp</span>
-                          <ChevronRight size={12} />
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex justify-center gap-3 flex-wrap">
+                  <CommentButton />
+                  <Link href="/blog">
+                    <button className="px-7 py-3 text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl hover:bg-white hover:border-violet-200 hover:text-violet-600 hover:shadow-md transition-all">
+                      Xem thêm bài viết
+                    </button>
                   </Link>
-                ))}
+                </div>
               </div>
-            </section>
-          )}
-
-          {/* --- COMMENT & CTA --- */}
-          <div className="mb-12 text-center bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl shadow-slate-200/50 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
-
-            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-violet-600" />
-            <h3 className="mb-3 text-2xl font-black text-slate-900">
-              Thảo luận & Góp ý
-            </h3>
-            <p className="max-w-xl mx-auto mb-8 text-slate-600">
-              Bạn thấy bài viết này hữu ích? Hãy để lại bình luận bên dưới hoặc
-              chia sẻ ý kiến của bạn để cộng đồng cùng phát triển nhé!
-            </p>
-
-            <div className="flex justify-center gap-4">
-              <CommentButton />
-              <Link href="/blog">
-                <button className="px-8 py-3 font-bold transition-all border bg-slate-50 text-slate-700 rounded-xl border-slate-200 hover:bg-white hover:border-violet-200 hover:text-violet-600 hover:shadow-md">
-                  Xem thêm bài viết khác
-                </button>
-              </Link>
             </div>
+
+            {/* ── SIDEBAR RIGHT ── */}
+            <aside className="lg:col-span-1">
+              <div className="sticky top-24 space-y-4">
+                {/* Related posts */}
+                {relatedPosts.length > 0 && (
+                  <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="flex items-center gap-2 text-sm font-black text-slate-800">
+                        <TrendingUp size={15} className="text-violet-500" />
+                        Bài viết liên quan
+                      </h3>
+                      <Link
+                        href="/blog"
+                        className="text-xs font-bold text-violet-600 hover:text-violet-700"
+                      >
+                        Xem tất cả →
+                      </Link>
+                    </div>
+                    <div className="space-y-1">
+                      {relatedPosts.map((related: any) => (
+                        <Link
+                          key={related._id}
+                          href={`/blog/${related.slug}`}
+                          className="group block"
+                        >
+                          <div className="flex gap-3 items-start p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                            {related.thumbnail && (
+                              <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-slate-100">
+                                <Image
+                                  src={related.thumbnail}
+                                  alt={related.title}
+                                  fill
+                                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-slate-800 line-clamp-2 group-hover:text-violet-600 transition-colors leading-snug">
+                                {related.title}
+                              </h4>
+                              <div className="flex items-center gap-1 mt-1.5 text-xs text-slate-400 font-medium">
+                                <Clock size={10} />
+                                <span>{related.readTime || "5 phút đọc"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick share dark */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">
+                    Chia sẻ bài viết
+                  </p>
+                  <div className="flex gap-2">
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+                      target="_blank"
+                      className="flex-1 flex justify-center p-3 bg-white/10 hover:bg-blue-600 rounded-xl transition-all"
+                    >
+                      <Facebook size={17} />
+                    </a>
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+                      target="_blank"
+                      className="flex-1 flex justify-center p-3 bg-white/10 hover:bg-sky-500 rounded-xl transition-all"
+                    >
+                      <Twitter size={17} />
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+                      target="_blank"
+                      className="flex-1 flex justify-center p-3 bg-white/10 hover:bg-indigo-600 rounded-xl transition-all"
+                    >
+                      <Linkedin size={17} />
+                    </a>
+                    <button className="flex-1 flex justify-center p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all">
+                      <Copy size={17} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
-        </article>
+        </div>
       </main>
     </>
   );
