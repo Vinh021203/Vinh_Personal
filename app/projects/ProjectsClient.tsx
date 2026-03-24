@@ -184,7 +184,10 @@ function ProjectCard({
         </div>
 
         <p className="flex-grow mb-6 text-sm font-medium leading-relaxed text-slate-500 line-clamp-2">
-          {project.description}
+          {(project.description ?? "")
+            .replace(/<[^>]*>/g, "")
+            .replace(/&nbsp;/g, " ")
+            .trim()}
         </p>
 
         {/* Tech Stack */}

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowUpRight,
   Code2,
   Loader2,
   Rocket,
@@ -43,7 +42,6 @@ export const ProjectSection = () => {
       try {
         const res = await fetch("/api/projects");
         if (!res.ok) throw new Error("Failed to fetch");
-
         const data = await res.json();
         const sorted = data.sort(
           (a: any, b: any) =>
@@ -52,47 +50,8 @@ export const ProjectSection = () => {
         setProjects(sorted.slice(0, 6));
       } catch (error) {
         console.error(error);
-        const mockProjects: Project[] = [
-          {
-            _id: "1",
-            name: "E-commerce Platform",
-            description:
-              "Nền tảng thương mại điện tử đa kênh với tính năng thanh toán real-time.",
-            image:
-              "https://images.unsplash.com/photo-1661956602116-aa6865609028?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-            slug: "e-com",
-            category: "Web App",
-            technologies: ["Next.js", "Stripe", "Redis"],
-            createdAt: "2024-01-01",
-            featured: true,
-          },
-          {
-            _id: "2",
-            name: "Finance Dashboard",
-            description:
-              "Bảng điều khiển quản lý tài chính cá nhân với biểu đồ tương tác.",
-            image:
-              "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-            slug: "finance",
-            category: "Dashboard",
-            technologies: ["React", "Recharts", "Tailwind"],
-            createdAt: "2024-02-01",
-            featured: false,
-          },
-          {
-            _id: "3",
-            name: "AI Chat Interface",
-            description: "Giao diện chat thông minh tích hợp GPT-4 API.",
-            image:
-              "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-            slug: "ai-chat",
-            category: "AI Tool",
-            technologies: ["TypeScript", "OpenAI", "Socket.io"],
-            createdAt: "2024-03-01",
-            featured: true,
-          },
-        ];
-        setProjects(mockProjects);
+        // ── Không có mock data, để rỗng ──
+        setProjects([]);
       } finally {
         setLoading(false);
       }
@@ -116,7 +75,7 @@ export const ProjectSection = () => {
       </div>
 
       <div className="container relative z-10 px-6 mx-auto max-w-7xl">
-        {/* CENTERED SECTION HEADER */}
+        {/* SECTION HEADER */}
         <div className="max-w-3xl mx-auto mb-16 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -152,10 +111,15 @@ export const ProjectSection = () => {
           </motion.p>
         </div>
 
-        {/* Main Project Grid */}
+        {/* PROJECT GRID */}
         {loading ? (
           <div className="flex items-center justify-center h-64 text-blue-500">
             <Loader2 size={40} className="animate-spin" />
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
+            <Code2 size={40} className="opacity-30" />
+            <p className="text-sm font-medium">Chưa có dự án nào</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2 lg:grid-cols-3">
@@ -205,7 +169,7 @@ export const ProjectSection = () => {
                   {/* Category Badge */}
                   <div className="absolute top-4 left-4">
                     <span className="px-3 py-1 text-xs font-bold tracking-wider uppercase border rounded-full shadow-sm bg-white/90 backdrop-blur-md text-slate-700 border-white/50">
-                      {project.category}
+                      {project.category ?? "Project"}
                     </span>
                   </div>
                 </div>
@@ -224,8 +188,12 @@ export const ProjectSection = () => {
                     )}
                   </div>
 
+                  {/* ── Description: strip HTML ── */}
                   <p className="mb-6 text-sm leading-relaxed text-slate-500 line-clamp-2">
-                    {project.description}
+                    {(project.description ?? "")
+                      .replace(/<[^>]*>/g, "")
+                      .replace(/&nbsp;/g, " ")
+                      .trim()}
                   </p>
 
                   {/* Tech Stack & Footer */}
@@ -258,18 +226,16 @@ export const ProjectSection = () => {
           </div>
         )}
 
-        {/* CTA BOX with "Xem tất cả" button */}
+        {/* CTA BOX */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="relative max-w-4xl mx-auto"
         >
-          {/* Gradient Border Effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 blur-2xl opacity-20 rounded-[2rem]" />
 
           <div className="relative bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
-            {/* Left: Icon & Text */}
             <div className="flex items-center w-full gap-6 md:w-auto">
               <div className="p-4 text-blue-600 bg-blue-50 rounded-2xl">
                 <LayoutTemplate size={32} />
@@ -284,7 +250,6 @@ export const ProjectSection = () => {
               </div>
             </div>
 
-            {/* Right: 3 Buttons */}
             <div className="flex flex-col w-full gap-3 sm:flex-row md:w-auto">
               <Link href="/projects" className="flex-1 md:flex-none">
                 <motion.button

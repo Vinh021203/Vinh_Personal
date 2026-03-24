@@ -43,7 +43,6 @@ interface Project {
 }
 
 export default function ProjectListClient() {
-  // --- LOGIC BACKEND GIỮ NGUYÊN ---
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [preview, setPreview] = useState<Project | null>(null);
@@ -66,6 +65,13 @@ export default function ProjectListClient() {
     currentPage * PAGE_SIZE,
   );
 
+  // Helper strip HTML
+  const stripHtml = (html?: string) =>
+    (html ?? "")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -73,50 +79,18 @@ export default function ProjectListClient() {
         const data = await res.json();
         const enhancedData = data.map((project: any, index: number) => ({
           ...project,
-          budget: Math.floor(Math.random() * 50000) + 10000,
-          progress: Math.floor(Math.random() * 100),
-          priority: ["low", "medium", "high"][index % 3] as
-            | "low"
-            | "medium"
-            | "high",
-          featured: index < 2,
+          budget: project.budget ?? 0,
+          progress: project.progress ?? 0,
+          priority:
+            project.priority ??
+            (["low", "medium", "high"][index % 3] as "low" | "medium" | "high"),
+          featured: project.featured ?? index < 2,
         }));
         setProjects(enhancedData);
       } catch {
         toast.error("Không thể tải danh sách dự án!");
-        setProjects([
-          {
-            _id: "1",
-            name: "Website VinhWorks",
-            client: "VinhWorks",
-            status: "Hoàn thành",
-            description:
-              "Thiết kế và phát triển website portfolio cá nhân với Next.js và Tailwind CSS",
-            image:
-              "https://api.dicebear.com/7.x/shapes/svg?seed=project1&backgroundColor=f97316",
-            tags: ["React", "Next.js", "Tailwind"],
-            createdAt: new Date().toISOString(),
-            budget: 25000,
-            progress: 100,
-            priority: "high",
-            featured: true,
-          },
-          {
-            _id: "2",
-            name: "E-commerce App",
-            client: "TechStore",
-            status: "Đang thực hiện",
-            description: "Ứng dụng bán hàng trực tuyến đa nền tảng",
-            image:
-              "https://api.dicebear.com/7.x/shapes/svg?seed=project2&backgroundColor=fbbf24",
-            tags: ["Node.js", "MongoDB", "Flutter"],
-            createdAt: new Date().toISOString(),
-            budget: 45000,
-            progress: 65,
-            priority: "medium",
-            featured: false,
-          },
-        ]);
+        // ── Không có mock data ──
+        setProjects([]);
       } finally {
         setLoading(false);
       }
@@ -126,12 +100,11 @@ export default function ProjectListClient() {
 
   const getStatusColor = (status: string | undefined | null) => {
     if (!status) return "bg-slate-50 text-slate-500 border-slate-200";
-
     switch (status.toLowerCase()) {
       case "hoàn thành":
         return "bg-green-50 text-green-600 border-green-200";
       case "đang thực hiện":
-      case "đang triển khai": // Thêm case này nếu cần đồng bộ
+      case "đang triển khai":
         return "bg-blue-50 text-blue-600 border-blue-200";
       case "tạm dừng":
         return "bg-amber-50 text-amber-600 border-amber-200";
@@ -144,7 +117,6 @@ export default function ProjectListClient() {
 
   const getPriorityColor = (priority: string | undefined | null) => {
     if (!priority) return "text-slate-600 bg-slate-50 border-slate-100";
-
     switch (priority) {
       case "high":
         return "text-red-600 bg-red-50 border-red-100";
@@ -172,7 +144,7 @@ export default function ProjectListClient() {
       if (!res.ok) throw new Error("Failed to delete project");
       toast.success("Xoá dự án thành công!");
       setProjects(projects.filter((project) => project._id !== deleteId));
-    } catch (err) {
+    } catch {
       toast.error("Xoá dự án thất bại!");
     } finally {
       setIsDeleting(false);
@@ -181,7 +153,6 @@ export default function ProjectListClient() {
     }
   };
 
-  // --- RENDER ---
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -232,7 +203,6 @@ export default function ProjectListClient() {
             </p>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
           <Link href="/admin/projects/create">
             <button className="relative flex items-center gap-2 px-6 py-3 overflow-hidden text-sm font-bold text-white transition-all shadow-lg group bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl shadow-orange-500/20 hover:shadow-orange-500/30">
@@ -251,7 +221,6 @@ export default function ProjectListClient() {
         transition={{ delay: 0.1 }}
         className="p-2 bg-white border border-orange-100 rounded-[20px] shadow-sm flex flex-col md:flex-row gap-3 mb-8"
       >
-        {/* Search */}
         <div className="relative flex-1 group">
           <Search
             className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-orange-500"
@@ -265,8 +234,6 @@ export default function ProjectListClient() {
             className="w-full py-3 pl-12 pr-4 text-sm font-medium transition-all border border-transparent outline-none bg-slate-50 rounded-2xl text-slate-700 placeholder:text-slate-400 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10"
           />
         </div>
-
-        {/* Filters */}
         <div className="flex items-center gap-2 p-1 overflow-x-auto bg-slate-50 rounded-2xl no-scrollbar">
           <div className="relative px-2">
             <select
@@ -285,27 +252,17 @@ export default function ProjectListClient() {
               size={16}
             />
           </div>
-
           <div className="w-[1px] h-6 bg-slate-200 mx-1" />
-
           <div className="flex gap-1">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-xl transition-all ${
-                viewMode === "grid"
-                  ? "bg-white text-orange-600 shadow-sm"
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
+              className={`p-2 rounded-xl transition-all ${viewMode === "grid" ? "bg-white text-orange-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
             >
               <LayoutGrid size={18} />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-xl transition-all ${
-                viewMode === "list"
-                  ? "bg-white text-orange-600 shadow-sm"
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
+              className={`p-2 rounded-xl transition-all ${viewMode === "list" ? "bg-white text-orange-600 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
             >
               <List size={18} />
             </button>
@@ -340,7 +297,7 @@ export default function ProjectListClient() {
                       fill
                       className="object-cover transition-transform duration-700 transform group-hover:scale-110"
                       onError={(e) => {
-                        e.currentTarget.src = "/placeholder.jpg"; // Fallback nếu ảnh lỗi
+                        e.currentTarget.src = "/placeholder.jpg";
                       }}
                     />
                   ) : (
@@ -348,28 +305,20 @@ export default function ProjectListClient() {
                       <ImageIcon size={48} strokeWidth={1} />
                     </div>
                   )}
-
-                  {/* Status & Priority Badges */}
                   <div className="absolute z-10 flex items-start justify-between top-4 left-4 right-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm backdrop-blur-md ${getStatusColor(
-                        project.status,
-                      )}`}
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm backdrop-blur-md ${getStatusColor(project.status)}`}
                     >
                       {project.status}
                     </span>
                     {project.priority && (
                       <span
-                        className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border shadow-sm backdrop-blur-md flex items-center gap-1 ${getPriorityColor(
-                          project.priority,
-                        )}`}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border shadow-sm backdrop-blur-md flex items-center gap-1 ${getPriorityColor(project.priority)}`}
                       >
                         <Activity size={12} /> {project.priority}
                       </span>
                     )}
                   </div>
-
-                  {/* Hover Actions */}
                   <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px]">
                     <button
                       onClick={() => setPreview(project)}
@@ -410,11 +359,11 @@ export default function ProjectListClient() {
                     )}
                   </div>
 
+                  {/* ── Strip HTML description ── */}
                   <p className="flex-1 mb-4 text-sm text-slate-500 line-clamp-2">
-                    {project.description || "Chưa có mô tả dự án..."}
+                    {stripHtml(project.description) || "Chưa có mô tả dự án..."}
                   </p>
 
-                  {/* Budget & Progress */}
                   <div className="pt-4 space-y-3 border-t border-slate-50">
                     <div className="flex justify-between text-xs font-bold text-slate-600">
                       <span className="flex items-center gap-1">
@@ -428,7 +377,6 @@ export default function ProjectListClient() {
                         )}
                       </span>
                     </div>
-
                     <div className="space-y-1">
                       <div className="flex justify-between text-[10px] font-bold uppercase text-slate-400">
                         <span>Tiến độ</span>
@@ -439,11 +387,7 @@ export default function ProjectListClient() {
                           initial={{ width: 0 }}
                           animate={{ width: `${project.progress}%` }}
                           transition={{ duration: 1, delay: 0.2 }}
-                          className={`h-full rounded-full ${
-                            project.progress === 100
-                              ? "bg-green-500"
-                              : "bg-gradient-to-r from-orange-400 to-amber-400"
-                          }`}
+                          className={`h-full rounded-full ${project.progress === 100 ? "bg-green-500" : "bg-gradient-to-r from-orange-400 to-amber-400"}`}
                         />
                       </div>
                     </div>
@@ -514,9 +458,7 @@ export default function ProjectListClient() {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(
-                            project.status,
-                          )}`}
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getStatusColor(project.status)}`}
                         >
                           {project.status}
                         </span>
@@ -700,8 +642,9 @@ export default function ProjectListClient() {
                 </div>
 
                 <h3 className="mb-2 font-bold text-slate-800">Mô tả dự án</h3>
+                {/* ── Strip HTML ở preview modal ── */}
                 <p className="mb-6 leading-relaxed text-slate-600">
-                  {preview.description ||
+                  {stripHtml(preview.description) ||
                     "Chưa có mô tả chi tiết cho dự án này."}
                 </p>
 
