@@ -314,14 +314,16 @@ export default function AboutClient() {
                     </motion.button>
                   </Link>
 
-                  <motion.button
+                  <motion.a
+                    href="/CV_Website.pdf"
+                    download="CV_VinhWorks.pdf"
                     whileHover={{ scale: 1.05, backgroundColor: "#F8FAFC" }}
                     whileTap={{ scale: 0.95 }}
                     className="flex-1 sm:flex-none w-full sm:w-auto flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-3 sm:py-4 text-sm sm:text-base lg:text-lg font-bold transition-all bg-white border-2 text-slate-700 border-slate-100 rounded-xl sm:rounded-2xl hover:border-purple-200 hover:text-purple-600"
                   >
                     <Download size={16} className="sm:w-5 sm:h-5" />
                     <span>Tải CV</span>
-                  </motion.button>
+                  </motion.a>
                 </div>
 
                 {/* Social Links */}
@@ -548,39 +550,101 @@ export default function AboutClient() {
         </section>
 
         {/* ================= QUOTE / PHILOSOPHY ================= */}
-        <section className="py-8">
-          <div className="container max-w-5xl px-6 mx-auto">
-            <div className="relative rounded-[3rem] bg-white border border-slate-100 p-12 md:p-20 text-center overflow-hidden shadow-2xl shadow-slate-200/50">
-              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-20%] right-[20%] w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[100px] mix-blend-multiply animate-blob" />
-                <div className="absolute bottom-[-20%] left-[20%] w-[500px] h-[500px] bg-orange-200/40 rounded-full blur-[100px] mix-blend-multiply animate-blob animation-delay-2000" />
-                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-              </div>
+        <section className="py-10 sm:py-16">
+          <div className="container max-w-5xl px-4 sm:px-6 mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="relative"
+            >
+              {/* Gradient border wrapper */}
+              <div className="p-[2px] rounded-[2.5rem] bg-gradient-to-br from-violet-500 via-fuchsia-500 to-orange-400 shadow-2xl shadow-purple-500/20">
+                <div className="relative rounded-[2.4rem] bg-white overflow-hidden">
 
-              <div className="relative z-10">
-                <div className="inline-block p-4 mb-8 text-purple-600 border rounded-full shadow-lg bg-gradient-to-br from-slate-50 to-white border-slate-100">
-                  <Brain size={32} />
+                  {/* Background blobs */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="absolute -top-1/4 right-0 w-[600px] h-[600px] bg-purple-100/60 rounded-full blur-[120px] animate-blob" />
+                    <div className="absolute -bottom-1/4 left-0 w-[500px] h-[500px] bg-orange-100/60 rounded-full blur-[120px] animate-blob animation-delay-2000" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(139,92,246,0.04)_0%,_transparent_70%)]" />
+                  </div>
+
+                  <div className="relative z-10 px-6 py-12 sm:px-14 sm:py-16 md:px-20 md:py-20 text-center">
+
+                    {/* Decorative quote marks */}
+                    <div className="absolute top-4 left-4 sm:top-8 sm:left-8 text-[80px] sm:text-[120px] font-black leading-none text-transparent bg-clip-text bg-gradient-to-br from-violet-200 to-fuchsia-100 select-none pointer-events-none">
+                      &ldquo;
+                    </div>
+                    <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 text-[80px] sm:text-[120px] font-black leading-none text-transparent bg-clip-text bg-gradient-to-br from-orange-200 to-fuchsia-100 select-none pointer-events-none rotate-180">
+                      &ldquo;
+                    </div>
+
+                    {/* Brain icon */}
+                    <motion.div
+                      animate={{ rotate: [0, 8, -8, 0] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                      className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 mb-6 sm:mb-8 rounded-2xl bg-gradient-to-br from-violet-100 to-fuchsia-100 border border-violet-200 shadow-lg shadow-violet-100"
+                    >
+                      <Brain size={28} className="text-violet-600 sm:w-8 sm:h-8" />
+                    </motion.div>
+
+                    {/* Quote text */}
+                    <h2 className="relative z-10 mb-6 sm:mb-10 text-2xl sm:text-3xl md:text-5xl font-black leading-[1.25] text-slate-900">
+                      Code không chỉ để{" "}
+                      <span className="relative inline-block">
+                        <span className="relative z-10">máy tính hiểu.</span>
+                      </span>
+                      <br />
+                      Code là để{" "}
+                      <span className="relative inline-block">
+                        <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500">
+                          con người
+                        </span>
+                        <span className="absolute -bottom-1 left-0 right-0 h-[3px] rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400 opacity-60" />
+                      </span>{" "}
+                      cảm nhận.
+                    </h2>
+
+                    {/* Divider + Label */}
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="h-px flex-1 max-w-[60px] bg-gradient-to-r from-transparent to-slate-200 rounded-full" />
+                      <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-50 to-fuchsia-50 border border-violet-100">
+                        <Sparkles size={14} className="text-violet-500" />
+                        <p className="text-xs sm:text-sm font-bold tracking-[0.15em] uppercase text-violet-600">
+                          Triết lý làm việc
+                        </p>
+                      </div>
+                      <div className="h-px flex-1 max-w-[60px] bg-gradient-to-l from-transparent to-slate-200 rounded-full" />
+                    </div>
+
+                    {/* Author row */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="mt-6 sm:mt-8 flex items-center justify-center gap-3"
+                    >
+                      <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-violet-200 shadow-md">
+                        <Image
+                          src="/me.jpg"
+                          alt="Vinh"
+                          width={36}
+                          height={36}
+                          className="object-cover w-full h-full"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-black text-slate-800">Lương Xuân Vinh</p>
+                        <p className="text-xs text-slate-400 font-medium">Full-stack Developer & Founder</p>
+                      </div>
+                    </motion.div>
+
+                  </div>
                 </div>
-
-                <h2 className="mb-8 text-3xl font-black leading-tight text-slate-900 md:text-5xl">
-                  "Code không chỉ để máy tính hiểu.
-                  <br />
-                  Code là để{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-orange-500">
-                    con người
-                  </span>{" "}
-                  cảm nhận."
-                </h2>
-
-                <div className="flex items-center justify-center gap-2">
-                  <div className="h-0.5 w-12 bg-slate-200 rounded-full"></div>
-                  <p className="text-lg font-bold tracking-widest uppercase text-slate-500">
-                    Triết lý làm việc
-                  </p>
-                  <div className="h-0.5 w-12 bg-slate-200 rounded-full"></div>
-                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
