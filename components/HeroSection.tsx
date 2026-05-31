@@ -2,7 +2,6 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
-import { TypeAnimation } from "react-type-animation";
 import {
   ArrowRight,
   Code,
@@ -12,29 +11,19 @@ import {
   Rocket,
   Sparkles,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 
 export const HeroSection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { scrollY } = useScroll();
 
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   const y2 = useTransform(scrollY, [0, 500], [0, -150]);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { clientX, clientY } = e;
-    const { innerWidth, innerHeight } = window;
-    const x = (clientX / innerWidth - 0.5) * 20;
-    const y = (clientY / innerHeight - 0.5) * 20;
-    setMousePosition({ x, y });
-  };
-
   return (
     <section
       ref={containerRef}
-      onMouseMove={handleMouseMove}
       className="relative flex items-center min-h-[85vh] md:min-h-[90vh] pt-16 pb-6 overflow-hidden md:pt-20 lg:pt-6 bg-white"
     >
       {/* BACKGROUND */}
@@ -105,23 +94,8 @@ export const HeroSection = () => {
 
             <div className="h-14 mt-3 text-base font-medium md:mt-4 md:text-lg text-slate-600 md:h-8">
               Tôi giúp bạn xây dựng{" "}
-              <span className="font-bold text-slate-800">
-                <TypeAnimation
-                  sequence={[
-                    "Hệ thống Web App 💻",
-                    2000,
-                    "Giao diện UI/UX đột phá 🎨",
-                    2000,
-                    "Website hiệu năng cao ⚡",
-                    2000,
-                    "Giải pháp SEO toàn diện 🚀",
-                    2000,
-                  ]}
-                  wrapper="span"
-                  speed={50}
-                  repeat={Infinity}
-                  className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600"
-                />
+              <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">
+                Hệ thống Web App
               </span>
             </div>
 

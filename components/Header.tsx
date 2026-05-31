@@ -46,23 +46,6 @@ export const Header = () => {
   }, []);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/auth/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        const data = await res.json();
-        if (data.user) setUser(data.user);
-        else setUser(null);
-      } catch {
-        setUser(null);
-      }
-    };
-    fetchUser();
-  }, [setUser]);
-
-  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
         dropdownRef.current &&

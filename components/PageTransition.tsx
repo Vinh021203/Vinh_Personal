@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css"; // Import CSS mặc định của nprogress
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,13 +15,12 @@ export default function PageTransition({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   // Reset scroll khi đổi route
   useEffect(() => {
     window.scrollTo(0, 0);
     NProgress.done(); // Kết thúc loading khi route thay đổi xong
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   // Giả lập loading start khi click link (Next.js App Router không có event routeChangeStart chuẩn)
   useEffect(() => {

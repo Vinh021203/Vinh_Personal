@@ -75,6 +75,7 @@ export default function ProjectDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [activeInsight, setActiveInsight] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false); // ← NEW
 
   const { scrollYProgress } = useScroll();
@@ -99,6 +100,16 @@ export default function ProjectDetailPage() {
       }
     })();
   }, [slug]);
+
+  useEffect(() => {
+    if (!project) return;
+
+    const timer = window.setInterval(() => {
+      setActiveInsight((index) => (index + 1) % 4);
+    }, 3500);
+
+    return () => window.clearInterval(timer);
+  }, [project]);
 
   const allImages = project
     ? [project.image, ...(project.gallery ?? [])].filter(Boolean)
@@ -139,6 +150,40 @@ export default function ProjectDetailPage() {
 
   const tags = project.tags ?? project.technologies ?? [];
   const statusLabel = project.status ?? "Đang triển khai";
+  const projectInsights = [
+    {
+      icon: <Award size={20} />,
+      label: "Mục tiêu",
+      title: "Tối ưu trải nghiệm và chuyển đổi",
+      text: `Dự án được triển khai cho ${project.client}, tập trung vào giao diện rõ ràng, tốc độ tải tốt và hành trình người dùng mạch lạc.`,
+    },
+    {
+      icon: <Activity size={20} />,
+      label: "Tiến độ",
+      title: `${project.progress ?? 0}% hoàn thiện`,
+      text:
+        (project.progress ?? 0) >= 100
+          ? "Sản phẩm đã hoàn tất các hạng mục chính và sẵn sàng vận hành thực tế."
+          : "Các hạng mục đang được theo dõi theo tiến độ để đảm bảo chất lượng khi bàn giao.",
+    },
+    {
+      icon: <Tag size={20} />,
+      label: "Công nghệ",
+      title: tags.slice(0, 3).join(" / ") || project.category || "Web solution",
+      text:
+        tags.length > 0
+          ? "Bộ công nghệ được chọn theo nhu cầu thực tế của dự án, ưu tiên khả năng mở rộng và dễ bảo trì."
+          : "Giải pháp được thiết kế linh hoạt để dễ mở rộng theo nhu cầu vận hành sau này.",
+    },
+    {
+      icon: <Rocket size={20} />,
+      label: "Hành động",
+      title: project.liveUrl ? "Xem sản phẩm đang chạy" : "Muốn làm dự án tương tự?",
+      text: project.liveUrl
+        ? "Mở website thực tế để kiểm tra giao diện, nội dung và trải nghiệm người dùng."
+        : "Trao đổi nhanh để biến ý tưởng của bạn thành một sản phẩm chỉn chu như thế này.",
+    },
+  ];
 
   const hasUniqueContent =
     project.content &&
@@ -424,23 +469,74 @@ export default function ProjectDetailPage() {
                 ))}
               </div>
 
-              {/* Testimonial */}
-              <div className="bg-gradient-to-br from-orange-500 to-amber-500 rounded-[1.5rem] p-6 text-white shadow-lg shadow-orange-200">
-                <div className="flex gap-0.5 mb-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      fill="white"
-                      className="text-white"
-                    />
-                  ))}
+              {/* Project insight slider */}
+              <div className="relative overflow-hidden rounded-[1.5rem] border border-orange-100 bg-white p-6 shadow-sm">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeInsight}
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.28 }}
+                    className="min-h-[190px]"
+                  >
+                    <div className="mb-5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                          {projectInsights[activeInsight].icon}
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-500">
+                          {projectInsights[activeInsight].label}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-300">
+                        {activeInsight + 1}/{projectInsights.length}
+                      </span>
+                    </div>
+
+                    <h3 className="mb-3 text-xl font-black leading-tight text-slate-900">
+                      {projectInsights[activeInsight].title}
+                    </h3>
+                    <p className="text-sm leading-6 text-slate-500">
+                      {projectInsights[activeInsight].text}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+                <div className="mt-5 flex items-center justify-between gap-4 border-t border-slate-100 pt-5">
+                  <div className="flex gap-1.5">
+                    {projectInsights.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setActiveInsight(index)}
+                        className={`h-2 rounded-full transition-all ${index === activeInsight ? "w-6 bg-orange-500" : "w-2 bg-slate-200 hover:bg-orange-200"}`}
+                        aria-label={`Xem thông tin ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  {project.liveUrl ? (
+                    <a
+                      href={project.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-orange-600"
+                    >
+                      Xem website <ArrowRight size={14} />
+                    </a>
+                  ) : (
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-orange-600"
+                    >
+                      Tư vấn ngay <ArrowRight size={14} />
+                    </Link>
+                  )}
                 </div>
-                <p className="text-sm italic leading-relaxed opacity-95 mb-4">
+                <p className="hidden text-sm italic leading-relaxed opacity-95 mb-4">
                   "Đội ngũ làm việc cực kỳ chuyên nghiệp. Sản phẩm vượt xa mong
                   đợi về cả thẩm mỹ lẫn hiệu năng."
                 </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-white/20">
+                <div className="hidden items-center gap-3 pt-4 border-t border-white/20">
                   <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-sm font-black">
                     C
                   </div>

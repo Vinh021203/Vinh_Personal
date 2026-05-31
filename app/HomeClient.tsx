@@ -1,32 +1,63 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 import { HeroSection } from "@/components/HeroSection";
-import { ServiceSection } from "@/components/ServiceSection";
-import { ProjectSection } from "@/components/ProjectSection";
-import { TestimonialSection } from "@/components/TestimonialSection";
-import { ProcessSection } from "@/components/ProcessSection";
-import { FAQSection } from "@/components/FAQSection";
+
+const ServiceSection = dynamic(
+  () => import("@/components/ServiceSection").then((mod) => mod.ServiceSection),
+  { ssr: false },
+);
+const ProcessSection = dynamic(
+  () => import("@/components/ProcessSection").then((mod) => mod.ProcessSection),
+  { ssr: false },
+);
+const ProjectSection = dynamic(
+  () => import("@/components/ProjectSection").then((mod) => mod.ProjectSection),
+  { ssr: false },
+);
+const TestimonialSection = dynamic(
+  () =>
+    import("@/components/TestimonialSection").then(
+      (mod) => mod.TestimonialSection,
+    ),
+  { ssr: false },
+);
+const FAQSection = dynamic(
+  () => import("@/components/FAQSection").then((mod) => mod.FAQSection),
+  { ssr: false },
+);
 
 export default function HomeClient() {
+  const [showDeferredSections, setShowDeferredSections] = useState(false);
+
+  useEffect(() => {
+    const loadSections = () => setShowDeferredSections(true);
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(loadSections, {
+        timeout: 1200,
+      });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timer = globalThis.setTimeout(loadSections, 600);
+    return () => globalThis.clearTimeout(timer);
+  }, []);
+
   return (
     <main className="min-h-screen bg-white text-slate-900 selection:bg-purple-100 selection:text-purple-900">
-      {/* 1. Hero: Gây ấn tượng ban đầu */}
       <HeroSection />
 
-      {/* 2. Services: Bạn làm được gì? */}
-      <ServiceSection />
-
-      {/* 3. Process: Cách bạn làm việc (Tăng độ uy tín) */}
-      <ProcessSection />
-
-      {/* 4. Projects: Bằng chứng năng lực */}
-      <ProjectSection />
-
-      {/* 5. Testimonials: Khách hàng nói gì (Social Proof) */}
-      <TestimonialSection />
-
-      {/* 6. FAQ: Xử lý từ chối & SEO từ khóa */}
-      <FAQSection />
+      {showDeferredSections && (
+        <>
+          <ServiceSection />
+          <ProcessSection />
+          <ProjectSection />
+          <TestimonialSection />
+          <FAQSection />
+        </>
+      )}
     </main>
   );
 }

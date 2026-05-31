@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import HomeClient from "./HomeClient";
 import Script from "next/script";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "VinhWorks - Thiết kế Website & Giải pháp Số Chuyên nghiệp",

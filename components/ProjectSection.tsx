@@ -6,12 +6,16 @@ import {
   Code2,
   Loader2,
   Rocket,
-  Sparkles,
   Zap,
   LayoutTemplate,
   ExternalLink,
   Calendar,
   Eye,
+  Activity,
+  DollarSign,
+  ImageIcon,
+  Star,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,6 +23,8 @@ import Image from "next/image";
 interface Project {
   _id: string;
   name: string;
+  client: string;
+  status: string;
   description: string;
   image: string;
   slug: string;
@@ -26,6 +32,9 @@ interface Project {
   technologies: string[];
   createdAt: string;
   featured: boolean;
+  budget?: number;
+  progress?: number;
+  priority?: "low" | "medium" | "high";
   liveUrl?: string;
   githubUrl?: string;
 }
@@ -33,8 +42,44 @@ interface Project {
 export const ProjectSection = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  const stripHtml = (html?: string) =>
+    (html ?? "")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+
+  const getStatusColor = (status: string | undefined | null) => {
+    if (!status) return "bg-slate-50 text-slate-500 border-slate-200";
+    switch (status.toLowerCase()) {
+      case "hoàn thành":
+        return "bg-green-50 text-green-600 border-green-200";
+      case "đang thực hiện":
+      case "đang triển khai":
+        return "bg-blue-50 text-blue-600 border-blue-200";
+      case "tạm dừng":
+        return "bg-amber-50 text-amber-600 border-amber-200";
+      case "hủy bỏ":
+        return "bg-red-50 text-red-600 border-red-200";
+      default:
+        return "bg-slate-50 text-slate-500 border-slate-200";
+    }
+  };
+
+  const getPriorityColor = (priority: string | undefined | null) => {
+    if (!priority) return "text-slate-600 bg-slate-50 border-slate-100";
+    switch (priority) {
+      case "high":
+        return "text-red-600 bg-red-50 border-red-100";
+      case "medium":
+        return "text-amber-600 bg-amber-50 border-amber-100";
+      case "low":
+        return "text-blue-600 bg-blue-50 border-blue-100";
+      default:
+        return "text-slate-600 bg-slate-50 border-slate-100";
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -43,7 +88,17 @@ export const ProjectSection = () => {
         const res = await fetch("/api/projects");
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        const sorted = data.sort(
+        const enhancedData = data.map((project: Project, index: number) => ({
+          ...project,
+          status: project.status ?? "Hoàn thành",
+          budget: project.budget ?? 0,
+          progress: project.progress ?? 0,
+          priority:
+            project.priority ??
+            (["low", "medium", "high"][index % 3] as "low" | "medium" | "high"),
+          featured: project.featured ?? index < 2,
+        }));
+        const sorted = enhancedData.sort(
           (a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
@@ -126,98 +181,114 @@ export const ProjectSection = () => {
             {projects.map((project, idx) => (
               <motion.div
                 key={project._id || idx}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: idx * 0.05 }}
                 viewport={{ once: true }}
-                onMouseEnter={() => setHoveredId(project._id)}
-                onMouseLeave={() => setHoveredId(null)}
-                className="group relative bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 hover:shadow-2xl transition-all duration-500 flex flex-col h-full"
+                className="group relative bg-white rounded-[2rem] border border-orange-100/60 shadow-sm hover:shadow-xl hover:shadow-orange-500/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
               >
-                {/* Image Container */}
-                <div className="relative aspect-[4/3] overflow-hidden m-2 rounded-[1.5rem]">
-                  <Image
-                    src={project.image || "/placeholder.jpg"}
-                    alt={project.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    unoptimized
-                  />
+                {/* Image Area */}
+                <div className="relative w-full h-48 overflow-hidden bg-slate-100">
+                  {project.image ? (
+                    <Image
+                      src={project.image}
+                      alt={project.name}
+                      fill
+                      className="object-cover transition-transform duration-700 transform group-hover:scale-110"
+                      unoptimized
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.jpg";
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-300">
+                      <ImageIcon size={48} strokeWidth={1} />
+                    </div>
+                  )}
 
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[2px]" />
-
-                  {/* Quick Actions on Hover */}
-                  <div className="absolute inset-0 flex items-center justify-center gap-3 transition-all duration-300 transform translate-y-4 opacity-0 group-hover:opacity-100 group-hover:translate-y-0">
-                    <Link href={`/projects/${project.slug}`}>
-                      <button className="p-3 transition-transform bg-white rounded-full shadow-lg text-slate-900 hover:scale-110">
-                        <Eye size={20} />
-                      </button>
+                  <div className="absolute z-10 flex items-start justify-between top-4 left-4 right-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-sm backdrop-blur-md ${getStatusColor(project.status)}`}
+                    >
+                      {project.status}
+                    </span>
+                    {project.priority && (
+                      <span
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border shadow-sm backdrop-blur-md flex items-center gap-1 ${getPriorityColor(project.priority)}`}
+                      >
+                        <Activity size={12} /> {project.priority}
+                      </span>
+                    )}
+                  </div>
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                    <Link
+                      href={`/projects/${project.slug}`}
+                      className="p-3 text-white transition-all border bg-white/20 rounded-xl backdrop-blur-md hover:bg-white hover:text-orange-600 border-white/30"
+                    >
+                      <Eye size={20} />
                     </Link>
                     {project.liveUrl && (
                       <a
                         href={project.liveUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-3 text-white transition-transform bg-blue-500 rounded-full shadow-lg hover:scale-110"
+                        className="p-3 text-white transition-all border bg-white/20 rounded-xl backdrop-blur-md hover:bg-white hover:text-blue-600 border-white/30"
                       >
                         <ExternalLink size={20} />
                       </a>
                     )}
                   </div>
-
-                  {/* Category Badge */}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 text-xs font-bold tracking-wider uppercase border rounded-full shadow-sm bg-white/90 backdrop-blur-md text-slate-700 border-white/50">
-                      {project.category ?? "Project"}
-                    </span>
-                  </div>
                 </div>
 
-                {/* Content Body */}
-                <div className="flex flex-col flex-grow p-6 pt-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold transition-colors text-slate-900 group-hover:text-blue-600 line-clamp-1">
-                      {project.name}
-                    </h3>
+                {/* Content Area */}
+                <div className="flex flex-col flex-1 p-6">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="mb-1 text-lg font-bold transition-colors text-slate-800 line-clamp-1 group-hover:text-orange-600">
+                        {project.name}
+                      </h3>
+                      <p className="flex items-center gap-1 text-xs font-medium text-slate-400">
+                        <User size={12} /> {project.client}
+                      </p>
+                    </div>
                     {project.featured && (
-                      <Sparkles
+                      <Star
                         size={16}
-                        className="mt-1 text-yellow-500 fill-yellow-500 shrink-0"
+                        className="text-yellow-400 fill-yellow-400"
                       />
                     )}
                   </div>
 
                   {/* ── Description: strip HTML ── */}
-                  <p className="mb-6 text-sm leading-relaxed text-slate-500 line-clamp-2">
-                    {(project.description ?? "")
-                      .replace(/<[^>]*>/g, "")
-                      .replace(/&nbsp;/g, " ")
-                      .trim()}
+                  <p className="flex-1 mb-4 text-sm text-slate-500 line-clamp-2">
+                    {stripHtml(project.description) || "Chưa có mô tả dự án..."}
                   </p>
 
-                  {/* Tech Stack & Footer */}
-                  <div className="flex items-center justify-between pt-6 mt-auto border-t border-slate-100">
-                    <div className="flex -space-x-2">
-                      {(project.technologies || [])
-                        .slice(0, 3)
-                        .map((tech, tIdx) => (
-                          <div
-                            key={tIdx}
-                            className="px-2 py-1 bg-slate-50 border border-white rounded-lg shadow-sm text-[10px] font-bold text-slate-600 relative z-0 hover:z-10 hover:scale-105 transition-transform"
-                          >
-                            {tech}
-                          </div>
-                        ))}
-                      {(project.technologies?.length || 0) > 3 && (
-                        <div className="px-2 py-1 bg-slate-100 border border-white rounded-lg text-[10px] font-bold text-slate-400">
-                          +{project.technologies.length - 3}
-                        </div>
-                      )}
+                  <div className="pt-4 space-y-3 border-t border-slate-50">
+                    <div className="flex justify-between text-xs font-bold text-slate-600">
+                      <span className="flex items-center gap-1">
+                        <DollarSign size={14} className="text-green-500" />{" "}
+                        {project.budget?.toLocaleString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar size={14} className="text-blue-500" />{" "}
+                        {new Date(project.createdAt).toLocaleDateString("vi-VN")}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-medium text-slate-400">
-                      <Calendar size={12} />
-                      {new Date(project.createdAt).getFullYear()}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-bold uppercase text-slate-400">
+                        <span>Tiến độ</span>
+                        <span>{project.progress}%</span>
+                      </div>
+                      <div className="w-full h-2 overflow-hidden rounded-full bg-slate-100">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${project.progress}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: 0.2 }}
+                          className={`h-full rounded-full ${project.progress === 100 ? "bg-green-500" : "bg-gradient-to-r from-orange-400 to-amber-400"}`}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
