@@ -10,12 +10,59 @@ function generateSlug(str: string) {
   return str
     .toLowerCase()
     .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
     .replace(/[^a-z0-9 -]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-// --- GET: Lấy danh sách dự án ---
+function text(form: FormData, key: string, fallback = "") {
+  const value = form.get(key);
+  return typeof value === "string" ? value.trim() : fallback;
+}
+
+function number(form: FormData, key: string, fallback = 0) {
+  const value = Number(form.get(key));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function array(form: FormData, key: string, fallback: string[] = []) {
+  const raw = form.get(key);
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String).map((item) => item.trim()).filter(Boolean) : fallback;
+  } catch {
+    return raw.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+}
+
+function dateValue(form: FormData, key: string) {
+  const value = text(form, key);
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+async function uploadImage(file: File | null, folder: string) {
+  if (!file || file.size <= 0) return "";
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder }, (error, result) => {
+      if (error || !result) reject(error);
+      else resolve(result);
+    });
+    stream.end(buffer);
+  });
+
+  return uploadResult.secure_url;
+}
+
 export async function GET(req: Request) {
   await connectDB();
   const { searchParams } = new URL(req.url);
@@ -26,26 +73,57 @@ export async function GET(req: Request) {
     const filter: Record<string, unknown> = { visibility: { $ne: "draft" } };
     if (slug) filter.slug = slug;
 
-    const fields =
-      "name slug client status priority budget progress liveUrl image gallery description tags technologies category createdAt updatedAt featured";
-    const query = slug ? Project.findOne(filter).select(fields).lean() : Project.find(filter).sort({ createdAt: -1 }).select(fields).lean();
+    const fields = [
+      "name",
+      "slug",
+      "client",
+      "category",
+      "industry",
+      "status",
+      "priority",
+      "budget",
+      "progress",
+      "summary",
+      "content",
+      "clientLogo",
+      "duration",
+      "startDate",
+      "endDate",
+      "role",
+      "liveUrl",
+      "githubUrl",
+      "image",
+      "gallery",
+      "description",
+      "tags",
+      "technologies",
+      "features",
+      "results",
+      "seoTitle",
+      "seoDescription",
+      "ogImage",
+      "featured",
+      "order",
+      "createdAt",
+      "updatedAt",
+    ].join(" ");
+
+    const query = slug
+      ? Project.findOne(filter).select(fields).lean()
+      : Project.find(filter).sort({ featured: -1, order: 1, createdAt: -1 }).select(fields).lean();
     const data = await query;
+
     return NextResponse.json(data ?? (slug ? null : []), {
-      headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
-      },
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800" },
     });
   }
 
-  const projects = await Project.find().sort({ createdAt: -1 }).lean();
+  const projects = await Project.find().sort({ order: 1, createdAt: -1 }).lean();
   return NextResponse.json(projects, {
-    headers: {
-      "Cache-Control": "private, no-store",
-    },
+    headers: { "Cache-Control": "private, no-store" },
   });
 }
 
-// --- POST: Tạo dự án mới ---
 export async function POST(req: Request) {
   try {
     const auth = await requireAdmin();
@@ -54,96 +132,68 @@ export async function POST(req: Request) {
     await connectDB();
     const form = await req.formData();
 
-    const name = form.get("name") as string;
-    const client = form.get("client") as string;
-    const status = form.get("status") as string;
-    const visibility = form.get("visibility") === "draft" ? "draft" : "published";
-    const tags = JSON.parse((form.get("tags") as string) || "[]");
-    const description = sanitizeHtml((form.get("description") as string) || "");
+    const name = text(form, "name");
+    const client = text(form, "client");
+    if (!name || !client) {
+      return NextResponse.json({ error: "Vui lòng nhập tên dự án và khách hàng" }, { status: 400 });
+    }
 
-    // Các trường mới
-    const budget = Number(form.get("budget")) || 0;
-    const progress = Number(form.get("progress")) || 0;
-    const priority = (form.get("priority") as string) || "medium";
-    const liveUrl = (form.get("liveUrl") as string) || "";
-    const githubUrl = (form.get("githubUrl") as string) || "";
-
-    // --- Xử lý Thumbnail (Ảnh đại diện) ---
     const thumbnail = form.get("thumbnail") as File | null;
-    let imagePath = "";
+    const imagePath = await uploadImage(thumbnail, "projects");
 
-    if (thumbnail && thumbnail.size > 0) {
-      const bytes = await thumbnail.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const uploadResult = await new Promise<{ secure_url: string }>(
-        (resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "projects" },
-            (error, result) => {
-              if (error || !result) reject(error);
-              else resolve(result);
-            }
-          );
-          stream.end(buffer);
-        }
-      );
-      imagePath = uploadResult.secure_url;
-    }
-
-    // --- Xử lý Gallery (Ảnh phụ - Nhiều ảnh) ---
-    // Lưu ý: Ở Frontend cần append cùng key 'gallery' nhiều lần
-    const galleryFiles = form.getAll("gallery") as File[];
     const galleryUrls: string[] = [];
-
-    if (galleryFiles && galleryFiles.length > 0) {
-      for (const file of galleryFiles) {
-        if (file instanceof File && file.size > 0) {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-
-          const uploadRes = await new Promise<{ secure_url: string }>(
-            (resolve, reject) => {
-              const stream = cloudinary.uploader.upload_stream(
-                { folder: "projects/gallery" },
-                (error, result) => {
-                  if (error || !result) reject(error);
-                  else resolve(result);
-                }
-              );
-              stream.end(buffer);
-            }
-          );
-          galleryUrls.push(uploadRes.secure_url);
-        }
-      }
+    for (const file of form.getAll("gallery") as File[]) {
+      const url = await uploadImage(file, "projects/gallery");
+      if (url) galleryUrls.push(url);
     }
 
-    const newProject = new Project({
+    const slug = text(form, "slug") || generateSlug(name);
+    const newProject = await Project.create({
       name,
       client,
-      slug: generateSlug(name),
-      status,
-      visibility,
-      priority,
-      budget,
-      progress,
-      liveUrl,
-      githubUrl,
-      tags,
-      description,
+      slug,
+      category: text(form, "category"),
+      industry: text(form, "industry"),
+      status: text(form, "status", "Đang triển khai") || "Đang triển khai",
+      visibility: text(form, "visibility") === "draft" ? "draft" : "published",
+      priority: ["low", "medium", "high"].includes(text(form, "priority")) ? text(form, "priority") : "medium",
+      budget: number(form, "budget"),
+      progress: Math.max(0, Math.min(100, number(form, "progress"))),
+      summary: text(form, "summary").slice(0, 240),
+      content: sanitizeHtml(text(form, "content")),
+      clientLogo: text(form, "clientLogo"),
+      duration: text(form, "duration"),
+      startDate: dateValue(form, "startDate"),
+      endDate: dateValue(form, "endDate"),
+      role: text(form, "role"),
+      liveUrl: text(form, "liveUrl"),
+      githubUrl: text(form, "githubUrl"),
+      tags: array(form, "tags"),
+      technologies: array(form, "technologies"),
+      features: array(form, "features"),
+      results: array(form, "results"),
+      description: sanitizeHtml(text(form, "description")),
       image: imagePath,
-      gallery: galleryUrls, // Lưu mảng URL gallery
+      gallery: galleryUrls,
+      seoTitle: text(form, "seoTitle").slice(0, 70),
+      seoDescription: text(form, "seoDescription").slice(0, 170),
+      ogImage: text(form, "ogImage"),
+      featured: text(form, "featured") === "true",
+      order: number(form, "order"),
     });
 
-    await newProject.save();
-    await logActivity({ actor: auth.user, action: "create", entity: "project", entityId: newProject._id.toString(), description: `Tạo dự án ${newProject.name}` });
+    await logActivity({
+      actor: auth.user,
+      action: "create",
+      entity: "project",
+      entityId: newProject._id.toString(),
+      description: `Tạo dự án ${newProject.name}`,
+      metadata: { slug: newProject.slug, visibility: newProject.visibility },
+    });
+
     return NextResponse.json(newProject, { status: 201 });
   } catch (error) {
     console.error("Error creating project:", error);
-    return NextResponse.json(
-      { error: "Failed to create project" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Không thể tạo dự án" }, { status: 500 });
   }
 }

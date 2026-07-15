@@ -30,6 +30,12 @@ function cleanText(value: unknown, maxLength = 2000) {
     .slice(0, maxLength);
 }
 
+function cleanArray(value: unknown, maxItems = 5) {
+  return Array.isArray(value)
+    ? value.map((item) => cleanText(item, 500)).filter(Boolean).slice(0, maxItems)
+    : [];
+}
+
 async function getUserFromCookie() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
@@ -55,6 +61,7 @@ export async function GET() {
         $or: [
           { senderId: user.id.toString() },
           { receiverId: user.id.toString() },
+          { conversationId: user.id.toString() },
         ],
       };
 
@@ -87,15 +94,24 @@ export async function POST(req: NextRequest) {
 
   const receiverId = cleanText(body.receiverId, 120) || null;
   const canSendAsAdmin = user?.role === "admin" && !!body.isAdmin;
+  const conversationId = cleanText(body.conversationId, 120) || (canSendAsAdmin ? receiverId || senderId : senderId);
 
   const newMessage = await Message.create({
+    conversationId,
     senderId,
     senderName,
+    senderEmail: isAuthenticated ? user.email || "" : cleanText(body.senderEmail, 160).toLowerCase(),
     receiverId,
     isAdmin: canSendAsAdmin,
     content,
+    attachments: cleanArray(body.attachments),
     read: canSendAsAdmin,
+    deliveredAt: new Date(),
     status: "sent",
+    metadata: {
+      source: cleanText(body.source, 60) || "chat",
+      userAgent: cleanText(req.headers.get("user-agent"), 300),
+    },
   });
 
   return noStore(newMessage, { status: 201 });
@@ -116,8 +132,12 @@ export async function PATCH(req: NextRequest) {
   }
 
   const result = await Message.updateMany(
-    { senderId: conversationId, isAdmin: { $ne: true }, read: { $ne: true } },
-    { $set: { read: true, status: "read" } },
+    {
+      $or: [{ conversationId }, { senderId: conversationId }],
+      isAdmin: { $ne: true },
+      read: { $ne: true },
+    },
+    { $set: { read: true, status: "read", readAt: new Date() } },
   );
 
   if (result.modifiedCount > 0) {
@@ -127,6 +147,7 @@ export async function PATCH(req: NextRequest) {
       entity: "message",
       entityId: conversationId,
       description: `Đánh dấu ${result.modifiedCount} tin nhắn đã đọc`,
+      metadata: { conversationId },
     });
   }
 

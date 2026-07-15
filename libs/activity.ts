@@ -6,6 +6,9 @@ type ActivityInput = {
   entity: "project" | "service" | "user" | "lead" | "message" | "system";
   entityId?: string;
   description: string;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export async function logActivity(input: ActivityInput) {
@@ -18,6 +21,9 @@ export async function logActivity(input: ActivityInput) {
       entity: input.entity,
       entityId: input.entityId || "",
       description: input.description,
+      ipAddress: input.ipAddress || "",
+      userAgent: input.userAgent || "",
+      metadata: input.metadata || {},
     });
   } catch (error) {
     console.error("Activity log failed:", error);

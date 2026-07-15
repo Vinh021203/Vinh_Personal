@@ -85,6 +85,13 @@ export async function PUT(req: Request, context: RouteContext) {
           : "active"
         : currentUser.status;
     const password = String(form.get("password") || "");
+    const phone = String(form.get("phone") || currentUser.phone || "").trim();
+    const bio = String(form.get("bio") || currentUser.bio || "").trim().slice(0, 500);
+    const permissionsRaw = String(form.get("permissions") || "");
+    const permissions =
+      currentSession.role === "admin" && permissionsRaw
+        ? permissionsRaw.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 50)
+        : currentUser.permissions || [];
     const avatarFile = form.get("avatar") as File | null;
     const avatarUrlFromForm = String(form.get("avatarUrl") || "").trim();
     let avatarUrl = avatarUrlFromForm || currentUser.avatar || "";
@@ -114,7 +121,18 @@ export async function PUT(req: Request, context: RouteContext) {
 
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { name, email, role, status, avatar: avatarUrl, password: passwordHash },
+      {
+        name,
+        email,
+        role,
+        status,
+        avatar: avatarUrl,
+        phone,
+        bio,
+        permissions: role === "admin" ? permissions : [],
+        password: passwordHash,
+        ...(password.trim() ? { passwordChangedAt: new Date() } : {}),
+      },
       { new: true },
     ).select("-password");
 
@@ -138,7 +156,7 @@ export async function PUT(req: Request, context: RouteContext) {
       });
     }
 
-    await logActivity({ actor: currentSession, action: "update", entity: "user", entityId: id, description: `Cập nhật người dùng ${updatedUser.name}` });
+    await logActivity({ actor: currentSession, action: "update", entity: "user", entityId: id, description: `Cập nhật người dùng ${updatedUser.name}`, metadata: { role, status } });
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Update User Error:", error);

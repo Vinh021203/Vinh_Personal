@@ -5,6 +5,62 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/libs/auth";
 import { logActivity } from "@/libs/activity";
 
+function generateSlug(str: string) {
+  return str
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function text(form: FormData, key: string, fallback = "") {
+  const value = form.get(key);
+  return typeof value === "string" ? value.trim() : fallback;
+}
+
+function number(form: FormData, key: string, fallback = 0) {
+  const value = Number(form.get(key));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function array(form: FormData, key: string, fallback: string[] = []) {
+  const raw = form.get(key);
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String).map((item) => item.trim()).filter(Boolean) : fallback;
+  } catch {
+    return raw.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+}
+
+function normalizeStatus(status?: string) {
+  return status === "Ẩn" || status === "hidden" ? "Ẩn" : "Hiển thị";
+}
+
+function normalizeVisibility(value?: string) {
+  return value === "draft" ? "draft" : "published";
+}
+
+async function uploadImage(file: File | null) {
+  if (!file || file.size <= 0) return "";
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder: "services" }, (error, result) => {
+      if (error || !result) reject(error);
+      else resolve(result);
+    });
+    stream.end(buffer);
+  });
+  return uploadResult.secure_url;
+}
+
 export async function GET(req: Request) {
   await connectDB();
   const { searchParams } = new URL(req.url);
@@ -12,22 +68,18 @@ export async function GET(req: Request) {
 
   if (isPublic) {
     const services = await Service.find({ status: { $ne: "Ẩn" }, visibility: { $ne: "draft" } })
-      .sort({ createdAt: -1 })
-      .select("name description icon status visibility price category image featured createdAt updatedAt")
+      .sort({ featured: -1, order: 1, createdAt: -1 })
+      .select("name slug description shortDescription icon status visibility price priceLabel startingPrice category image features deliverables process timeline ctaLabel ctaHref seoTitle seoDescription ogImage featured order createdAt updatedAt")
       .lean();
 
     return NextResponse.json(services, {
-      headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
-      },
+      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800" },
     });
   }
 
-  const services = await Service.find().sort({ createdAt: -1 }).lean();
+  const services = await Service.find().sort({ order: 1, createdAt: -1 }).lean();
   return NextResponse.json(services, {
-    headers: {
-      "Cache-Control": "private, no-store",
-    },
+    headers: { "Cache-Control": "private, no-store" },
   });
 }
 
@@ -38,32 +90,40 @@ export async function POST(req: Request) {
 
     await connectDB();
     const form = await req.formData();
-    const thumbnail = form.get("thumbnail") as File | null;
-    let imageUrl = "";
+    const name = text(form, "name");
+    const description = text(form, "description");
 
-    if (thumbnail && thumbnail.size > 0) {
-      const bytes = await thumbnail.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream({ folder: "services" }, (error, result) => {
-          if (error || !result) reject(error);
-          else resolve(result);
-        });
-        stream.end(buffer);
-      });
-      imageUrl = uploadResult.secure_url;
+    if (!name || !description) {
+      return NextResponse.json({ error: "Vui lòng nhập tên và mô tả dịch vụ" }, { status: 400 });
     }
 
+    const imageUrl = await uploadImage(form.get("thumbnail") as File | null);
+    const slug = text(form, "slug") || generateSlug(name);
+
     const newService = await Service.create({
-      name: String(form.get("name") || ""),
-      description: String(form.get("description") || ""),
-      icon: String(form.get("icon") || "Wrench"),
-      status: normalizeStatus(String(form.get("status") || "")),
-      visibility: normalizeVisibility(String(form.get("visibility") || "")),
-      price: Number(form.get("price")) || 0,
-      category: String(form.get("category") || "General"),
+      name,
+      slug,
+      description,
+      shortDescription: text(form, "shortDescription").slice(0, 220),
+      icon: text(form, "icon", "Wrench") || "Wrench",
+      status: normalizeStatus(text(form, "status")),
+      visibility: normalizeVisibility(text(form, "visibility")),
+      price: number(form, "price"),
+      priceLabel: text(form, "priceLabel"),
+      startingPrice: number(form, "startingPrice"),
+      category: text(form, "category", "General") || "General",
       image: imageUrl,
-      featured: form.get("featured") === "true",
+      features: array(form, "features"),
+      deliverables: array(form, "deliverables"),
+      process: array(form, "process"),
+      timeline: text(form, "timeline"),
+      ctaLabel: text(form, "ctaLabel"),
+      ctaHref: text(form, "ctaHref"),
+      seoTitle: text(form, "seoTitle").slice(0, 70),
+      seoDescription: text(form, "seoDescription").slice(0, 170),
+      ogImage: text(form, "ogImage"),
+      featured: text(form, "featured") === "true",
+      order: number(form, "order"),
     });
 
     await logActivity({
@@ -72,18 +132,11 @@ export async function POST(req: Request) {
       entity: "service",
       entityId: newService._id.toString(),
       description: `Tạo dịch vụ ${newService.name}`,
+      metadata: { slug: newService.slug, visibility: newService.visibility },
     });
     return NextResponse.json(newService, { status: 201 });
   } catch (error) {
     console.error("Create Service Error:", error);
     return NextResponse.json({ error: "Không thể tạo dịch vụ" }, { status: 500 });
   }
-}
-
-function normalizeStatus(status?: string) {
-  return status === "Ẩn" ? "Ẩn" : "Hiển thị";
-}
-
-function normalizeVisibility(value?: string) {
-  return value === "draft" ? "draft" : "published";
 }

@@ -21,16 +21,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const description =
-      clean(project.description).slice(0, 158) ||
+      project.seoDescription ||
+      clean(project.summary || project.description).slice(0, 158) ||
       `Khám phá dự án ${project.name} do Lương Vinh thiết kế và phát triển.`;
 
     return createMetadata({
-      title: `${project.name} | Dự án`,
+      title: project.seoTitle || `${project.name} | Dự án`,
       description,
       path: `/projects/${project.slug}`,
-      image: project.image || "/vinhworks-og-dark-1200x630.jpg",
+      image: project.ogImage || project.image || "/vinhworks-og-dark-1200x630.jpg",
       imageAlt: `${project.name} — VinhWorks`,
-      keywords: [project.name, project.client, ...(project.tags || []), "dự án website", "Lương Vinh"],
+      keywords: [project.name, project.client, project.category || "", project.industry || "", ...(project.tags || []), ...(project.technologies || []), "dự án website", "Lương Vinh"].filter(Boolean),
     });
   } catch {
     return createMetadata({
@@ -60,9 +61,9 @@ export default async function ProjectDetailLayout({
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         name: project.name,
-        description: clean(project.description),
+        description: clean(project.summary || project.description),
         url: `${SITE_URL}/projects/${project.slug}`,
-        image: project.image,
+        image: project.ogImage || project.image,
         creator: { "@type": "Person", name: "Lương Vinh", url: SITE_URL },
         about: project.tags || [],
         dateCreated: project.createdAt,

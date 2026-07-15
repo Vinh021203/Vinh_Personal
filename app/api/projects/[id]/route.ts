@@ -10,28 +10,70 @@ function generateSlug(str: string) {
   return str
     .toLowerCase()
     .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
     .replace(/[^a-z0-9 -]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-export async function GET(
-  _: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+function text(form: FormData, key: string, fallback = "") {
+  const value = form.get(key);
+  return typeof value === "string" ? value.trim() : fallback;
+}
+
+function number(form: FormData, key: string, fallback = 0) {
+  if (!form.has(key)) return fallback;
+  const value = Number(form.get(key));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function array(form: FormData, key: string, fallback: string[] = []) {
+  if (!form.has(key)) return fallback;
+  const raw = form.get(key);
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String).map((item) => item.trim()).filter(Boolean) : fallback;
+  } catch {
+    return raw.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+}
+
+function dateValue(form: FormData, key: string, fallback?: Date) {
+  if (!form.has(key)) return fallback;
+  const value = text(form, key);
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : date;
+}
+
+async function uploadImage(file: File | null, folder: string) {
+  if (!file || file.size <= 0) return "";
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder }, (error, result) => {
+      if (error || !result) reject(error);
+      else resolve(result);
+    });
+    stream.end(buffer);
+  });
+  return uploadResult.secure_url;
+}
+
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await connectDB();
 
   const project = await Project.findById(id);
-  if (!project)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(project);
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireAdmin();
     if (auth.response) return auth.response;
@@ -39,135 +81,74 @@ export async function PUT(
     const { id } = await params;
     await connectDB();
 
-    const form = await req.formData();
-
-    // Lấy project hiện tại để đối chiếu dữ liệu cũ
     const currentProject = await Project.findById(id);
-    if (!currentProject) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
-    }
+    if (!currentProject) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-    // --- Xử lý các trường Text ---
-    // Nếu form gửi lên null/undefined, giữ nguyên giá trị cũ (currentProject)
-    // Nếu form gửi chuỗi rỗng "", có thể bạn muốn xóa hoặc cập nhật thành rỗng -> tùy logic
-    // Ở đây tôi ưu tiên: Nếu có gửi key thì update, nếu không gửi key thì giữ nguyên.
-    // Tuy nhiên FormData luôn gửi string, nên ta cần check kỹ.
-
-    const name = form.get("name") as string;
-    const client = form.get("client") as string;
-    const status = form.get("status") as string;
-    const visibility = form.get("visibility") === "draft" ? "draft" : "published";
-    const description = sanitizeHtml((form.get("description") as string) || "");
-
-    // Tags: Xử lý mảng JSON
-    const tagsRaw = form.get("tags") as string;
-    const tags = tagsRaw ? JSON.parse(tagsRaw) : currentProject.tags;
-
-    const budget = form.has("budget")
-      ? Number(form.get("budget"))
-      : currentProject.budget;
-    const progress = form.has("progress")
-      ? Number(form.get("progress"))
-      : currentProject.progress;
-    const priority =
-      (form.get("priority") as string) || currentProject.priority;
-    const liveUrl = (form.get("liveUrl") as string) || currentProject.liveUrl;
-    const githubUrl =
-      (form.get("githubUrl") as string) || currentProject.githubUrl;
-
-    // --- Xử lý Thumbnail (Ảnh đại diện) ---
+    const form = await req.formData();
+    const name = text(form, "name", currentProject.name);
     const thumbnail = form.get("thumbnail") as File | null;
-    let imagePath = currentProject.image; // Mặc định giữ ảnh cũ
+    const uploadedImage = await uploadImage(thumbnail, "projects");
 
-    if (thumbnail && thumbnail.size > 0) {
-      const bytes = await thumbnail.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const uploadResult = await new Promise<{ secure_url: string }>(
-        (resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "projects" },
-            (error, result) => {
-              if (error || !result) reject(error);
-              else resolve(result);
-            }
-          );
-          stream.end(buffer);
-        }
-      );
-      imagePath = uploadResult.secure_url; // Cập nhật ảnh mới
-    }
-
-    // --- Xử lý Gallery (Ảnh phụ) ---
-    const galleryFiles = form.getAll("gallery") as File[];
     const newGalleryUrls: string[] = [];
-
-    if (galleryFiles && galleryFiles.length > 0) {
-      for (const file of galleryFiles) {
-        if (file instanceof File && file.size > 0) {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-
-          const uploadRes = await new Promise<{ secure_url: string }>(
-            (resolve, reject) => {
-              const stream = cloudinary.uploader.upload_stream(
-                { folder: "projects/gallery" },
-                (error, result) => {
-                  if (error || !result) reject(error);
-                  else resolve(result);
-                }
-              );
-              stream.end(buffer);
-            }
-          );
-          newGalleryUrls.push(uploadRes.secure_url);
-        }
-      }
+    for (const file of form.getAll("gallery") as File[]) {
+      const url = await uploadImage(file, "projects/gallery");
+      if (url) newGalleryUrls.push(url);
     }
 
-    // Merge gallery cũ + mới (hoặc thay thế tùy logic bạn muốn)
-    // Ở đây là: Giữ lại gallery cũ và THÊM ảnh mới vào sau
-    const updatedGallery = [
-      ...(currentProject.gallery || []),
-      ...newGalleryUrls,
-    ];
-
+    const existingGallery = array(form, "existingGallery", currentProject.gallery || []);
     const updateData = {
-      name: name || currentProject.name,
-      client: client || currentProject.client,
-      status: status || currentProject.status,
-      visibility,
-      tags,
-      description: description || currentProject.description,
-      slug: name ? generateSlug(name) : currentProject.slug, // Chỉ tạo slug mới nếu tên đổi
-      budget,
-      progress,
-      priority,
-      liveUrl,
-      githubUrl,
-      image: imagePath,
-      gallery: updatedGallery,
+      name,
+      client: text(form, "client", currentProject.client),
+      slug: text(form, "slug") || (name !== currentProject.name ? generateSlug(name) : currentProject.slug),
+      category: text(form, "category", currentProject.category || ""),
+      industry: text(form, "industry", currentProject.industry || ""),
+      status: text(form, "status", currentProject.status),
+      visibility: text(form, "visibility", currentProject.visibility) === "draft" ? "draft" : "published",
+      priority: ["low", "medium", "high"].includes(text(form, "priority", currentProject.priority)) ? text(form, "priority", currentProject.priority) : "medium",
+      budget: number(form, "budget", currentProject.budget),
+      progress: Math.max(0, Math.min(100, number(form, "progress", currentProject.progress))),
+      summary: text(form, "summary", currentProject.summary || "").slice(0, 240),
+      content: form.has("content") ? sanitizeHtml(text(form, "content")) : currentProject.content,
+      clientLogo: text(form, "clientLogo", currentProject.clientLogo || ""),
+      duration: text(form, "duration", currentProject.duration || ""),
+      startDate: dateValue(form, "startDate", currentProject.startDate),
+      endDate: dateValue(form, "endDate", currentProject.endDate),
+      role: text(form, "role", currentProject.role || ""),
+      liveUrl: text(form, "liveUrl", currentProject.liveUrl || ""),
+      githubUrl: text(form, "githubUrl", currentProject.githubUrl || ""),
+      tags: array(form, "tags", currentProject.tags || []),
+      technologies: array(form, "technologies", currentProject.technologies || []),
+      features: array(form, "features", currentProject.features || []),
+      results: array(form, "results", currentProject.results || []),
+      description: form.has("description") ? sanitizeHtml(text(form, "description")) : currentProject.description,
+      image: uploadedImage || currentProject.image,
+      gallery: [...existingGallery, ...newGalleryUrls],
+      seoTitle: text(form, "seoTitle", currentProject.seoTitle || "").slice(0, 70),
+      seoDescription: text(form, "seoDescription", currentProject.seoDescription || "").slice(0, 170),
+      ogImage: text(form, "ogImage", currentProject.ogImage || ""),
+      featured: form.has("featured") ? text(form, "featured") === "true" : currentProject.featured,
+      order: number(form, "order", currentProject.order || 0),
     };
 
-    const updated = await Project.findByIdAndUpdate(id, updateData, {
-      new: true,
+    const updated = await Project.findByIdAndUpdate(id, updateData, { new: true });
+
+    await logActivity({
+      actor: auth.user,
+      action: "update",
+      entity: "project",
+      entityId: id,
+      description: `Cập nhật dự án ${updated?.name || currentProject.name}`,
+      metadata: { slug: updated?.slug, visibility: updated?.visibility },
     });
 
-    await logActivity({ actor: auth.user, action: "update", entity: "project", entityId: id, description: `Cập nhật dự án ${updated?.name || currentProject.name}` });
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating project:", error);
-    return NextResponse.json(
-      { error: "Failed to update project" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Không thể cập nhật dự án" }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  _: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin();
   if (auth.response) return auth.response;
 
@@ -175,6 +156,15 @@ export async function DELETE(
   await connectDB();
 
   const deleted = await Project.findByIdAndDelete(id);
-  if (deleted) await logActivity({ actor: auth.user, action: "delete", entity: "project", entityId: id, description: `Xóa dự án ${deleted.name}` });
+  if (deleted) {
+    await logActivity({
+      actor: auth.user,
+      action: "delete",
+      entity: "project",
+      entityId: id,
+      description: `Xóa dự án ${deleted.name}`,
+      metadata: { slug: deleted.slug },
+    });
+  }
   return NextResponse.json({ success: true });
 }
