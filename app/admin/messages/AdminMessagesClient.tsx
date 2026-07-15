@@ -1,229 +1,334 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import {
-  MessageCircle,
-  Send,
-  Search,
-  Phone,
-  Video,
-  MoreVertical,
-  Plus,
-  Check,
-  CheckCheck,
-  ChevronLeft,
-  Mic,
-  Image as ImageIcon,
-} from "lucide-react";
-import { motion } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
 import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowRight,
+  CheckCheck,
+  Clock3,
+  Mail,
+  MessageCircle,
+  RefreshCw,
+  Search,
+  Send,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
-// --- Interfaces ---
+type MessageStatus = "sent" | "delivered" | "read";
+
 interface Message {
   _id: string;
   senderId: string;
   senderName: string;
-  receiverId?: string;
+  receiverId?: string | null;
   content: string;
   createdAt: string;
   isAdmin?: boolean;
   read?: boolean;
-  status?: "sent" | "delivered" | "read";
+  status?: MessageStatus;
 }
 
-interface UserInfo {
+interface UserRecord {
+  _id: string;
+  name?: string;
+  email?: string;
+  avatar?: string;
+  role?: string;
+}
+
+interface Conversation {
   id: string;
   name: string;
-  lastMessage?: string;
-  lastMessageTime?: string;
-  unreadCount?: number;
-  isOnline?: boolean;
+  email?: string;
   avatar?: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  totalMessages: number;
+}
+
+const fallbackAvatar = "/vinhworks-favicon-512.png";
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function formatTime(dateString?: string) {
+  if (!dateString) return "--:--";
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const sameDay =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (sameDay) {
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
+function initials(name?: string) {
+  const value = name?.trim() || "KH";
+  return value
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 export default function AdminMessagesClient() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [reply, setReply] = useState("");
+  const [usersMap, setUsersMap] = useState<Record<string, UserRecord>>({});
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-
-  // State lưu thông tin users để map avatar
-  const [usersMap, setUsersMap] = useState<Record<string, any>>({});
+  const [filterStatus, setFilterStatus] = useState<"all" | "unread">("all");
+  const [reply, setReply] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // --- Fetch Data ---
-  useEffect(() => {
-    const initData = async () => {
-      try {
-        // 1. Get Users List & Admin Info
-        const usersRes = await fetch("/api/users");
-        const usersData = await usersRes.json();
+  const fetchData = useCallback(async (silent = false) => {
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
 
-        // Tạo map để tra cứu nhanh user info từ ID
-        const map: Record<string, any> = {};
-        let adminIdFound = null;
+    try {
+      const [usersRes, messagesRes] = await Promise.all([
+        fetch("/api/users", { cache: "no-store" }),
+        fetch("/api/messages", { cache: "no-store" }),
+      ]);
 
-        if (Array.isArray(usersData)) {
-          usersData.forEach((u: any) => {
-            map[u._id] = u; // Lưu ý key là _id từ mongoDB
-            if (u.role === "admin") adminIdFound = u._id;
-          });
-        }
-        setUsersMap(map);
-        if (adminIdFound) setCurrentAdminId(adminIdFound);
-
-        // 2. Get Messages
-        const timestamp = new Date().getTime();
-        const res = await fetch(`/api/messages?t=${timestamp}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("Failed to fetch messages");
-        const data = await res.json();
-        setMessages(data);
-      } catch (err) {
-        console.error(err);
-        // toast.error("Không thể tải dữ liệu!");
-      } finally {
-        setLoading(false);
+      if (!usersRes.ok || !messagesRes.ok) {
+        throw new Error("Không thể tải dữ liệu tin nhắn");
       }
-    };
 
-    initData();
-    const interval = setInterval(initData, 5000);
-    return () => clearInterval(interval);
+      const usersData = await usersRes.json();
+      const messagesData = await messagesRes.json();
+      const nextUsersMap: Record<string, UserRecord> = {};
+      let adminId: string | null = null;
+
+      if (Array.isArray(usersData)) {
+        usersData.forEach((user: UserRecord) => {
+          if (!user?._id) return;
+          nextUsersMap[user._id] = user;
+          if (user.role === "admin") adminId = user._id;
+        });
+      }
+
+      setUsersMap(nextUsersMap);
+      setCurrentAdminId(adminId);
+      setMessages(Array.isArray(messagesData) ? messagesData : []);
+    } catch (error) {
+      console.error(error);
+      if (!silent) toast.error("Không thể tải trung tâm tin nhắn");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  // Auto scroll to bottom
   useEffect(() => {
-    if (messages.length > 0 && selectedUser) {
-      setTimeout(() => {
-        chatBottomRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        });
-      }, 100);
-    }
-  }, [messages, selectedUser]);
+    fetchData();
+    const interval = window.setInterval(() => fetchData(true), 15000);
 
-  // --- Logic Process User List ---
-  const userListMap = new Map<string, UserInfo>();
+    return () => window.clearInterval(interval);
+  }, [fetchData]);
 
-  messages.forEach((msg) => {
-    // Nếu người gửi không phải là admin hiện tại -> đó là khách hàng
-    if (msg.senderId !== currentAdminId) {
-      if (!userListMap.has(msg.senderId)) {
-        // Lấy thông tin user từ usersMap đã fetch
-        const userProfile = usersMap[msg.senderId] || {};
+  const conversations = useMemo<Conversation[]>(() => {
+    const map = new Map<string, Conversation>();
 
-        userListMap.set(msg.senderId, {
-          id: msg.senderId,
-          name: userProfile.name || msg.senderName || "Khách hàng",
-          // Ưu tiên avatar từ User Profile, nếu không có thì dùng Dicebear fallback
-          avatar:
-            userProfile.avatar ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`,
-          unreadCount: 0,
-          isOnline: Math.random() > 0.5, // Mock status
-        });
+    messages.forEach((message) => {
+      const customerId =
+        message.senderId === currentAdminId ? message.receiverId : message.senderId;
+
+      if (!customerId || customerId === currentAdminId || customerId === "admin") {
+        return;
       }
 
-      const user = userListMap.get(msg.senderId)!;
-      user.lastMessage = msg.content;
-      user.lastMessageTime = msg.createdAt;
-      if (!msg.read && !msg.isAdmin) user.unreadCount! += 1;
-    }
-  });
+      const profile = usersMap[customerId];
+      const current = map.get(customerId);
+      const next: Conversation = current || {
+        id: customerId,
+        name:
+          profile?.name ||
+          (message.senderId === customerId ? message.senderName : undefined) ||
+          "Khách hàng",
+        email: profile?.email,
+        avatar: profile?.avatar,
+        lastMessage: "",
+        lastMessageTime: "",
+        unreadCount: 0,
+        totalMessages: 0,
+      };
 
-  const userInfos = Array.from(userListMap.values()).sort((a, b) => {
-    return (
-      new Date(b.lastMessageTime || 0).getTime() -
-      new Date(a.lastMessageTime || 0).getTime()
+      next.lastMessage = message.content;
+      next.lastMessageTime = message.createdAt;
+      next.totalMessages += 1;
+
+      if (message.senderId === customerId && !message.read && !message.isAdmin) {
+        next.unreadCount += 1;
+      }
+
+      map.set(customerId, next);
+    });
+
+    return Array.from(map.values()).sort(
+      (a, b) =>
+        new Date(b.lastMessageTime || 0).getTime() -
+        new Date(a.lastMessageTime || 0).getTime(),
     );
-  });
+  }, [currentAdminId, messages, usersMap]);
 
-  const filteredUsers = userInfos.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterStatus === "all" ||
-        (filterStatus === "unread" && user.unreadCount! > 0)),
+  const filteredConversations = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    return conversations.filter((conversation) => {
+      const matchesSearch =
+        !keyword ||
+        conversation.name.toLowerCase().includes(keyword) ||
+        conversation.email?.toLowerCase().includes(keyword);
+      const matchesFilter =
+        filterStatus === "all" || conversation.unreadCount > 0;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [conversations, filterStatus, searchTerm]);
+
+  const selectedConversation = useMemo(
+    () => conversations.find((conversation) => conversation.id === selectedUser),
+    [conversations, selectedUser],
   );
 
-  const filteredMessages = selectedUser
-    ? messages.filter(
-        (m) => m.senderId === selectedUser || m.receiverId === selectedUser,
-      )
-    : [];
+  const selectedMessages = useMemo(() => {
+    if (!selectedUser) return [];
 
-  const selectedUserInfo = userInfos.find((u) => u.id === selectedUser);
+    return messages.filter(
+      (message) =>
+        message.senderId === selectedUser || message.receiverId === selectedUser,
+    );
+  }, [messages, selectedUser]);
 
-  // --- Handlers ---
+  const unreadTotal = conversations.reduce(
+    (total, conversation) => total + conversation.unreadCount,
+    0,
+  );
+
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    const timeout = window.setTimeout(() => {
+      chatBottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 80);
+
+    return () => window.clearTimeout(timeout);
+  }, [selectedMessages.length, selectedUser]);
+
+  const handleSelectConversation = (conversationId: string) => {
+    setSelectedUser(conversationId);
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.senderId === conversationId && !message.isAdmin
+          ? { ...message, read: true, status: "read" }
+          : message,
+      ),
+    );
+    fetch("/api/messages", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId }),
+    }).catch((error) => console.error("Mark read failed:", error));
+  };
+
   const handleReply = async () => {
-    if (!reply.trim() || !selectedUser || !currentAdminId) return;
+    const trimmedReply = reply.trim();
+    if (!trimmedReply || !selectedUser || !currentAdminId || sending) return;
 
-    const tempId = `temp-${Date.now()}`;
-    const newMessage: Message = {
-      _id: tempId,
+    const optimisticMessage: Message = {
+      _id: `temp-${Date.now()}`,
       senderId: currentAdminId,
       senderName: "Admin",
       receiverId: selectedUser,
-      content: reply,
+      content: trimmedReply,
       createdAt: new Date().toISOString(),
       isAdmin: true,
       status: "sent",
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => [...prev, optimisticMessage]);
     setReply("");
+    setSending(true);
 
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     try {
-      await fetch("/api/messages", {
+      const response = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: newMessage.content,
+          content: trimmedReply,
           receiverId: selectedUser,
           isAdmin: true,
         }),
       });
+
+      if (!response.ok) throw new Error("Send failed");
+
+      const savedMessage = await response.json();
+      setMessages((prev) =>
+        prev.map((message) =>
+          message._id === optimisticMessage._id ? savedMessage : message,
+        ),
+      );
     } catch (error) {
+      console.error(error);
       toast.error("Gửi tin nhắn thất bại");
+      setMessages((prev) =>
+        prev.filter((message) => message._id !== optimisticMessage._id),
+      );
+      setReply(trimmedReply);
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       handleReply();
     }
   };
 
-  const formatMessageTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const isToday =
-      date.getDate() === now.getDate() &&
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear();
-    return isToday
-      ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  const handleTextareaInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setReply(event.target.value);
+    event.target.style.height = "auto";
+    event.target.style.height = `${Math.min(event.target.scrollHeight, 132)}px`;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-orange-200 rounded-full border-t-orange-500 animate-spin" />
-          <p className="text-sm font-bold text-slate-400 animate-pulse">
-            Đang tải tin nhắn...
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="border border-zinc-950 bg-zinc-950 px-8 py-6 text-center text-white shadow-[8px_8px_0_#ffb21c]">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-[#ffb21c] border-t-transparent" />
+          <p className="text-xs font-black uppercase tracking-[0.28em]">
+            Đang tải tin nhắn
           </p>
         </div>
       </div>
@@ -231,405 +336,421 @@ export default function AdminMessagesClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-40px)] flex flex-col p-8">
+    <div className="min-h-screen bg-[#fff8e9] px-4 pb-10 pt-6 text-zinc-950 sm:px-6 lg:px-8">
       <Toaster position="top-right" />
 
-      {/* 1. HEADER */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-between px-1 mb-6 md:flex-row"
-      >
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-white border border-orange-100 shadow-sm rounded-2xl">
-            <MessageCircle size={24} className="text-orange-500" />
+      <section className="grid overflow-hidden border border-zinc-950 bg-[#fff8e9] shadow-[8px_8px_0_#ffb21c] lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="p-5 sm:p-7 lg:p-9">
+          <div className="mb-8 inline-flex -rotate-2 items-center gap-2 border border-zinc-950 bg-white px-4 py-3 text-xs font-black uppercase tracking-[0.28em] shadow-[4px_4px_0_#ffb21c]">
+            <Sparkles className="h-4 w-4 text-[#e18400]" />
+            Customer support
           </div>
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-800">
-              Trung tâm tin nhắn
-            </h1>
-            <p className="text-xs font-medium text-slate-500 mt-0.5">
-              Kết nối và hỗ trợ khách hàng
-            </p>
-          </div>
+
+          <h1 className="max-w-3xl text-[clamp(3.2rem,9vw,7.4rem)] font-black leading-[0.82] tracking-[-0.08em]">
+            Trung tâm
+            <span className="block text-[#e18400]">tin nhắn.</span>
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-lg font-semibold leading-8 text-slate-600">
+            Theo dõi hội thoại khách hàng, phản hồi nhanh và giữ mọi yêu cầu
+            hỗ trợ trong một khu vực CMS gọn gàng.
+          </p>
         </div>
-      </motion.div>
 
-      {/* 2. MAIN LAYOUT */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex-1 bg-white border border-orange-100 rounded-[32px] shadow-xl overflow-hidden flex relative"
-      >
-        {/* --- SIDEBAR (USER LIST) --- */}
-        <div
-          className={`w-full md:w-80 lg:w-96 border-r border-slate-100 flex flex-col bg-slate-50/50 ${
-            selectedUser ? "hidden md:flex" : "flex"
-          }`}
-        >
-          {/* Search Header */}
-          <div className="sticky top-0 z-10 p-5 border-b bg-white/80 backdrop-blur-md border-slate-100">
-            <div className="relative mb-4 group">
-              <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Tìm kiếm khách hàng..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none"
-              />
-            </div>
-            <div className="flex gap-2 pb-1 overflow-x-auto no-scrollbar">
-              {[
-                { id: "all", label: "Tất cả" },
-                { id: "unread", label: "Chưa đọc" },
-              ].map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setFilterStatus(filter.id)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    filterStatus === filter.id
-                      ? "bg-slate-800 text-white shadow-md shadow-slate-800/20"
-                      : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-100"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
+        <div className="border-t border-zinc-950 bg-zinc-950 p-5 text-white lg:border-l lg:border-t-0 sm:p-7 lg:p-9">
+          <div className="mb-6 flex items-center justify-between">
+            <p className="text-xs font-black uppercase tracking-[0.34em] text-[#ffb21c]">
+              Inbox snapshot
+            </p>
+            <span className="border border-[#ffb21c] px-3 py-2 text-xs font-black uppercase text-[#ffb21c]">
+              CMS
+            </span>
           </div>
 
-          {/* List Users */}
-          <div className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
-            {filteredUsers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                <p className="text-sm font-medium">
-                  Không tìm thấy cuộc hội thoại
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              ["Hội thoại", conversations.length.toString().padStart(2, "0")],
+              ["Chưa đọc", unreadTotal.toString().padStart(2, "0")],
+              ["Tin nhắn", messages.length.toString().padStart(2, "0")],
+              ["Đang chọn", selectedConversation ? "01" : "00"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="border border-white/20 bg-white/[0.04] p-5"
+              >
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-white/55">
+                  {label}
+                </p>
+                <p className="mt-4 text-4xl font-black leading-none text-white">
+                  {value}
                 </p>
               </div>
-            ) : (
-              filteredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  onClick={() => setSelectedUser(user.id)}
-                  className={`group p-3 rounded-2xl cursor-pointer transition-all relative ${
-                    selectedUser === user.id
-                      ? "bg-white shadow-md shadow-orange-100 border border-orange-100 ring-1 ring-orange-500/20"
-                      : "hover:bg-white hover:shadow-sm border border-transparent"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 overflow-hidden border-2 border-white rounded-full shadow-sm bg-slate-100">
-                        <Image
-                          src={user.avatar || "/placeholder.jpg"}
-                          alt=""
-                          width={48}
-                          height={48}
-                          className="object-cover"
-                          unoptimized // Fix lỗi load ảnh từ nguồn ngoài nếu chưa config domain
-                          onError={(e) => {
-                            e.currentTarget.srcset = "/placeholder.jpg"; // Fallback nếu ảnh lỗi
-                          }}
-                        />
-                      </div>
-                      {user.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm ring-1 ring-white" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <h3
-                          className={`text-sm font-bold truncate ${
-                            selectedUser === user.id
-                              ? "text-slate-800"
-                              : "text-slate-700"
-                          }`}
-                        >
-                          {user.name}
-                        </h3>
-                        {user.lastMessageTime && (
-                          <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap ml-2">
-                            {formatMessageTime(user.lastMessageTime)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p
-                          className={`text-xs truncate max-w-[140px] ${
-                            user.unreadCount! > 0
-                              ? "font-bold text-slate-800"
-                              : "text-slate-500"
-                          }`}
-                        >
-                          {user.lastMessage || "Đã gửi tin nhắn"}
-                        </p>
-                        {user.unreadCount! > 0 && (
-                          <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm shadow-orange-500/30 animate-pulse">
-                            {user.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+            ))}
           </div>
-        </div>
 
-        {/* --- CHAT AREA --- */}
-        <div
-          className={`flex-1 flex flex-col bg-white relative ${
-            !selectedUser ? "hidden md:flex" : "flex"
-          }`}
-        >
-          {selectedUser ? (
-            <>
-              {/* Chat Header */}
-              <div className="absolute top-0 z-20 flex items-center justify-between w-full h-20 px-6 border-b shadow-sm border-slate-100 bg-white/90 backdrop-blur-md">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setSelectedUser(null)}
-                    className="p-2 -ml-2 transition-colors rounded-full md:hidden text-slate-500 hover:bg-slate-100"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <Image
-                        src={selectedUserInfo?.avatar || "/placeholder.jpg"}
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="object-cover border rounded-full shadow-sm"
-                        unoptimized
-                      />
-                      {selectedUserInfo?.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
-                      )}
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold text-slate-800">
-                        {selectedUserInfo?.name}
-                      </h2>
-                      <p className="flex items-center gap-1 text-xs text-slate-500">
-                        {selectedUserInfo?.isOnline ? (
-                          <span className="font-medium text-green-600">
-                            Đang hoạt động
-                          </span>
-                        ) : (
-                          "Hoạt động 5p trước"
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-1 md:gap-2">
-                  <button className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors">
-                    <Phone size={20} />
-                  </button>
-                  <button className="p-2.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors">
-                    <Video size={20} />
-                  </button>
-                  <button className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                    <MoreVertical size={20} />
-                  </button>
-                </div>
+          <button
+            type="button"
+            onClick={() => fetchData(true)}
+            className="mt-6 inline-flex items-center gap-3 border border-[#ffb21c] bg-[#ffb21c] px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-zinc-950 shadow-[5px_5px_0_rgba(255,178,28,0.25)] transition hover:-translate-y-0.5"
+          >
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            Làm mới inbox
+          </button>
+        </div>
+      </section>
+
+      <section className="mt-8 overflow-hidden border border-zinc-950 bg-white shadow-[8px_8px_0_#ffb21c]">
+        <div className="grid h-[calc(100dvh-220px)] min-h-[560px] max-h-[780px] lg:grid-cols-[390px_minmax(0,1fr)]">
+          <aside
+            className={cn(
+              "border-zinc-950 bg-[#fff8e9] lg:border-r",
+              selectedUser ? "hidden lg:block" : "block",
+            )}
+          >
+            <div className="border-b border-zinc-950 p-4 sm:p-5">
+              <div className="flex items-center gap-3 border border-zinc-950 bg-white px-4 py-3 shadow-[4px_4px_0_#ffb21c]">
+                <Search className="h-5 w-5 text-slate-500" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Tìm khách hàng, email..."
+                  className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-slate-400"
+                />
               </div>
 
-              {/* Messages List */}
-              <div className="flex-1 p-4 pt-24 pb-4 overflow-y-auto bg-slate-50/30 custom-scrollbar">
-                <div className="flex flex-col max-w-3xl gap-2 mx-auto">
-                  <div className="flex justify-center my-4">
-                    <span className="px-3 py-1 text-[10px] font-bold text-slate-400 bg-slate-100 rounded-full uppercase tracking-wider">
-                      Hôm nay
-                    </span>
-                  </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {[
+                  { id: "all", label: "Tất cả" },
+                  { id: "unread", label: "Chưa đọc" },
+                ].map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setFilterStatus(filter.id as "all" | "unread")}
+                    className={cn(
+                      "border border-zinc-950 px-4 py-3 text-xs font-black uppercase tracking-[0.18em] transition",
+                      filterStatus === filter.id
+                        ? "bg-zinc-950 text-white shadow-[4px_4px_0_#ffb21c]"
+                        : "bg-white text-zinc-950 hover:bg-[#fff3d8]",
+                    )}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                  {filteredMessages.map((msg, index) => {
-                    const isMe = msg.senderId === currentAdminId || msg.isAdmin;
-                    const showAvatar =
-                      index === 0 ||
-                      filteredMessages[index - 1].senderId !== msg.senderId;
+            <div className="scrollbar-hide h-full overflow-y-auto overscroll-contain p-4 sm:p-5">
+              {filteredConversations.length === 0 ? (
+                <div className="border border-dashed border-zinc-300 bg-white p-6 text-center">
+                  <MessageCircle className="mx-auto mb-3 h-9 w-9 text-[#e18400]" />
+                  <p className="text-sm font-black uppercase tracking-[0.16em]">
+                    Chưa có hội thoại
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500">
+                    Khi khách gửi tin nhắn, danh sách sẽ xuất hiện tại đây.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredConversations.map((conversation, index) => {
+                    const active = selectedUser === conversation.id;
 
                     return (
-                      <motion.div
-                        key={msg._id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex gap-3 ${
-                          isMe ? "flex-row-reverse" : "flex-row"
-                        }`}
-                      >
-                        {!isMe && (
-                          <div
-                            className={`w-8 h-8 shrink-0 flex flex-col justify-end ${
-                              !showAvatar && "invisible"
-                            }`}
-                          >
-                            <Image
-                              src={
-                                selectedUserInfo?.avatar || "/placeholder.jpg"
-                              }
-                              alt=""
-                              width={32}
-                              height={32}
-                              className="object-cover bg-white border rounded-full border-slate-200"
-                              unoptimized
-                            />
-                          </div>
+                      <button
+                        key={conversation.id}
+                        type="button"
+                        onClick={() => handleSelectConversation(conversation.id)}
+                        className={cn(
+                          "group w-full border p-4 text-left transition",
+                          active
+                            ? "border-zinc-950 bg-zinc-950 text-white shadow-[5px_5px_0_#ffb21c]"
+                            : "border-zinc-200 bg-white hover:border-zinc-950 hover:shadow-[5px_5px_0_#ffb21c]",
                         )}
-
-                        <div
-                          className={`flex flex-col max-w-[75%] md:max-w-[60%] ${
-                            isMe ? "items-end" : "items-start"
-                          }`}
-                        >
-                          <div
-                            className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${
-                              isMe
-                                ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-tr-none"
-                                : "bg-white border border-slate-100 text-slate-700 rounded-tl-none"
-                            }`}
-                          >
-                            {msg.content}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-zinc-950 bg-[#ffb21c]">
+                            {conversation.avatar ? (
+                              <Image
+                                src={conversation.avatar}
+                                alt={conversation.name}
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-sm font-black">
+                                {initials(conversation.name)}
+                              </div>
+                            )}
+                            <span className="absolute bottom-0 right-0 h-3 w-3 border border-zinc-950 bg-emerald-400" />
                           </div>
-                          <div
-                            className={`flex items-center gap-1.5 mt-1 text-[10px] font-medium ${
-                              isMe
-                                ? "text-slate-400 flex-row-reverse"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            <span>
-                              {new Date(msg.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="truncate text-base font-black">
+                                {conversation.name}
+                              </p>
+                              <span
+                                className={cn(
+                                  "text-[11px] font-black",
+                                  active ? "text-white/55" : "text-slate-400",
+                                )}
+                              >
+                                {formatTime(conversation.lastMessageTime)}
+                              </span>
+                            </div>
+
+                            {conversation.email && (
+                              <p
+                                className={cn(
+                                  "mt-1 truncate text-xs font-bold",
+                                  active ? "text-white/55" : "text-slate-400",
+                                )}
+                              >
+                                {conversation.email}
+                              </p>
+                            )}
+
+                            <p
+                              className={cn(
+                                "mt-2 line-clamp-2 text-sm font-semibold leading-6",
+                                active ? "text-white/70" : "text-slate-600",
+                              )}
+                            >
+                              {conversation.lastMessage}
+                            </p>
+                          </div>
+
+                          <div className="flex shrink-0 flex-col items-end gap-2">
+                            <span
+                              className={cn(
+                                "text-[11px] font-black text-[#e18400]",
+                                active && "text-[#ffb21c]",
+                              )}
+                            >
+                              {String(index + 1).padStart(2, "0")}
                             </span>
-                            {isMe &&
-                              (msg.status === "read" ? (
-                                <CheckCheck
-                                  size={14}
-                                  className="text-blue-500"
-                                />
-                              ) : msg.status === "delivered" ? (
-                                <CheckCheck
-                                  size={14}
-                                  className="text-slate-400"
-                                />
-                              ) : (
-                                <Check size={14} className="text-slate-400" />
-                              ))}
+
+                            {conversation.unreadCount > 0 && (
+                              <span className="grid h-6 min-w-6 place-items-center bg-[#ff6a00] px-2 text-xs font-black text-white">
+                                {conversation.unreadCount}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      </motion.div>
+                      </button>
                     );
                   })}
-                  <div ref={chatBottomRef} className="h-px" />
                 </div>
-              </div>
+              )}
+            </div>
+          </aside>
 
-              {/* Input Area */}
-              <div className="p-4 bg-white border-t border-slate-100">
-                <div className="max-w-3xl mx-auto flex items-end gap-2 bg-slate-50 p-2 rounded-[24px] border border-slate-200 focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all">
-                  <button className="p-3 transition-all rounded-full text-slate-400 hover:text-slate-600 hover:bg-white">
-                    <Plus size={20} />
-                  </button>
-                  <button className="hidden p-3 transition-all rounded-full sm:block text-slate-400 hover:text-slate-600 hover:bg-white">
-                    <ImageIcon size={20} />
-                  </button>
-
-                  <textarea
-                    ref={textareaRef}
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Nhập tin nhắn..."
-                    className="flex-1 bg-transparent border-none focus:ring-0 py-3 px-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none max-h-32 min-h-[44px] outline-none custom-scrollbar"
-                    rows={1}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = "auto";
-                      target.style.height = `${target.scrollHeight}px`;
-                    }}
-                  />
-
-                  {reply.trim() ? (
+          <main className={cn("flex min-h-0 flex-col", !selectedUser && "hidden lg:flex")}>
+            {selectedConversation ? (
+              <>
+                <div className="flex items-center justify-between gap-4 border-b border-zinc-950 bg-white p-4 sm:p-5">
+                  <div className="flex min-w-0 items-center gap-3">
                     <button
-                      onClick={handleReply}
-                      className="p-3 text-white transition-all bg-orange-500 rounded-full shadow-lg hover:bg-orange-600 shadow-orange-500/30 active:scale-95"
+                      type="button"
+                      onClick={() => setSelectedUser(null)}
+                      className="grid h-11 w-11 place-items-center border border-zinc-950 bg-[#fff8e9] lg:hidden"
+                      aria-label="Quay lại danh sách hội thoại"
                     >
-                      <Send size={18} fill="currentColor" className="ml-0.5" />
+                      <ArrowRight className="h-5 w-5 rotate-180" />
                     </button>
-                  ) : (
-                    <button className="p-3 transition-all rounded-full text-slate-400 hover:text-slate-600 hover:bg-white">
-                      <Mic size={20} />
+
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-zinc-950 bg-[#ffb21c]">
+                      {selectedConversation.avatar ? (
+                        <Image
+                          src={selectedConversation.avatar}
+                          alt={selectedConversation.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm font-black">
+                          {initials(selectedConversation.name)}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <h2 className="truncate text-xl font-black">
+                        {selectedConversation.name}
+                      </h2>
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-2 w-2 bg-emerald-400" />
+                          Online
+                        </span>
+                        {selectedConversation.email && (
+                          <span className="inline-flex items-center gap-1 normal-case tracking-normal">
+                            <Mail className="h-3.5 w-3.5" />
+                            {selectedConversation.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hidden items-center gap-2 sm:flex">
+                    <span className="border border-zinc-950 bg-[#fff8e9] px-3 py-2 text-xs font-black uppercase tracking-[0.14em]">
+                      {selectedConversation.totalMessages} tin
+                    </span>
+                    <span className="border border-zinc-950 bg-zinc-950 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-white">
+                      Support
+                    </span>
+                  </div>
+                </div>
+
+                <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[linear-gradient(rgba(255,178,28,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,178,28,0.06)_1px,transparent_1px)] bg-[size:34px_34px] p-4 sm:p-6">
+                  <div className="mx-auto flex max-w-4xl flex-col gap-4">
+                    {selectedMessages.map((message, index) => {
+                      const isMine = message.senderId === currentAdminId || message.isAdmin;
+                      const previous = selectedMessages[index - 1];
+                      const showMeta = !previous || previous.senderId !== message.senderId;
+
+                      return (
+                        <div
+                          key={message._id}
+                          className={cn("flex gap-3", isMine ? "justify-end" : "justify-start")}
+                        >
+                          {!isMine && showMeta && (
+                            <div className="relative mt-1 h-9 w-9 shrink-0 overflow-hidden border border-zinc-950 bg-[#ffb21c]">
+                              {selectedConversation.avatar ? (
+                                <Image
+                                  src={selectedConversation.avatar}
+                                  alt={selectedConversation.name}
+                                  fill
+                                  sizes="36px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-[10px] font-black">
+                                  {initials(selectedConversation.name)}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {!isMine && !showMeta && <div className="h-9 w-9 shrink-0" />}
+
+                          <div className={cn("max-w-[78%]", isMine && "text-right")}>
+                            {showMeta && (
+                              <div
+                                className={cn(
+                                  "mb-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-400",
+                                  isMine && "justify-end",
+                                )}
+                              >
+                                <span>{isMine ? "Admin" : selectedConversation.name}</span>
+                                <span>•</span>
+                                <span>{formatTime(message.createdAt)}</span>
+                              </div>
+                            )}
+
+                            <div
+                              className={cn(
+                                "border px-4 py-3 text-sm font-semibold leading-7 shadow-[4px_4px_0_rgba(0,0,0,0.08)] sm:text-base",
+                                isMine
+                                  ? "border-zinc-950 bg-[#ffb21c] text-zinc-950"
+                                  : "border-zinc-200 bg-white text-slate-700",
+                              )}
+                            >
+                              {message.content}
+                            </div>
+
+                            {isMine && (
+                              <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-slate-400">
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                {message.status === "read" ? "Đã đọc" : "Đã gửi"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={chatBottomRef} />
+                  </div>
+                </div>
+
+                <div className="border-t border-zinc-950 bg-white p-4 sm:p-5">
+                  <div className="mx-auto flex max-w-4xl items-end gap-3">
+                    <textarea
+                      ref={textareaRef}
+                      value={reply}
+                      onChange={handleTextareaInput}
+                      onKeyDown={handleKeyDown}
+                      rows={1}
+                      placeholder="Nhập phản hồi cho khách hàng..."
+                      className="scrollbar-hide min-h-[54px] flex-1 resize-none border border-zinc-950 bg-[#fff8e9] px-4 py-4 text-sm font-semibold leading-6 outline-none transition placeholder:text-slate-400 focus:shadow-[4px_4px_0_#ffb21c]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleReply}
+                      disabled={!reply.trim() || sending}
+                      className="grid h-[54px] w-[54px] shrink-0 place-items-center border border-zinc-950 bg-zinc-950 text-white shadow-[4px_4px_0_#ffb21c] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Gửi tin nhắn"
+                    >
+                      {sending ? (
+                        <RefreshCw className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
                     </button>
-                  )}
+                  </div>
+                  <p className="mx-auto mt-3 max-w-4xl text-xs font-bold text-slate-400">
+                    Nhấn Enter để gửi, Shift + Enter để xuống dòng.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="grid flex-1 place-items-center bg-[radial-gradient(circle_at_center,rgba(255,178,28,0.18),transparent_32%)] p-8 text-center">
+                <div className="max-w-md">
+                  <div className="mx-auto mb-6 grid h-24 w-24 place-items-center border border-zinc-950 bg-white shadow-[7px_7px_0_#ffb21c]">
+                    <MessageCircle className="h-11 w-11 text-[#e18400]" />
+                  </div>
+                  <p className="text-xs font-black uppercase tracking-[0.32em] text-[#e18400]">
+                    Support ready
+                  </p>
+                  <h2 className="mt-3 text-4xl font-black tracking-[-0.06em]">
+                    Chọn một hội thoại để bắt đầu.
+                  </h2>
+                  <p className="mt-4 text-base font-semibold leading-7 text-slate-600">
+                    Mọi tin nhắn mới sẽ được đồng bộ tự động. Bạn cũng có thể
+                    bấm “Làm mới inbox” nếu muốn kiểm tra ngay.
+                  </p>
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center flex-1 p-8 text-center bg-slate-50/50">
-              <div className="flex items-center justify-center w-32 h-32 mb-6 bg-white rounded-full shadow-lg shadow-slate-200/50 animate-float">
-                <div className="relative">
-                  <MessageCircle size={64} className="text-orange-500" />
-                  <div className="absolute w-4 h-4 bg-green-500 border-2 border-white rounded-full -top-1 -right-1 animate-pulse"></div>
-                </div>
-              </div>
-              <h2 className="mb-2 text-2xl font-extrabold text-slate-800">
-                Xin chào, Admin! 👋
-              </h2>
-              <p className="max-w-xs mx-auto text-slate-500">
-                Chọn một cuộc hội thoại từ danh sách bên trái để bắt đầu hỗ trợ
-                khách hàng ngay.
+            )}
+          </main>
+        </div>
+      </section>
+
+      <section className="mt-8 grid gap-4 border border-zinc-950 bg-zinc-950 p-4 text-white shadow-[8px_8px_0_#ffb21c] sm:grid-cols-3">
+        {[
+          [Clock3, "Phản hồi nhanh", "Giữ nhịp hỗ trợ khách hàng trong CMS."],
+          [UserRound, "Theo dõi khách", "Nhận diện từng hội thoại rõ ràng."],
+          [MessageCircle, "Tập trung", "Không thất lạc tin nhắn quan trọng."],
+        ].map(([Icon, title, desc]) => {
+          const IconComponent = Icon as typeof Clock3;
+
+          return (
+            <div key={title as string} className="border border-white/15 p-4">
+              <IconComponent className="mb-3 h-5 w-5 text-[#ffb21c]" />
+              <p className="text-sm font-black uppercase tracking-[0.16em]">
+                {title as string}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white/60">
+                {desc as string}
               </p>
             </div>
-          )}
-        </div>
-      </motion.div>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        @keyframes float {
-          0% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-          100% {
-            transform: translateY(0px);
-          }
-        }
-        .animate-float {
-          animation: float 4s ease-in-out infinite;
-        }
-      `}</style>
+          );
+        })}
+      </section>
     </div>
   );
 }

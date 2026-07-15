@@ -7,7 +7,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-poppins)', 'sans-serif'],
+        sans: ['Inter', 'Segoe UI', 'Arial', 'sans-serif'],
       },
       // Có thể thêm custom typography nếu cần
       typography: {

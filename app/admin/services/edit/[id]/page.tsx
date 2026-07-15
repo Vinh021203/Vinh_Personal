@@ -1,43 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import {
-  Save,
   ArrowLeft,
-  Upload,
-  X,
-  Eye,
-  Settings,
-  Image as ImageIcon,
-  Sparkles,
-  RefreshCw,
   Clock,
-  Edit3,
-  LayoutTemplate,
-  Wrench,
-  DollarSign,
-  Tag,
-  CheckCircle2,
   Code2,
-  MonitorSmartphone,
+  DollarSign,
+  Edit3,
+  Eye,
   Layers,
+  MonitorSmartphone,
+  RefreshCw,
+  Save,
   ServerCog,
-  LucideIcon,
+  Settings,
+  Sparkles,
   Star,
+  Tag,
+  Upload,
+  Wrench,
+  X,
+  type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
 import SelectIconField from "@/components/admin/SelectIconField";
-import Image from "next/image";
 
 interface ServiceData {
   name: string;
   description: string;
   icon: string;
-  status: "Hiển thị" | "Ẩn";
-  createdAt?: string;
+  status: string;
+  visibility?: "draft" | "published";
   updatedAt?: string;
   image?: string;
   price?: number;
@@ -45,471 +42,161 @@ interface ServiceData {
   featured?: boolean;
 }
 
-const iconMap: Record<string, LucideIcon> = {
-  Code2,
-  MonitorSmartphone,
-  Layers,
-  ServerCog,
-  Wrench,
-  Settings,
-};
+const iconMap: Record<string, LucideIcon> = { Code2, MonitorSmartphone, Layers, ServerCog, Wrench, Settings };
 
 export default function EditServicePage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-
-  // --- STATE ---
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("Code2");
-  const [status, setStatus] = useState<"Hiển thị" | "Ẩn">("Hiển thị");
-
-  // New Fields
-  const [price, setPrice] = useState<number>(0);
+  const [status, setStatus] = useState("Hiển thị");
+  const [visibility, setVisibility] = useState<"draft" | "published">("published");
+  const [price, setPrice] = useState(0);
   const [category, setCategory] = useState("");
   const [featured, setFeatured] = useState(false);
-
-  // Image State
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [currentImage, setCurrentImage] = useState("");
-
   const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
-  const [showPreview, setShowPreview] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [splitView, setSplitView] = useState(true);
 
-  // --- FETCH DATA ---
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/services/${id}`);
+        const res = await fetch(`/api/services/${id}`, { cache: "no-store" });
         if (!res.ok) throw new Error("Không thể tải dịch vụ");
         const data: ServiceData = await res.json();
-
         setName(data.name || "");
         setDescription(data.description || "");
         setIcon(data.icon || "Code2");
-        setStatus(data.status || "Hiển thị");
+        setStatus(normalizeStatus(data.status));
+        setVisibility(data.visibility || "published");
         setPrice(data.price || 0);
         setCategory(data.category || "");
-        setFeatured(data.featured || false);
+        setFeatured(Boolean(data.featured));
         setCurrentImage(data.image || "");
         setUpdatedAt(data.updatedAt || "");
-      } catch (err) {
+      } catch {
         toast.error("Lỗi tải dữ liệu");
         router.push("/admin/services");
       } finally {
         setFetchLoading(false);
       }
     };
-
     if (id) fetchData();
   }, [id, router]);
 
-  // --- HANDLERS ---
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setThumbnail(file);
-      setIsDirty(true);
-      const reader = new FileReader();
-      reader.onload = (e) => setThumbnailPreview(e.target?.result as string);
-      reader.readAsDataURL(file);
-    }
+  const touch = () => setIsDirty(true);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setThumbnail(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+    touch();
   };
 
-  const removeThumbnail = () => {
-    setThumbnail(null);
-    setThumbnailPreview("");
-    setIsDirty(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const submit = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     if (!name.trim() || !description.trim()) {
-      toast.error("Vui lòng nhập đầy đủ tên và mô tả!");
-      setLoading(false);
+      toast.error("Vui lòng nhập tên và mô tả dịch vụ");
       return;
     }
 
+    setLoading(true);
     try {
       const form = new FormData();
       form.append("name", name.trim());
       form.append("description", description.trim());
       form.append("status", status);
+      form.append("visibility", visibility);
       form.append("icon", icon);
       form.append("price", price.toString());
       form.append("category", category.trim());
-      form.append("featured", featured.toString()); // Quan trọng: gửi boolean dưới dạng string
+      form.append("featured", featured.toString());
+      if (thumbnail) form.append("thumbnail", thumbnail);
 
-      if (thumbnail) {
-        form.append("thumbnail", thumbnail);
-      }
-
-      const res = await fetch(`/api/services/${id}`, {
-        method: "PUT",
-        body: form,
-      });
-
+      const res = await fetch(`/api/services/${id}`, { method: "PUT", body: form });
       if (!res.ok) throw new Error("Cập nhật thất bại");
 
-      toast.success("✅ Cập nhật thành công!");
+      toast.success("Đã cập nhật dịch vụ");
       setIsDirty(false);
       router.push("/admin/services");
-    } catch (err) {
-      toast.error("❌ Có lỗi xảy ra!");
+    } catch (error: any) {
+      toast.error(error.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (s: string) =>
-    s === "Hiển thị"
-      ? "bg-green-50 text-green-600 border-green-200"
-      : "bg-slate-50 text-slate-500 border-slate-200";
-
-  if (fetchLoading)
+  if (fetchLoading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        Loading...
-      </div>
-    );
-
-  return (
-    <div className="min-h-screen pb-8 px-8">
-      <Toaster position="top-right" />
-
-      {/* 1. HEADER */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-40 flex flex-col justify-between gap-6 p-4 mb-8 -mx-4 border-b md:flex-row md:items-center bg-white/80 backdrop-blur-xl md:-mx-8 md:px-8 border-orange-100/50"
-      >
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/services"
-            className="p-2 transition-colors text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl"
-          >
-            <ArrowLeft size={24} />
-          </Link>
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-800">
-              Chỉnh sửa dịch vụ
-              {isDirty && (
-                <span
-                  className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"
-                  title="Unsaved changes"
-                />
-              )}
-            </h1>
-            <div className="flex items-center gap-3 mt-1 text-xs font-medium text-slate-500">
-              <span className="flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
-                #{id}
-              </span>
-              {updatedAt && (
-                <span className="flex items-center gap-1">
-                  <Clock size={12} /> Cập nhật:{" "}
-                  {new Date(updatedAt).toLocaleDateString("vi-VN")}
-                </span>
-              )}
-            </div>
+      <div className="grid min-h-[70vh] place-items-center">
+        <div className="border border-zinc-950 bg-zinc-950 px-6 py-5 text-white shadow-[5px_5px_0_#ffb21c]">
+          <div className="flex items-center gap-3">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#ffb21c] border-t-transparent" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Đang tải dịch vụ</span>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSplitView(!splitView)}
-            className={`hidden lg:flex items-center gap-2 px-4 py-2 text-sm font-bold transition-all border rounded-xl ${
-              splitView
-                ? "bg-orange-50 text-orange-600 border-orange-200"
-                : "text-slate-500 border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            <LayoutTemplate size={18} />
-            <span>{splitView ? "Ẩn xem trước" : "Hiện xem trước"}</span>
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white transition-all shadow-lg rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-orange-500/30 disabled:opacity-50"
-          >
-            {loading ? (
-              <RefreshCw size={18} className="animate-spin" />
-            ) : (
-              <Edit3 size={18} />
-            )}
-            <span>Cập nhật</span>
-          </button>
-        </div>
-      </motion.div>
-
-      <form
-        onSubmit={handleSubmit}
-        className={`grid gap-8 ${
-          splitView ? "lg:grid-cols-2" : "lg:grid-cols-3"
-        }`}
-      >
-        {/* 2. FORM SECTION */}
-        <div
-          className={`${
-            splitView ? "lg:col-span-1" : "lg:col-span-2"
-          } space-y-6`}
-        >
-          {/* Basic Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-6 bg-white border border-orange-100 rounded-[24px] shadow-sm"
-          >
-            <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-slate-800">
-              <Wrench size={20} className="text-orange-500" /> Thông tin dịch vụ
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-                  Tên dịch vụ
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-4 py-3 text-sm font-medium transition-all border outline-none bg-slate-50 border-slate-200 rounded-xl text-slate-700 focus:bg-white focus:border-orange-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-                  Mô tả
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  rows={5}
-                  className="w-full px-4 py-3 text-sm font-medium transition-all border outline-none resize-none bg-slate-50 border-slate-200 rounded-xl text-slate-700 focus:bg-white focus:border-orange-400"
-                />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Icon & Image */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-6 bg-white border border-orange-100 rounded-[24px] shadow-sm"
-          >
-            <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-slate-800">
-              <Sparkles size={20} className="text-blue-500" /> Icon & Hình ảnh
-            </h3>
-            <div className="mb-6">
-              <label className="block mb-2 text-xs font-bold uppercase text-slate-500">
-                Icon
-              </label>
-              <div className="p-4 border bg-slate-50 rounded-xl border-slate-200">
-                <SelectIconField
-                  icon={icon}
-                  setIcon={(v) => {
-                    setIcon(v);
-                    setIsDirty(true);
-                  }}
-                />
-              </div>
-            </div>
+  return (
+    <div className="min-h-screen px-4 pb-12 sm:px-6 xl:px-8">
+      <AdminToast />
+      <section className="sticky top-0 z-30 -mx-4 mb-7 border-b border-zinc-950 bg-[#fff8e9]/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/admin/services" className="grid h-12 w-12 shrink-0 place-items-center border border-zinc-950 bg-white shadow-[3px_3px_0_#ffb21c] transition hover:bg-zinc-950 hover:text-white"><ArrowLeft size={20} /></Link>
             <div>
-              <label className="block mb-2 text-xs font-bold uppercase text-slate-500">
-                Ảnh minh họa
-              </label>
-              {thumbnailPreview || currentImage ? (
-                <div className="relative group w-fit">
-                  <Image
-                    src={thumbnailPreview || currentImage}
-                    alt="Preview"
-                    width={300}
-                    height={200}
-                    className="object-cover border rounded-xl border-slate-200"
-                    unoptimized
-                  />
-                  <button
-                    type="button"
-                    onClick={removeThumbnail}
-                    className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-32 transition-all border-2 border-dashed cursor-pointer border-slate-200 rounded-2xl hover:border-orange-400 hover:bg-orange-50 bg-slate-50/50">
-                  <Upload className="w-5 h-5 mb-2 text-slate-400" />
-                  <span className="text-xs font-medium text-slate-500">
-                    Tải ảnh lên
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={handleThumbnailChange}
-                    accept="image/*"
-                  />
-                </label>
-              )}
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#df8200]">Service Editor</p>
+              <h1 className="flex items-center gap-3 text-3xl font-black leading-none text-zinc-950 sm:text-4xl">Chỉnh sửa dịch vụ{isDirty && <span className="h-3 w-3 animate-pulse bg-[#ffb21c]" />}</h1>
+              <p className="mt-2 flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500"><span>#{id}</span>{updatedAt && <span className="flex items-center gap-1"><Clock size={13} /> {new Date(updatedAt).toLocaleDateString("vi-VN")}</span>}</p>
             </div>
-          </motion.div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:flex">
+            <button type="button" onClick={() => { toast.success("Đã lưu bản nháp"); setIsDirty(false); }} disabled={!isDirty} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-white px-5 text-[10px] font-black uppercase tracking-[0.12em] disabled:opacity-50"><Save size={17} />Lưu nháp</button>
+            <button type="button" onClick={() => submit()} disabled={loading} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-[#ffb21c] px-5 text-[10px] font-black uppercase tracking-[0.12em] shadow-[4px_4px_0_#111] transition hover:-translate-y-0.5 disabled:opacity-50">{loading ? <RefreshCw size={17} className="animate-spin" /> : <Edit3 size={17} />}Cập nhật</button>
+          </div>
         </div>
+      </section>
 
-        {/* 3. SIDEBAR / PREVIEW */}
+      <form onSubmit={submit} className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="sticky space-y-6 top-24"
-          >
-            {/* Configuration */}
-            <div className="p-6 bg-white border border-orange-100 rounded-[24px] shadow-sm">
-              <h3 className="flex items-center gap-2 mb-4 text-lg font-bold text-slate-800">
-                <Settings size={20} className="text-slate-500" /> Cấu hình
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-                    Trạng thái
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={status}
-                      onChange={(e) => {
-                        setStatus(e.target.value as any);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-4 py-3 text-sm font-bold border appearance-none cursor-pointer bg-slate-50 border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:border-orange-400"
-                    >
-                      <option value="Hiển thị">Hiển thị</option>
-                      <option value="Ẩn">Ẩn</option>
-                    </select>
-                    <CheckCircle2
-                      className="absolute -translate-y-1/2 right-4 top-1/2 text-slate-400"
-                      size={16}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-                    Danh mục
-                  </label>
-                  <div className="relative">
-                    <Tag
-                      size={18}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      type="text"
-                      value={category}
-                      onChange={(e) => {
-                        setCategory(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="VD: Web"
-                      className="w-full py-3 pl-10 pr-4 text-sm font-medium border outline-none bg-slate-50 border-slate-200 rounded-xl"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">
-                    Giá (VNĐ)
-                  </label>
-                  <div className="relative">
-                    <DollarSign
-                      size={18}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      type="number"
-                      value={price}
-                      onChange={(e) => {
-                        setPrice(Number(e.target.value));
-                        setIsDirty(true);
-                      }}
-                      className="w-full py-3 pl-10 pr-4 font-mono text-sm font-bold border outline-none bg-slate-50 border-slate-200 rounded-xl"
-                    />
-                  </div>
-                </div>
-                {/* Featured Switch */}
-                <div className="flex items-center justify-between p-3 border rounded-xl border-slate-200 bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-yellow-100 rounded-lg text-yellow-600">
-                      <Star size={16} fill="currentColor" />
-                    </div>
-                    <span className="text-sm font-bold text-slate-600">
-                      Nổi bật
-                    </span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={featured}
-                      onChange={(e) => {
-                        setFeatured(e.target.checked);
-                        setIsDirty(true);
-                      }}
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Preview */}
-            {splitView && (
-              <div className="group relative bg-white rounded-[2rem] shadow-xl border border-orange-100 overflow-hidden flex flex-col">
-                <div className="relative flex items-center justify-center w-full h-40 bg-gradient-to-br from-orange-50 to-amber-50">
-                  <div className="flex items-center justify-center w-20 h-20 text-orange-500 bg-white shadow-lg rounded-2xl">
-                    {(() => {
-                      const Icon = iconMap[icon] || Code2;
-                      return <Icon size={40} strokeWidth={1.5} />;
-                    })()}
-                  </div>
-                  {featured && (
-                    <div className="absolute top-4 left-4 bg-yellow-400 text-white p-1.5 rounded-full shadow-sm">
-                      <Star size={12} fill="currentColor" />
-                    </div>
-                  )}
-                </div>
-                <div className="p-6 text-center">
-                  <h3 className="mb-2 text-xl font-extrabold text-slate-800">
-                    {name || "Tên dịch vụ"}
-                  </h3>
-                  <span
-                    className={`inline-block mb-4 px-3 py-1 rounded-full text-xs font-bold border uppercase ${getStatusColor(
-                      status,
-                    )}`}
-                  >
-                    {status}
-                  </span>
-                  <div className="flex items-center justify-between pt-4 mt-auto border-t border-slate-100">
-                    <span className="flex items-center gap-1 text-xs font-bold uppercase text-slate-400">
-                      <Tag size={12} /> {category || "General"}
-                    </span>
-                    <span className="text-lg font-extrabold text-slate-800">
-                      {price.toLocaleString()}{" "}
-                      <span className="text-xs font-medium text-slate-400">
-                        VNĐ
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
+          <FormPanel icon={Wrench} kicker="01 · Nội dung" title="Thông tin dịch vụ">
+            <Field label="Tên dịch vụ" required><input value={name} onChange={(e) => { setName(e.target.value); touch(); }} className="admin-crud-input" /></Field>
+            <Field label="Mô tả dịch vụ" required><textarea value={description} onChange={(e) => { setDescription(e.target.value); touch(); }} rows={6} className="admin-crud-textarea" /></Field>
+          </FormPanel>
+          <FormPanel icon={Sparkles} kicker="02 · Nhận diện" title="Icon & ảnh minh họa">
+            <Field label="Icon hiển thị"><div className="border border-zinc-950 bg-[#fff8e9] p-4"><SelectIconField icon={icon} setIcon={(value) => { setIcon(value); touch(); }} /></div></Field>
+            <Field label="Ảnh minh họa">{thumbnailPreview || currentImage ? <ImagePreview src={thumbnailPreview || currentImage} onRemove={() => { setThumbnail(null); setThumbnailPreview(""); setCurrentImage(""); touch(); }} /> : <UploadBox label="Tải ảnh dịch vụ" onChange={handleImageChange} />}</Field>
+          </FormPanel>
         </div>
+
+        <aside className="space-y-6 xl:sticky xl:top-28 xl:self-start">
+          <FormPanel icon={Settings} kicker="03 · Cấu hình" title="Thiết lập">
+            <Field label="Trạng thái"><select value={status} onChange={(e) => { setStatus(e.target.value); touch(); }} className="admin-crud-input"><option value="Hiển thị">Hiển thị</option><option value="Ẩn">Ẩn</option></select></Field>
+            <Field label="Hiển thị ngoài website"><select value={visibility} onChange={(e) => { setVisibility(e.target.value as "draft" | "published"); touch(); }} className="admin-crud-input"><option value="published">Công khai</option><option value="draft">Bản nháp</option></select></Field>
+            <Field label="Danh mục"><input value={category} onChange={(e) => { setCategory(e.target.value); touch(); }} className="admin-crud-input" /></Field>
+            <Field label="Giá khởi điểm (VNĐ)"><input type="number" value={price} onChange={(e) => { setPrice(Number(e.target.value)); touch(); }} className="admin-crud-input" /></Field>
+            <FeaturedSwitch checked={featured} onChange={(checked) => { setFeatured(checked); touch(); }} />
+          </FormPanel>
+          <PreviewCard title={name} description={description} icon={icon} status={status} category={category} price={price} featured={featured} image={thumbnailPreview || currentImage} />
+        </aside>
       </form>
     </div>
   );
 }
+
+function AdminToast() { return <Toaster position="top-right" toastOptions={{ style: { background: "#09090b", color: "#fff", border: "1px solid #ffb21c", borderRadius: 0, fontWeight: 800 } }} />; }
+function FormPanel({ icon: Icon, kicker, title, children }: { icon: LucideIcon; kicker: string; title: string; children: React.ReactNode }) { return <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="border border-zinc-950 bg-white shadow-[6px_6px_0_#e4ded0]"><div className="border-b border-zinc-950 bg-zinc-950 px-5 py-4 text-white"><p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#ffb21c]">{kicker}</p><h2 className="flex items-center gap-3 text-2xl font-black"><Icon size={24} className="text-[#ffb21c]" />{title}</h2></div><div className="space-y-5 p-5 sm:p-6">{children}</div></motion.section>; }
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) { return <label className="block"><span className="mb-2 block text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}{required && <span className="text-red-600"> *</span>}</span>{children}</label>; }
+function UploadBox({ label, onChange }: { label: string; onChange: (event: React.ChangeEvent<HTMLInputElement>) => void }) { return <label className="grid min-h-36 cursor-pointer place-items-center border border-dashed border-zinc-950 bg-[#fff8e9] p-5 text-center transition hover:bg-white hover:shadow-[4px_4px_0_#ffb21c]"><span className="grid h-12 w-12 place-items-center border border-zinc-950 bg-white"><Upload size={20} /></span><span className="mt-3 text-[10px] font-black uppercase tracking-[0.14em]">{label}</span><input type="file" accept="image/*" onChange={onChange} className="hidden" /></label>; }
+function ImagePreview({ src, onRemove }: { src: string; onRemove: () => void }) { return <div className="relative aspect-video max-w-md border border-zinc-950 bg-[#fff8e9]"><Image src={src} alt="Preview" fill className="object-cover" unoptimized /><button type="button" onClick={onRemove} className="absolute right-2 top-2 grid h-9 w-9 place-items-center border border-zinc-950 bg-white text-red-600"><X size={16} /></button></div>; }
+function FeaturedSwitch({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) { return <button type="button" onClick={() => onChange(!checked)} className={`flex w-full items-center justify-between border border-zinc-950 p-4 text-left ${checked ? "bg-[#ffb21c]" : "bg-[#fff8e9]"}`}><span className="flex items-center gap-3 text-sm font-black"><Star size={18} className={checked ? "fill-zinc-950" : ""} />Dịch vụ nổi bật</span><span className="text-[10px] font-black uppercase">{checked ? "Bật" : "Tắt"}</span></button>; }
+function PreviewCard({ title, description, icon, status, category, price, featured, image }: { title: string; description: string; icon: string; status: string; category: string; price: number; featured: boolean; image: string }) { const Icon = iconMap[icon] || Wrench; return <div className="overflow-hidden border border-zinc-950 bg-white shadow-[6px_6px_0_#ffb21c]"><div className="relative aspect-video border-b border-zinc-950 bg-[#fff8e9]">{image ? <Image src={image} alt="Preview" fill className="object-cover" unoptimized /> : <div className="grid h-full place-items-center"><span className="grid h-20 w-20 place-items-center border border-zinc-950 bg-[#ffb21c] shadow-[4px_4px_0_#111]"><Icon size={34} /></span></div>}{featured && <span className="absolute left-3 top-3 border border-zinc-950 bg-[#ffb21c] px-2 py-1 text-[9px] font-black uppercase">Nổi bật</span>}</div><div className="p-5"><p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500"><Eye size={13} /> Live preview</p><h3 className="line-clamp-2 text-2xl font-black leading-tight">{title || "Tên dịch vụ"}</h3><p className="my-5 line-clamp-3 min-h-20 text-sm leading-7 text-slate-600">{description || "Mô tả dịch vụ sẽ hiển thị tại đây."}</p><div className="flex items-center justify-between border-t border-zinc-200 pt-4"><span className="inline-flex items-center gap-1 text-xs font-black uppercase text-slate-500"><Tag size={13} />{category || "General"}</span><span className="text-lg font-black"><DollarSign className="inline" size={15} /> {price.toLocaleString("vi-VN")}</span></div><div className="mt-3 text-[10px] font-black uppercase text-[#df8200]">{status}</div></div></div>; }
+function normalizeStatus(status?: string) { return status === "Ẩn" ? "Ẩn" : "Hiển thị"; }

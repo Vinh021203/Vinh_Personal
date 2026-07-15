@@ -1,46 +1,93 @@
-import { connectDB } from "@/libs/mongodb";
-import User from "@/models/User";
-import { NextResponse } from "next/server";
+﻿import { connectDB } from "@/libs/mongodb";
 import cloudinary from "@/libs/cloudinary";
+import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers"; // Thêm để set cookie
-import { SignJWT } from "jose"; // Thêm để tạo token mới
+import { SignJWT } from "jose";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { getCurrentUserFromCookie, requireAdmin } from "@/libs/auth";
+import { logActivity } from "@/libs/activity";
 
-// Hàm tạo token (tách ra dùng lại hoặc viết thẳng vào đây)
-const createToken = async (payload: any) => {
+type RouteContext = { params: Promise<{ id: string }> };
+
+const createToken = async (payload: Record<string, string>) => {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-  return await new SignJWT(payload)
+  return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("1d") // Thời hạn token
+    .setExpirationTime("1d")
     .sign(secret);
 };
 
-// ... (GET và DELETE giữ nguyên)
-
-// --- PUT: Cập nhật user ---
-export async function PUT(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(_req: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
+    const currentSession = await getCurrentUserFromCookie();
+    if (!currentSession) {
+      return NextResponse.json({ error: "Bạn cần đăng nhập để tiếp tục" }, { status: 401 });
+    }
+    if (currentSession.role !== "admin" && String(currentSession.id) !== id) {
+      return NextResponse.json({ error: "Bạn không có quyền xem dữ liệu này" }, { status: 403 });
+    }
+
+    await connectDB();
+
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return NextResponse.json(
+        { error: "Không tìm thấy người dùng" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json(user);
+  } catch (error) {
+    console.error("Get User Error:", error);
+    return NextResponse.json(
+      { error: "Không thể tải người dùng" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(req: Request, context: RouteContext) {
+  try {
+    const currentSession = await getCurrentUserFromCookie();
+    if (!currentSession) {
+      return NextResponse.json({ error: "Bạn cần đăng nhập để tiếp tục" }, { status: 401 });
+    }
+
+    const { id } = await context.params;
+    const isSelfUpdate = String(currentSession.id) === id;
+    if (currentSession.role !== "admin" && !isSelfUpdate) {
+      return NextResponse.json({ error: "Bạn không có quyền thực hiện thao tác này" }, { status: 403 });
+    }
+
     await connectDB();
 
     const form = await req.formData();
-    const name = form.get("name") as string;
-    const email = form.get("email") as string;
-    const role = form.get("role") as string;
-    const status = form.get("status") as string;
-    const password = form.get("password") as string;
-    const avatarFile = form.get("avatar") as File | null;
-
+    const name = String(form.get("name") || "").trim();
+    const email = String(form.get("email") || "").trim().toLowerCase();
     const currentUser = await User.findById(id);
     if (!currentUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "Không tìm thấy người dùng" }, { status: 404 });
     }
 
-    // 1. Xử lý Avatar
-    let avatarUrl = currentUser.avatar;
+    const role =
+      currentSession.role === "admin"
+        ? form.get("role") === "admin"
+          ? "admin"
+          : "user"
+        : currentUser.role;
+    const status =
+      currentSession.role === "admin"
+        ? form.get("status") === "inactive"
+          ? "inactive"
+          : "active"
+        : currentUser.status;
+    const password = String(form.get("password") || "");
+    const avatarFile = form.get("avatar") as File | null;
+    const avatarUrlFromForm = String(form.get("avatarUrl") || "").trim();
+    let avatarUrl = avatarUrlFromForm || currentUser.avatar || "";
     if (avatarFile && avatarFile.size > 0) {
       const bytes = await avatarFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
@@ -52,65 +99,79 @@ export async function PUT(
             (error, result) => {
               if (error || !result) reject(error);
               else resolve(result);
-            }
+            },
           );
           stream.end(buffer);
-        }
+        },
       );
       avatarUrl = uploadResult.secure_url;
     }
 
-    // 2. Xử lý Password
     let passwordHash = currentUser.password;
-    if (password && password.trim() !== "") {
-      const salt = await bcrypt.genSalt(10);
-      passwordHash = await bcrypt.hash(password, salt);
+    if (password.trim()) {
+      passwordHash = await bcrypt.hash(password, 10);
     }
 
-    // 3. Update Data
-    const updateData = {
-      name,
-      email,
-      role,
-      status,
-      avatar: avatarUrl,
-      password: passwordHash,
-    };
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { name, email, role, status, avatar: avatarUrl, password: passwordHash },
+      { new: true },
+    ).select("-password");
 
-    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
-      new: true,
-    }).select("-password");
+    if (isSelfUpdate) {
+      const tokenPayload = {
+        id: updatedUser._id.toString(),
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar || "",
+      };
 
-    // --- QUAN TRỌNG: UPDATE COOKIE NẾU LÀ CHÍNH MÌNH ---
-    // Kiểm tra xem người đang thực hiện request có phải là người đang đăng nhập không
-    // (Hoặc đơn giản là luôn update token mới cho user vừa được sửa nếu logic cho phép)
-    // Ở đây ta sẽ tạo token mới chứa avatar mới
+      const newToken = await createToken(tokenPayload);
+      const cookieStore = await cookies();
+      cookieStore.set("token", newToken, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
 
-    const tokenPayload = {
-      id: updatedUser._id.toString(),
-      email: updatedUser.email,
-      name: updatedUser.name,
-      role: updatedUser.role,
-      avatar: updatedUser.avatar, // Avatar mới nhất!
-    };
-
-    const newToken = await createToken(tokenPayload);
-    const cookieStore = await cookies();
-
-    // Set lại cookie với token mới
-    cookieStore.set("token", newToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24, // 1 ngày
-    });
-
+    await logActivity({ actor: currentSession, action: "update", entity: "user", entityId: id, description: `Cập nhật người dùng ${updatedUser.name}` });
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Update User Error:", error);
     return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 }
+      { error: "Không thể cập nhật người dùng" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(_req: Request, context: RouteContext) {
+  try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
+    const { id } = await context.params;
+    await connectDB();
+
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) {
+      return NextResponse.json(
+        { error: "Không tìm thấy người dùng" },
+        { status: 404 },
+      );
+    }
+
+    await logActivity({ actor: auth.user, action: "delete", entity: "user", entityId: id, description: `Xóa người dùng ${deletedUser.name}` });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete User Error:", error);
+    return NextResponse.json(
+      { error: "Không thể xoá người dùng" },
+      { status: 500 },
     );
   }
 }

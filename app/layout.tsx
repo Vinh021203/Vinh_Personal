@@ -1,88 +1,99 @@
+import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
-import { Poppins } from "next/font/google";
 import AppWrapper from "@/components/AppWrapper";
 import { UserProvider } from "@/contexts/UserContext";
 import NextTopLoader from "nextjs-toploader";
 import PageTransition from "@/components/PageTransition";
+import { DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/libs/seo";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-export const metadata = {
-  title: "VinhWorks | Dịch vụ thiết kế Website - Application chuyên nghiệp",
-  description:
-    "VinhWorks dịch vụ hỗ trợ mọi người lập trình viên phát triển sản phẩm nhanh, đẹp, và tối ưu với công nghệ hiện đại.",
-  keywords: [
-    "VinhWorks",
-    "lập trình",
-    "developer",
-    "nền tảng",
-    "frontend",
-    "nextjs",
-    "typescript",
-  ],
-  authors: [{ name: "VinhWorks Team", url: "https://vinhwork.vercel.app" }], // Đã sửa lại link cho đúng domain mới
-
-  // 👇 QUAN TRỌNG: Thêm mã xác minh Google ở đây
-  verification: {
-    google: "-elT34SlFd-jN8jKj04dMDqIwcUy-DV2eEIc3k90uLQ",
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "VinhWorks | Thiết kế Website & Giải pháp số",
+    template: "%s | VinhWorks",
   },
-
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    "thiết kế website",
+    "lập trình website",
+    "Next.js",
+    "React",
+    "landing page",
+    "web application",
+    "UI UX",
+    "SEO website",
+    "Lương Vinh",
+    "VinhWorks",
+  ],
+  authors: [{ name: "Lương Vinh", url: SITE_URL }],
+  creator: "Lương Vinh",
+  publisher: SITE_NAME,
+  category: "technology",
+  alternates: { canonical: "/" },
+  manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/vinhworks-favicon-512.png", type: "image/png", sizes: "512x512" }],
+    shortcut: "/vinhworks-favicon-512.png",
+    apple: [{ url: "/vinhworks-favicon-512.png", type: "image/png", sizes: "512x512" }],
+  },
+  verification: { google: "-elT34SlFd-jN8jKj04dMDqIwcUy-DV2eEIc3k90uLQ" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
-    title: "VinhWorks",
-    description:
-      "Nền tảng giúp lập trình viên phát triển sản phẩm đẹp và nhanh.",
-    url: "https://vinhwork.vercel.app", // Đã sửa link
-    siteName: "VinhWorks",
-    images: [
-      {
-        url: "https://res.cloudinary.com/your-cloud/image/upload/v1/your-thumbnail.jpg",
-        width: 1200,
-        height: 630,
-        alt: "VinhWorks Preview",
-      },
-    ],
+    title: "VinhWorks | Thiết kế Website & Giải pháp số",
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: "vi_VN",
     type: "website",
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: "Lương Vinh - VinhWorks" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "VinhWorks",
-    description: "Nền tảng lập trình viên phát triển nhanh.",
-    images: [
-      "https://res.cloudinary.com/your-cloud/image/upload/v1/your-thumbnail.jpg",
-    ],
+    title: "VinhWorks | Thiết kế Website & Giải pháp số",
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="vi" className={poppins.className}>
-      <head>
-        <link rel="icon" href="/logo.png" type="image/png" />
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0f172a" />
-      </head>
-      <body className="min-h-screen font-sans text-gray-900 bg-white">
-        <NextTopLoader
-          color="#8b5cf6"
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #8b5cf6,0 0 5px #8b5cf6"
-        />
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#ffb21c",
+  colorScheme: "light",
+};
 
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="vi">
+      <head>
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link rel="preconnect" href="https://api.emailjs.com" crossOrigin="" />
+      </head>
+      <body className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+        <NextTopLoader
+          color="#ffb21c"
+          initialPosition={0.12}
+          crawlSpeed={160}
+          height={4}
+          crawl
+          showSpinner={false}
+          easing="ease-out"
+          speed={260}
+          shadow="0 1px 0 #18181b,0 0 12px rgba(255,178,28,.55)"
+        />
         <UserProvider>
           <AppWrapper>
             <PageTransition>{children}</PageTransition>

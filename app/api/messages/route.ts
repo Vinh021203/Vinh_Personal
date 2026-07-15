@@ -1,71 +1,134 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/libs/mongodb";
-import Message from "@/models/Message";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/libs/auth";
+import { connectDB } from "@/libs/mongodb";
+import Message from "@/models/Message";
+import { logActivity } from "@/libs/activity";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET(req: NextRequest) {
-  await connectDB();
-
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-  const user = token ? await verifyToken(token) : null;
-
-  if (!user) return NextResponse.json([], { status: 200 });
-
-  // Nếu là Admin, có thể muốn xem tất cả tin nhắn trong hệ thống để support
-  // Hoặc chỉ xem tin nhắn liên quan đến mình.
-  // Ở đây ta giả định Admin sẽ thấy tất cả tin nhắn gửi đến Admin HOẶC Admin gửi đi.
-  // Nếu muốn Admin thấy toàn bộ chat của hệ thống (kiểu support center), có thể bỏ filter sender/receiver.
-
-  // Cách 1: Chỉ lấy tin nhắn liên quan đến user hiện tại
-  const messages = await Message.find({
-    $or: [
-      { senderId: user.id.toString() },
-      { receiverId: user.id.toString() },
-      { receiverId: null }, // Lấy cả tin nhắn khách gửi chung chung (chưa có receiver cụ thể)
-      { receiverId: "admin" }, // Fallback nếu frontend gửi receiverId="admin"
-    ],
-  }).sort({ createdAt: 1 });
-
-  return NextResponse.json(messages, {
+function noStore<T>(body: T, init?: ResponseInit) {
+  return NextResponse.json(body, {
+    ...init,
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       Pragma: "no-cache",
       Expires: "0",
+      ...(init?.headers || {}),
     },
   });
+}
+
+function cleanText(value: unknown, maxLength = 2000) {
+  if (typeof value !== "string") return "";
+
+  return value
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/[<>]/g, "")
+    .trim()
+    .slice(0, maxLength);
+}
+
+async function getUserFromCookie() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return null;
+
+  try {
+    return await verifyToken(token);
+  } catch {
+    return null;
+  }
+}
+
+export async function GET() {
+  await connectDB();
+
+  const user = await getUserFromCookie();
+  if (!user) return noStore([]);
+
+  const isAdmin = user.role === "admin";
+  const query = isAdmin
+    ? {}
+    : {
+        $or: [
+          { senderId: user.id.toString() },
+          { receiverId: user.id.toString() },
+        ],
+      };
+
+  const messages = await Message.find(query).sort({ createdAt: 1 }).lean();
+  return noStore(messages);
 }
 
 export async function POST(req: NextRequest) {
   await connectDB();
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-  const user = token ? await verifyToken(token) : null;
+  const user = await getUserFromCookie();
+  const body = await req.json().catch(() => ({}));
+  const content = cleanText(body.content);
 
-  if (!user || !user.name || !user.id)
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!content) {
+    return noStore({ message: "Thiếu nội dung tin nhắn" }, { status: 400 });
+  }
 
-  const { content, receiverId, isAdmin } = await req.json();
-  if (!content)
-    return NextResponse.json({ message: "Thiếu nội dung" }, { status: 400 });
+  const isAuthenticated = !!user?.id;
+  const guestId = cleanText(body.guestId, 80);
+  const senderId = isAuthenticated
+    ? user.id.toString()
+    : /^guest-[a-z0-9-]{8,}$/i.test(guestId)
+      ? guestId
+      : `guest-${crypto.randomUUID()}`;
 
-  const newMsg = await Message.create({
-    senderId: user.id.toString(),
-    senderName: user.name,
-    receiverId: receiverId || null,
-    isAdmin: !!isAdmin, // Chuyển đổi sang boolean
+  const senderName = isAuthenticated
+    ? user.name || "Người dùng"
+    : cleanText(body.senderName, 80) || "Khách truy cập";
+
+  const receiverId = cleanText(body.receiverId, 120) || null;
+  const canSendAsAdmin = user?.role === "admin" && !!body.isAdmin;
+
+  const newMessage = await Message.create({
+    senderId,
+    senderName,
+    receiverId,
+    isAdmin: canSendAsAdmin,
     content,
+    read: canSendAsAdmin,
+    status: "sent",
   });
 
-  return NextResponse.json(newMsg, {
-    status: 201,
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate",
-    },
-  });
+  return noStore(newMessage, { status: 201 });
+}
+
+export async function PATCH(req: NextRequest) {
+  await connectDB();
+
+  const user = await getUserFromCookie();
+  if (!user || user.role !== "admin") {
+    return noStore({ message: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const conversationId = cleanText(body.conversationId, 120);
+  if (!conversationId) {
+    return noStore({ message: "Thiếu conversationId" }, { status: 400 });
+  }
+
+  const result = await Message.updateMany(
+    { senderId: conversationId, isAdmin: { $ne: true }, read: { $ne: true } },
+    { $set: { read: true, status: "read" } },
+  );
+
+  if (result.modifiedCount > 0) {
+    await logActivity({
+      actor: user,
+      action: "mark_read",
+      entity: "message",
+      entityId: conversationId,
+      description: `Đánh dấu ${result.modifiedCount} tin nhắn đã đọc`,
+    });
+  }
+
+  return noStore({ success: true, modifiedCount: result.modifiedCount });
 }

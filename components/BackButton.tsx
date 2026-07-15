@@ -8,10 +8,11 @@ export default function BackButton() {
 
   return (
     <button
+      type="button"
       onClick={() => router.back()}
-      className="flex items-center justify-center w-full gap-2 px-8 py-4 font-bold transition-all bg-white border-2 shadow-sm sm:w-auto text-slate-600 border-slate-100 rounded-2xl hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md hover:-translate-y-1"
+      className="inline-flex min-h-14 items-center justify-center gap-3 border border-zinc-950 bg-white px-7 py-4 text-[11px] font-black uppercase tracking-[.12em] text-zinc-950 shadow-[4px_4px_0_rgba(24,24,27,.18)] transition-all hover:-translate-y-1 hover:bg-zinc-950 hover:text-white"
     >
-      <ArrowLeft size={20} />
+      <ArrowLeft size={18} />
       Quay lại
     </button>
   );

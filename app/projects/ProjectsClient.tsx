@@ -1,663 +1,255 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useSpring,
-  useMotionTemplate,
-  useMotionValue,
-} from "framer-motion";
-import {
-  ArrowRight,
-  ExternalLink,
-  Calendar,
-  User,
-  Eye,
-  Sparkles,
-  Rocket,
-  Globe,
-  Zap,
-  Search,
-  Grid3X3,
-  List,
-  Briefcase,
-  Code2,
-} from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowRight, BriefcaseBusiness, CalendarDays, CheckCircle2, Code2, DollarSign,
+  ExternalLink, Eye, Filter, ImageIcon, Layers3, Loader2,
+  Search, SlidersHorizontal, Sparkles, UserRound, UsersRound, X,
+} from "lucide-react";
 
-// --- TYPES ---
 interface Project {
   _id: string;
   name: string;
-  client: string;
-  description: string;
-  image: string;
   slug: string;
-  category: string;
-  technologies: string[];
-  completedAt?: string;
-  createdAt: string;
+  client: string;
+  status?: string;
+  priority?: "low" | "medium" | "high";
+  budget?: number;
+  progress?: number;
   liveUrl?: string;
-  featured?: boolean;
+  image?: string;
+  description?: string;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-// --- CARD COMPONENT VỚI HIỆU ỨNG SPOTLIGHT ---
-function ProjectCard({
-  project,
-  viewMode,
-}: {
-  project: Project;
-  viewMode: "grid" | "list";
-}) {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+const stripHtml = (value = "") =>
+  value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 
-  function handleMouseMove({
-    currentTarget,
-    clientX,
-    clientY,
-  }: React.MouseEvent) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
+const priorityText = { low: "Cơ bản", medium: "Tiêu chuẩn", high: "Ưu tiên" };
 
-  const displayYear = new Date(
-    project.completedAt || project.createdAt,
-  ).getFullYear();
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      onMouseMove={handleMouseMove}
-      className={`group relative h-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-orange-200/50 transition-all duration-500 ${
-        viewMode === "list" ? "md:flex" : ""
-      }`}
-    >
-      {/* Spotlight Effect */}
-      <motion.div
-        className="absolute z-10 transition duration-300 opacity-0 pointer-events-none -inset-px group-hover:opacity-100"
-        style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              650px circle at ${mouseX}px ${mouseY}px,
-              rgba(251, 146, 60, 0.1),
-              transparent 80%
-            )
-          `,
-        }}
-      />
-
-      {/* Featured Badge */}
-      {project.featured && (
-        <div className="absolute z-20 top-4 left-4">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="flex items-center gap-1 px-3 py-1 text-xs font-bold tracking-wider text-white uppercase rounded-full shadow-lg bg-gradient-to-r from-orange-400 to-pink-500"
-          >
-            <Sparkles size={12} /> Nổi bật
-          </motion.div>
-        </div>
-      )}
-
-      {/* Image Section */}
-      <div
-        className={`relative overflow-hidden bg-slate-100 ${
-          viewMode === "list" ? "md:w-2/5 h-64 md:h-auto" : "aspect-[16/10]"
-        }`}
-      >
-        <Image
-          src={project.image || "/placeholder.jpg"}
-          alt={project.name}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-110 group-hover:rotate-1"
-          unoptimized
-        />
-
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[2px] flex items-center justify-center gap-4 z-20">
-          <Link href={`/projects/${project.slug}`}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="flex flex-col items-center gap-2 text-white"
-            >
-              <div className="p-4 bg-white rounded-full shadow-lg text-orange-600">
-                <Eye size={24} />
-              </div>
-              <span className="text-xs font-bold tracking-wider uppercase drop-shadow-md">
-                Chi tiết
-              </span>
-            </motion.button>
-          </Link>
-          {project.liveUrl && (
-            <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="flex flex-col items-center gap-2 text-white"
-              >
-                <div className="p-4 bg-white rounded-full shadow-lg text-pink-600">
-                  <ExternalLink size={24} />
-                </div>
-                <span className="text-xs font-bold tracking-wider uppercase drop-shadow-md">
-                  Xem Live
-                </span>
-              </motion.button>
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div
-        className={`p-8 flex flex-col relative z-20 ${
-          viewMode === "list" ? "md:w-3/5 justify-center" : ""
-        }`}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <span className="px-3 py-1 text-xs font-bold tracking-wider uppercase border rounded-lg bg-orange-50 text-orange-600 border-orange-100">
-            {project.category || "Project"}
-          </span>
-          <span className="flex items-center gap-1 text-xs font-bold text-slate-400">
-            <Calendar size={12} /> {displayYear}
-          </span>
-        </div>
-
-        <h3 className="mb-3 text-2xl font-black transition-colors text-slate-900 group-hover:text-orange-600 line-clamp-1">
-          <Link href={`/projects/${project.slug}`}>{project.name}</Link>
-        </h3>
-
-        <div className="flex items-center gap-2 mb-4 text-sm font-bold text-slate-500">
-          <User size={14} className="text-pink-500" />
-          <span className="truncate">
-            Client: <span className="text-slate-700">{project.client}</span>
-          </span>
-        </div>
-
-        <p className="flex-grow mb-6 text-sm font-medium leading-relaxed text-slate-500 line-clamp-2">
-          {(project.description ?? "")
-            .replace(/<[^>]*>/g, "")
-            .replace(/&nbsp;/g, " ")
-            .trim()}
-        </p>
-
-        {/* Tech Stack */}
-        {project.technologies && project.technologies.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-6 mt-auto border-t border-slate-100">
-            {project.technologies.slice(0, 4).map((tech, idx) => (
-              <span
-                key={idx}
-                className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md border border-slate-200 group-hover:border-orange-200 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors cursor-default"
-              >
-                {tech}
-              </span>
-            ))}
-            {project.technologies.length > 4 && (
-              <span className="px-2.5 py-1 bg-slate-100 text-slate-400 text-[11px] font-bold rounded-md border border-slate-200">
-                +{project.technologies.length - 4}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-// --- MAIN CLIENT COMPONENT ---
 export default function ProjectsClient() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [mounted, setMounted] = useState(false);
-
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
-
-  const categories = [
-    { id: "all", label: "Tất cả" },
-    { id: "Website", label: "Website" },
-    { id: "E-commerce", label: "E-commerce" },
-    { id: "Landing Page", label: "Landing Page" },
-    { id: "Mobile App", label: "Mobile App" },
-  ];
+  const [error, setError] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeTag, setActiveTag] = useState("Tất cả");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const controller = new AbortController();
-
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch("/api/projects", {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("Failed to fetch");
-        const data = await res.json();
-
-        setProjects(data);
-        setFilteredProjects(data);
-      } catch (err: any) {
-        if (err.name !== "AbortError") {
-          console.error(err);
-          toast.error("Không thể tải danh sách dự án!");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjects();
+    fetch("/api/projects?public=1", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Không thể tải dự án");
+        return response.json();
+      })
+      .then((data: Project[]) =>
+        setProjects(Array.isArray(data) ? data : []),
+      )
+      .catch((fetchError) => {
+        if (fetchError.name !== "AbortError") setError(true);
+      })
+      .finally(() => setLoading(false));
     return () => controller.abort();
   }, []);
 
-  useEffect(() => {
-    let filtered = projects;
+  const tags = useMemo(() => {
+    const values = projects.flatMap((project) => project.tags || []).filter(Boolean);
+    return ["Tất cả", ...Array.from(new Set(values))];
+  }, [projects]);
 
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (project) =>
-          project.category?.toLowerCase() === selectedCategory.toLowerCase(),
-      );
-    }
+  const filtered = useMemo(() => {
+    const keyword = search.toLocaleLowerCase("vi").trim();
+    return projects.filter((project) => {
+      const matchesTag = activeTag === "Tất cả" || project.tags?.includes(activeTag);
+      const haystack = [project.name, project.client, project.description, ...(project.tags || [])]
+        .join(" ").toLocaleLowerCase("vi");
+      return matchesTag && (!keyword || haystack.includes(keyword));
+    });
+  }, [activeTag, projects, search]);
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (project) =>
-          project.name.toLowerCase().includes(term) ||
-          project.client.toLowerCase().includes(term) ||
-          project.description.toLowerCase().includes(term),
-      );
-    }
-
-    setFilteredProjects(filtered);
-  }, [projects, searchTerm, selectedCategory]);
-
-  const stats = [
-    {
-      icon: Rocket,
-      label: "Dự án hoàn thành",
-      value: projects.length,
-      color: "text-orange-500",
-      bg: "bg-orange-100",
-    },
-    {
-      icon: User,
-      label: "Khách hàng",
-      value: projects.length > 5 ? `${projects.length}+` : projects.length,
-      color: "text-purple-500",
-      bg: "bg-purple-100",
-    },
-    {
-      icon: Globe,
-      label: "Online",
-      value: projects.filter((p) => p.liveUrl).length,
-      color: "text-pink-500",
-      bg: "bg-pink-100",
-    },
-    {
-      icon: Zap,
-      label: "Kinh nghiệm",
-      value: "3+ Năm",
-      color: "text-violet-500",
-      bg: "bg-violet-100",
-    },
-  ];
-
-  if (!mounted) return null;
+  const completed = projects.filter((project) => (project.progress || 0) >= 100).length;
+  const clientCount = new Set(projects.map((project) => project.client).filter(Boolean)).size;
 
   return (
-    <>
-      <Toaster position="top-center" />
-      <motion.div
-        style={{ scaleX }}
-        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 origin-left z-[100]"
-      />
-
-      <main className="min-h-screen overflow-hidden font-sans bg-white text-slate-900 selection:bg-orange-200 selection:text-orange-900">
-        {/* ================= BACKGROUND DECORATIONS ================= */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-orange-300/20 rounded-full blur-[100px] animate-blob mix-blend-multiply" />
-          <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-purple-300/20 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-multiply" />
-          <div className="absolute top-[40%] left-[30%] w-[500px] h-[500px] bg-pink-300/20 rounded-full blur-[100px] animate-blob animation-delay-4000 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px]" />
+    <main className="min-h-screen bg-[#fff8e9] text-zinc-950">
+      <section className="relative overflow-hidden border-b border-zinc-900 bg-[#fff8e9] pt-16 md:pt-24">
+        <div className="pointer-events-none absolute -right-20 top-10 h-80 w-80 rounded-full bg-[#ffb21c]/20 blur-3xl" />
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-16 md:pb-24 lg:grid-cols-[1.35fr_.65fr] lg:px-8">
+          <div>
+            <span className="inline-flex -rotate-2 items-center gap-2 border border-zinc-900 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[.2em] shadow-[3px_3px_0_#ffb21c]">
+              <Code2 size={14} className="text-[#d98200]" /> Portfolio từ dữ liệu thực
+            </span>
+            <h1 className="mt-8 max-w-4xl text-[clamp(3.3rem,8vw,7.7rem)] font-black leading-[.82] tracking-[-.075em]">
+              Dự án đã<br /><span className="text-[#d98200]">được làm thật.</span>
+            </h1>
+            <p className="mt-8 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
+              Mỗi sản phẩm là một bài toán cụ thể được Lương Vinh trực tiếp thiết kế,
+              phát triển và bàn giao — từ landing page đến hệ thống có backend.
+            </p>
+          </div>
+          <div className="self-end border border-zinc-900 bg-white shadow-[8px_8px_0_#ffb21c]">
+            <div className="flex items-center justify-between border-b border-zinc-900 bg-zinc-950 px-6 py-4 text-white">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[.2em] text-[#ffb21c]">Portfolio overview</p>
+                <p className="mt-1 text-sm font-bold">Dữ liệu được cập nhật trực tiếp</p>
+              </div>
+              <span className="grid h-10 w-10 place-items-center border border-white/25 bg-white/10"><Sparkles size={18} className="text-[#ffb21c]" /></span>
+            </div>
+            <Stat icon={<BriefcaseBusiness size={19} />} value={loading ? "—" : String(projects.length).padStart(2, "0")} label="Dự án" note="Trên hệ thống" />
+            <Stat icon={<CheckCircle2 size={19} />} value={loading ? "—" : String(completed).padStart(2, "0")} label="Hoàn thành" note="Đã bàn giao" />
+            <Stat icon={<UsersRound size={19} />} value={loading ? "—" : String(clientCount).padStart(2, "0")} label="Khách hàng" note="Đã đồng hành" last />
+          </div>
         </div>
+        <div className="border-t border-zinc-900 bg-zinc-950 text-white">
+          <div className="mx-auto grid max-w-7xl grid-cols-3 px-3 text-center text-[7px] font-black uppercase tracking-[.08em] sm:px-5 sm:text-[9px] sm:tracking-[.12em] md:text-[10px] md:tracking-[.18em] lg:px-8">
+            <span className="flex min-w-0 items-center justify-center gap-1 border-r border-white/15 px-1 py-4 sm:gap-2 sm:px-3"><CheckCircle2 size={12} className="shrink-0 text-[#ffb21c] sm:size-[14px]" /><span>Frontend chỉnh chu</span></span>
+            <span className="flex min-w-0 items-center justify-center gap-1 border-r border-white/15 px-1 py-4 sm:gap-2 sm:px-3"><Layers3 size={12} className="shrink-0 text-[#ffb21c] sm:size-[14px]" /><span>Backend thực tế</span></span>
+            <span className="flex min-w-0 items-center justify-center gap-1 px-1 py-4 sm:gap-2 sm:px-3"><Sparkles size={12} className="shrink-0 text-[#ffb21c] sm:size-[14px]" /><span>Responsive toàn diện</span></span>
+          </div>
+        </div>
+      </section>
 
-        <div className="container relative z-10 px-6 pt-10 pb-10 mx-auto max-w-7xl">
-          {/* ================= HERO SECTION ================= */}
-          <div className="mb-10 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-xs font-bold bg-white border rounded-full shadow-sm border-orange-100 text-orange-600 ring-1 ring-orange-50">
-                <Briefcase size={13} /> <span>PORTFOLIO</span>
-              </div>
-
-              <h1 className="mb-4 sm:mb-6 text-4xl sm:text-5xl md:text-7xl font-black leading-tight tracking-tight text-slate-900">
-                Dự án{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500">
-                  Tiêu biểu
-                </span>
-              </h1>
-
-              <p className="max-w-2xl mx-auto text-base sm:text-lg font-medium leading-relaxed text-slate-600">
-                Khám phá những giải pháp số sáng tạo mà chúng tôi đã thực hiện
-                cho khách hàng.
-              </p>
-            </motion.div>
-
-            {/* Stats Bar */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-8 sm:mt-12 md:grid-cols-4">
-              {stats.map((stat, i) => {
-                const Icon = stat.icon;
-
-                // Mỗi card 1 bộ màu gradient riêng
-                const cardThemes = [
-                  {
-                    gradient: "from-orange-400/15 to-amber-300/10",
-                    border: "border-orange-200/60",
-                    iconBg: "bg-orange-100",
-                    iconColor: "text-orange-500",
-                    glow: "group-hover:shadow-orange-200/60",
-                    shine: "from-orange-500/20 to-amber-400/20",
-                  },
-                  {
-                    gradient: "from-violet-400/15 to-purple-300/10",
-                    border: "border-violet-200/60",
-                    iconBg: "bg-violet-100",
-                    iconColor: "text-violet-500",
-                    glow: "group-hover:shadow-violet-200/60",
-                    shine: "from-violet-500/20 to-purple-400/20",
-                  },
-                  {
-                    gradient: "from-pink-400/15 to-fuchsia-300/10",
-                    border: "border-pink-200/60",
-                    iconBg: "bg-pink-100",
-                    iconColor: "text-pink-500",
-                    glow: "group-hover:shadow-pink-200/60",
-                    shine: "from-pink-500/20 to-fuchsia-400/20",
-                  },
-                  {
-                    gradient: "from-blue-400/15 to-indigo-300/10",
-                    border: "border-blue-200/60",
-                    iconBg: "bg-blue-100",
-                    iconColor: "text-blue-500",
-                    glow: "group-hover:shadow-blue-200/60",
-                    shine: "from-blue-500/20 to-indigo-400/20",
-                  },
-                ];
-
-                const theme = cardThemes[i % cardThemes.length];
-
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 24, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{
-                      delay: i * 0.1,
-                      duration: 0.5,
-                      ease: [0.25, 0.46, 0.45, 0.94],
-                    }}
-                    whileHover={{ y: -6, scale: 1.02 }}
-                    className="group relative overflow-hidden"
-                  >
-                    {/* Glow shadow */}
-                    <div
-                      className={`absolute -inset-[1px] rounded-2xl bg-gradient-to-br ${theme.shine} opacity-0 group-hover:opacity-100 blur transition-all duration-500`}
-                    />
-
-                    {/* Card */}
-                    <div
-                      className={`relative p-5 sm:p-6 bg-gradient-to-br ${theme.gradient} border ${theme.border} rounded-2xl shadow-sm group-hover:shadow-xl ${theme.glow} transition-all duration-300 h-full bg-white/80 backdrop-blur-sm`}
-                    >
-                      {/* Icon */}
-                      <motion.div
-                        whileHover={{ rotate: [0, -10, 10, 0], scale: 1.15 }}
-                        transition={{ duration: 0.4 }}
-                        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mx-auto mb-3 sm:mb-4 ${theme.iconBg} ${theme.iconColor}`}
-                      >
-                        <Icon size={22} />
-                      </motion.div>
-
-                      {/* Value */}
-                      <motion.h3
-                        className="mb-1 text-2xl sm:text-3xl font-black text-slate-900"
-                        initial={{ scale: 1 }}
-                        whileInView={{ scale: [1, 1.1, 1] }}
-                        transition={{ delay: i * 0.1 + 0.3, duration: 0.4 }}
-                        viewport={{ once: true }}
-                      >
-                        {stat.value}
-                      </motion.h3>
-
-                      {/* Label */}
-                      <p className="text-xs sm:text-sm font-bold text-slate-500">
-                        {stat.label}
-                      </p>
-
-                      {/* Decorative dot */}
-                      <div
-                        className={`absolute top-3 right-3 w-2 h-2 rounded-full ${theme.iconBg} opacity-60`}
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })}
+      <section className="bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 lg:px-8">
+          <div className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#d98200]">Danh sách dự án</p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-.05em] md:text-6xl">Khám phá sản phẩm.</h2>
+            </div>
+            <div className="relative w-full lg:max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm dự án, khách hàng, công nghệ..." className="h-14 w-full border border-zinc-900 bg-[#fff8e9] pl-12 pr-11 text-sm font-semibold outline-none focus:shadow-[4px_4px_0_#ffb21c]" />
+              {search && <button onClick={() => setSearch("")} aria-label="Xóa tìm kiếm" className="absolute right-4 top-1/2 -translate-y-1/2"><X size={17} /></button>}
             </div>
           </div>
 
-          {/* ================= TOOLBAR ================= */}
-          <div className="sticky z-30 mb-10 top-24">
-            <div className="flex flex-col items-center justify-between gap-4 p-4 transition-all border shadow-lg bg-white/80 backdrop-blur-xl rounded-2xl border-white/50 shadow-slate-200/50 lg:flex-row hover:shadow-xl">
-              {/* Search */}
-              <div className="relative w-full lg:w-96 group">
-                <Search
-                  className="absolute transition-colors -translate-y-1/2 left-4 top-1/2 text-slate-400 group-focus-within:text-orange-600"
-                  size={20}
-                />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm dự án..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full py-3 pl-12 pr-4 text-sm font-medium transition-all border outline-none bg-slate-50 border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-700 placeholder:text-slate-400"
-                />
-              </div>
-
-              {/* Filter & View */}
-              <div className="flex items-center w-full gap-4 pb-2 overflow-x-auto lg:w-auto lg:pb-0 no-scrollbar">
-                <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap relative z-10 ${
-                        selectedCategory === cat.id
-                          ? "text-orange-600 bg-white shadow-sm"
-                          : "text-slate-500 hover:text-slate-900"
-                      }`}
-                    >
-                      {cat.label}
-                      {selectedCategory === cat.id && (
-                        <motion.div
-                          layoutId="activeFilter"
-                          className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.6,
-                          }}
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex p-1 border bg-slate-100/50 rounded-xl border-slate-200 shrink-0">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded-lg transition-all ${
-                      viewMode === "grid"
-                        ? "bg-white text-orange-600 shadow-sm"
-                        : "text-slate-400 hover:text-slate-600"
-                    }`}
-                  >
-                    <Grid3X3 size={20} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-lg transition-all ${
-                      viewMode === "list"
-                        ? "bg-white text-orange-600 shadow-sm"
-                        : "text-slate-400 hover:text-slate-600"
-                    }`}
-                  >
-                    <List size={20} />
-                  </button>
-                </div>
-              </div>
+          <div className="mb-8 flex items-center justify-between gap-3 border-y border-zinc-300 py-4 md:mb-10 md:items-start md:justify-start md:py-5">
+            <button onClick={() => setFilterOpen(true)} className="flex items-center gap-3 border border-zinc-900 bg-[#ffb21c] px-4 py-2.5 text-[9px] font-black uppercase tracking-wider shadow-[3px_3px_0_#111] md:hidden">
+              <Filter size={15} /> Bộ lọc
+            </button>
+            <span className="max-w-[52%] truncate text-right text-[9px] font-black uppercase tracking-wider text-zinc-500 md:hidden">Đang xem: <b className="text-[#d98200]">{activeTag}</b></span>
+            <Filter size={17} className="mt-2 hidden shrink-0 text-[#d98200] md:block" />
+            <div className="hidden flex-wrap gap-2 md:flex">
+              {tags.map((tag) => <button key={tag} onClick={() => setActiveTag(tag)} className={`shrink-0 snap-start border border-zinc-900 px-4 py-2 text-[9px] font-black uppercase tracking-wider transition md:text-[10px] ${activeTag === tag ? "bg-zinc-950 text-white shadow-[3px_3px_0_#ffb21c]" : "bg-white hover:bg-[#fff8e9]"}`}>{tag}</button>)}
             </div>
           </div>
 
-          {/* ================= PROJECTS GRID ================= */}
+          <AnimatePresence>
+            {filterOpen && <div className="fixed inset-0 z-[90] flex items-end md:hidden">
+              <motion.button aria-label="Đóng bộ lọc" onClick={() => setFilterOpen(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-zinc-950/60 backdrop-blur-[2px]" />
+              <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 320 }} className="relative z-10 w-full border-t border-zinc-900 bg-[#fff8e9] p-5 shadow-[0_-8px_30px_rgba(0,0,0,.2)]">
+                <div className="mx-auto mb-5 h-1 w-12 rounded-full bg-zinc-300" />
+                <div className="flex items-center justify-between border-b border-zinc-300 pb-4">
+                  <div><p className="text-[9px] font-black uppercase tracking-[.18em] text-[#d98200]">Lọc dự án</p><h3 className="mt-1 text-xl font-black">Chọn một danh mục</h3></div>
+                  <button onClick={() => setFilterOpen(false)} aria-label="Đóng" className="grid h-10 w-10 place-items-center border border-zinc-900 bg-white"><X size={18} /></button>
+                </div>
+                <div className="mt-5 grid max-h-[48vh] grid-cols-2 gap-2 overflow-y-auto pb-2">
+                  {tags.map((tag) => <button key={tag} onClick={() => { setActiveTag(tag); setFilterOpen(false); }} className={`min-h-12 border border-zinc-900 px-3 py-3 text-left text-[9px] font-black uppercase leading-4 tracking-wider ${activeTag === tag ? "bg-zinc-950 text-white shadow-[3px_3px_0_#ffb21c]" : "bg-white"}`}>{tag}</button>)}
+                </div>
+              </motion.div>
+            </div>}
+          </AnimatePresence>
+
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="relative bg-white rounded-[2rem] h-[300px] sm:h-[450px] animate-pulse border border-slate-100 shadow-sm overflow-hidden"
-                >
-                  {/* Shimmer effect */}
-                  <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent" />
-                </div>
-              ))}
-            </div>
-          ) : filteredProjects.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-16 sm:py-24 bg-white rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 shadow-sm px-6"
-            >
-              <div className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full bg-slate-50">
-                <Code2 className="text-slate-400" size={28} />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-slate-900">
-                Không tìm thấy dự án nào
-              </h3>
-              <p className="mt-2 text-sm sm:text-base text-slate-500">
-                Thử tìm kiếm với từ khóa khác xem sao.
-              </p>
-            </motion.div>
+            <div className="grid min-h-80 place-items-center border border-dashed border-zinc-400"><div className="text-center"><Loader2 className="mx-auto animate-spin text-[#d98200]" size={34} /><p className="mt-4 text-xs font-black uppercase tracking-widest">Đang tải từ backend</p></div></div>
+          ) : error ? (
+            <Empty icon={<SlidersHorizontal size={30} />} title="Chưa kết nối được dữ liệu" text="Vui lòng tải lại trang hoặc thử lại sau." />
+          ) : filtered.length === 0 ? (
+            <Empty icon={<Search size={30} />} title="Không tìm thấy dự án" text="Thử đổi từ khóa hoặc chọn một nhóm khác." />
           ) : (
-            <div
-              className={`grid gap-4 sm:gap-8 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2"
-                  : "grid-cols-1"
-              }`}
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredProjects.map((project, idx) => (
-                  <motion.div
-                    key={project._id}
-                    layout
-                    initial={{ opacity: 0, y: 30, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: idx * 0.08,
-                      ease: [0.25, 0.46, 0.45, 0.94],
-                    }}
-                    whileHover={{ y: -6 }}
-                    className="group"
-                  >
-                    {/* Glow border khi hover */}
-                    <div className="relative">
-                      <div className="absolute -inset-[1px] bg-gradient-to-r from-violet-500/0 via-fuchsia-500/0 to-orange-500/0 group-hover:from-violet-500/30 group-hover:via-fuchsia-500/20 group-hover:to-orange-500/30 rounded-[2rem] blur transition-all duration-500" />
-                      <div className="relative">
-                        <ProjectCard project={project} viewMode={viewMode} />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+            <motion.div layout className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((project, index) => <ProjectCard key={project._id} project={project} index={index} />)}
+            </motion.div>
           )}
-
-          {/* ================= CTA SECTION ================= */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-8 sm:mt-10 relative rounded-[2rem] sm:rounded-[3rem] bg-gradient-to-br from-orange-50 via-white to-purple-50 p-8 sm:p-12 text-center overflow-hidden shadow-2xl shadow-orange-100 border border-orange-100"
-          >
-            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-
-            <div className="relative z-10">
-              {/* Icon */}
-              <div className="flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-6 sm:mb-8 bg-white border border-white shadow-xl rounded-2xl sm:rounded-3xl shadow-orange-200/50">
-                <Rocket size={28} className="text-orange-600 sm:hidden" />
-                <Rocket size={40} className="text-orange-600 hidden sm:block" />
-              </div>
-
-              {/* Tiêu đề */}
-              <h2 className="mb-4 sm:mb-6 text-2xl sm:text-3xl md:text-5xl font-black text-slate-900 leading-tight">
-                Bạn đã sẵn sàng <br className="hidden sm:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500">
-                  bứt phá doanh thu?
-                </span>
-              </h2>
-
-              {/* Mô tả */}
-              <p className="max-w-2xl mx-auto mb-8 sm:mb-10 text-sm sm:text-lg font-medium text-slate-600">
-                Đừng để ý tưởng tuyệt vời của bạn chỉ nằm trên giấy.{" "}
-                <span className="block mt-1 sm:inline">
-                  Hãy để chúng tôi biến nó thành hiện thực ngay hôm nay.
-                </span>
-              </p>
-
-              {/* 2 nút — luôn ngang */}
-              <div className="flex flex-row justify-center gap-3 sm:gap-4">
-                <Link href="/contact" className="flex-1 sm:flex-none">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full flex items-center justify-center gap-2 px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white transition-all shadow-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-orange-200 rounded-xl hover:shadow-xl active:scale-95"
-                  >
-                    Bắt đầu ngay <ArrowRight size={15} />
-                  </motion.button>
-                </Link>
-                <Link href="/pricing" className="flex-1 sm:flex-none">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full px-5 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold transition-all bg-white border-2 text-slate-600 rounded-xl border-slate-200 hover:border-orange-200 hover:text-orange-600 hover:shadow-md active:scale-95"
-                  >
-                    Xem bảng giá
-                  </motion.button>
-                </Link>
-              </div>
-            </div>
-          </motion.div>
         </div>
-      </main>
-    </>
+      </section>
+
+      <section className="relative overflow-hidden border-y border-zinc-900 bg-[#fff8e9] py-16 md:py-24">
+        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-72 w-72 rounded-full border-[45px] border-[#ffb21c]/15" />
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-5 lg:grid-cols-[1.35fr_.65fr] lg:items-end lg:px-8">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />
+              <p className="text-[10px] font-black uppercase tracking-[.2em] text-[#d98200]">Đang nhận dự án mới</p>
+            </div>
+            <h2 className="mt-5 max-w-4xl text-4xl font-black leading-[.92] tracking-[-.06em] md:text-6xl lg:text-7xl">
+              Bạn có một ý tưởng?<br />Hãy cùng biến nó thành <span className="text-[#d98200]">sản phẩm.</span>
+            </h2>
+          </div>
+          <div className="border border-zinc-900 bg-white shadow-[7px_7px_0_#111]">
+            <div className="flex items-start justify-between gap-5 border-b border-zinc-900 p-6">
+              <div><p className="text-[9px] font-black uppercase tracking-[.18em] text-zinc-400">Phản hồi dự kiến</p><p className="mt-2 text-lg font-black">Trong vòng 24 giờ</p></div>
+              <span className="grid h-11 w-11 shrink-0 place-items-center border border-zinc-900 bg-[#fff8e9]"><Sparkles size={19} className="text-[#d98200]" /></span>
+            </div>
+            <Link href="/contact" className="group flex items-center justify-between bg-[#ffb21c] px-6 py-5 text-xs font-black uppercase transition-colors hover:bg-zinc-950 hover:text-white">
+              Trao đổi dự án
+              <span className="grid h-9 w-9 place-items-center border border-zinc-900 bg-white text-zinc-950 transition-transform group-hover:translate-x-1"><ArrowRight size={17} /></span>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
   );
+}
+
+function Stat({ icon, value, label, note, last = false }: { icon: React.ReactNode; value: string; label: string; note: string; last?: boolean }) {
+  return <div className={`group grid grid-cols-[44px_1fr_auto] items-center gap-4 px-6 py-5 transition-colors hover:bg-[#fff8e9] ${last ? "" : "border-b border-zinc-900"}`}>
+    <span className="grid h-11 w-11 place-items-center border border-zinc-900 bg-[#fff8e9] text-[#d98200] transition-colors group-hover:bg-[#ffb21c] group-hover:text-zinc-950">{icon}</span>
+    <span><strong className="block text-xs font-black uppercase tracking-[.12em]">{label}</strong><small className="mt-1 block text-[10px] font-semibold text-zinc-400">{note}</small></span>
+    <strong className="text-4xl font-black tracking-[-.06em] text-[#d98200]">{value}</strong>
+  </div>;
+}
+
+function ProjectCard({ project, index }: { project: Project; index: number }) {
+  const progress = Math.max(0, Math.min(100, project.progress || 0));
+  const date = project.createdAt ? new Date(project.createdAt).toLocaleDateString("vi-VN") : "Đang cập nhật";
+  const priority = priorityText[project.priority || "medium"];
+  return (
+    <motion.article layout initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * .045, .3) }} className="group flex min-w-0 flex-col overflow-hidden border border-zinc-900 bg-white shadow-[6px_6px_0_#ffb21c] transition-transform duration-300 hover:-translate-y-2">
+      <div className="relative aspect-video overflow-hidden border-b border-zinc-900 bg-amber-50">
+        {project.image ? <Image src={project.image} alt={project.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center text-zinc-300"><ImageIcon size={46} /></div>}
+        <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-3">
+          <span className="max-w-[65%] truncate border border-zinc-900 bg-[#ffb21c] px-3 py-1.5 text-[9px] font-black uppercase tracking-wider">{project.status || "Đang cập nhật"}</span>
+          <span className="border border-zinc-900 bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-wider">{priority}</span>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center gap-3 bg-zinc-950/75 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          <Link href={`/projects/${project.slug}`} aria-label={`Xem ${project.name}`} className="border border-white bg-white p-3 text-zinc-950 hover:bg-[#ffb21c]"><Eye size={19} /></Link>
+          {project.liveUrl && <a href={project.liveUrl} target="_blank" rel="noreferrer" aria-label="Mở website" className="border border-white bg-white p-3 text-zinc-950 hover:bg-[#ffb21c]"><ExternalLink size={19} /></a>}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col p-6">
+        <h3 className="line-clamp-2 text-xl font-black leading-tight tracking-[-.025em] group-hover:text-[#d98200]"><Link href={`/projects/${project.slug}`}>{project.name}</Link></h3>
+        <p className="mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400"><UserRound size={12} />{project.client}</p>
+        <div className="my-5 h-16 min-h-16 overflow-hidden">
+          <p
+            className="overflow-hidden text-sm text-zinc-600"
+            style={{
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: 2,
+              lineClamp: 2,
+              lineHeight: "32px",
+              height: "64px",
+              maxHeight: "64px",
+            }}
+          >{stripHtml(project.description) || "Thông tin dự án đang được cập nhật."}</p>
+        </div>
+        {project.tags && project.tags.length > 0 && <div className="mb-5 flex flex-wrap gap-1.5">{project.tags.slice(0, 3).map((tag) => <span key={tag} className="border border-zinc-300 bg-[#fff8e9] px-2 py-1 text-[9px] font-bold uppercase">{tag}</span>)}</div>}
+        <div className="border-t border-zinc-300 pt-4">
+          <div className="flex justify-between gap-3 text-[11px] font-black text-zinc-700"><span className="flex items-center gap-1"><DollarSign size={14} className="text-[#d98200]" />{(project.budget || 0).toLocaleString("vi-VN")}</span><span className="flex items-center gap-1"><CalendarDays size={14} className="text-[#d98200]" />{date}</span></div>
+          <div className="mt-4 flex justify-between text-[9px] font-black uppercase tracking-wider text-zinc-400"><span>Tiến độ</span><span>{progress}%</span></div>
+          <div className="mt-2 h-1.5 bg-zinc-100"><div className="h-full bg-[#ffb21c] transition-[width]" style={{ width: `${progress}%` }} /></div>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+function Empty({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+  return <div className="grid min-h-80 place-items-center border border-dashed border-zinc-400 bg-[#fff8e9]"><div className="max-w-sm px-6 text-center"><div className="mx-auto grid h-16 w-16 place-items-center border border-zinc-900 bg-white shadow-[4px_4px_0_#ffb21c]">{icon}</div><h3 className="mt-6 text-xl font-black">{title}</h3><p className="mt-2 text-sm text-zinc-600">{text}</p></div></div>;
 }

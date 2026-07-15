@@ -2,6 +2,9 @@ import { connectDB } from "@/libs/mongodb";
 import cloudinary from "@/libs/cloudinary";
 import Project from "@/models/Project";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/libs/auth";
+import { sanitizeHtml } from "@/libs/sanitize";
+import { logActivity } from "@/libs/activity";
 
 function generateSlug(str: string) {
   return str
@@ -30,6 +33,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     const { id } = await params;
     await connectDB();
 
@@ -50,7 +56,8 @@ export async function PUT(
     const name = form.get("name") as string;
     const client = form.get("client") as string;
     const status = form.get("status") as string;
-    const description = form.get("description") as string;
+    const visibility = form.get("visibility") === "draft" ? "draft" : "published";
+    const description = sanitizeHtml((form.get("description") as string) || "");
 
     // Tags: Xử lý mảng JSON
     const tagsRaw = form.get("tags") as string;
@@ -129,6 +136,7 @@ export async function PUT(
       name: name || currentProject.name,
       client: client || currentProject.client,
       status: status || currentProject.status,
+      visibility,
       tags,
       description: description || currentProject.description,
       slug: name ? generateSlug(name) : currentProject.slug, // Chỉ tạo slug mới nếu tên đổi
@@ -145,6 +153,7 @@ export async function PUT(
       new: true,
     });
 
+    await logActivity({ actor: auth.user, action: "update", entity: "project", entityId: id, description: `Cập nhật dự án ${updated?.name || currentProject.name}` });
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating project:", error);
@@ -159,9 +168,13 @@ export async function DELETE(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
+
   const { id } = await params;
   await connectDB();
 
-  await Project.findByIdAndDelete(id);
+  const deleted = await Project.findByIdAndDelete(id);
+  if (deleted) await logActivity({ actor: auth.user, action: "delete", entity: "project", entityId: id, description: `Xóa dự án ${deleted.name}` });
   return NextResponse.json({ success: true });
 }

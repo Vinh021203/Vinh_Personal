@@ -1,12 +1,6 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/libs/seo";
 
 export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: ["/admin/", "/settings/", "/profile/", "/api/"],
-    },
-    sitemap: "https://vinhwork.vercel.app/sitemap.xml",
-  };
+  return { rules: [{ userAgent: "*", allow: "/", disallow: ["/admin/", "/api/", "/login", "/register", "/profile", "/settings"] }], sitemap: `${SITE_URL}/sitemap.xml`, host: SITE_URL };
 }

@@ -12,12 +12,12 @@ export default function CreateProjectPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[80vh]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-orange-500 rounded-full border-t-transparent animate-spin"></div>
-            <p className="text-sm font-medium text-slate-500">
-              Đang tải trình tạo dự án...
-            </p>
+        <div className="grid min-h-[70vh] place-items-center">
+          <div className="border border-zinc-950 bg-zinc-950 px-6 py-5 text-white shadow-[5px_5px_0_#ffb21c]">
+            <div className="flex items-center gap-3">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#ffb21c] border-t-transparent" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Đang tải trình tạo dự án</span>
+            </div>
           </div>
         </div>
       }

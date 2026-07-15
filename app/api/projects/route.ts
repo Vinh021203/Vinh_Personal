@@ -2,6 +2,9 @@ import { connectDB } from "@/libs/mongodb";
 import cloudinary from "@/libs/cloudinary";
 import Project from "@/models/Project";
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/libs/auth";
+import { sanitizeHtml } from "@/libs/sanitize";
+import { logActivity } from "@/libs/activity";
 
 function generateSlug(str: string) {
   return str
@@ -13,23 +16,50 @@ function generateSlug(str: string) {
 }
 
 // --- GET: Lấy danh sách dự án ---
-export async function GET() {
+export async function GET(req: Request) {
   await connectDB();
-  const projects = await Project.find().sort({ createdAt: -1 });
-  return NextResponse.json(projects);
+  const { searchParams } = new URL(req.url);
+  const isPublic = searchParams.get("public") === "1";
+  const slug = searchParams.get("slug");
+
+  if (isPublic) {
+    const filter: Record<string, unknown> = { visibility: { $ne: "draft" } };
+    if (slug) filter.slug = slug;
+
+    const fields =
+      "name slug client status priority budget progress liveUrl image gallery description tags technologies category createdAt updatedAt featured";
+    const query = slug ? Project.findOne(filter).select(fields).lean() : Project.find(filter).sort({ createdAt: -1 }).select(fields).lean();
+    const data = await query;
+    return NextResponse.json(data ?? (slug ? null : []), {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
+      },
+    });
+  }
+
+  const projects = await Project.find().sort({ createdAt: -1 }).lean();
+  return NextResponse.json(projects, {
+    headers: {
+      "Cache-Control": "private, no-store",
+    },
+  });
 }
 
 // --- POST: Tạo dự án mới ---
 export async function POST(req: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     await connectDB();
     const form = await req.formData();
 
     const name = form.get("name") as string;
     const client = form.get("client") as string;
     const status = form.get("status") as string;
+    const visibility = form.get("visibility") === "draft" ? "draft" : "published";
     const tags = JSON.parse((form.get("tags") as string) || "[]");
-    const description = form.get("description") as string;
+    const description = sanitizeHtml((form.get("description") as string) || "");
 
     // Các trường mới
     const budget = Number(form.get("budget")) || 0;
@@ -94,6 +124,7 @@ export async function POST(req: Request) {
       client,
       slug: generateSlug(name),
       status,
+      visibility,
       priority,
       budget,
       progress,
@@ -106,6 +137,7 @@ export async function POST(req: Request) {
     });
 
     await newProject.save();
+    await logActivity({ actor: auth.user, action: "create", entity: "project", entityId: newProject._id.toString(), description: `Tạo dự án ${newProject.name}` });
     return NextResponse.json(newProject, { status: 201 });
   } catch (error) {
     console.error("Error creating project:", error);

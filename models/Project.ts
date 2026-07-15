@@ -1,11 +1,11 @@
-// models/Project.ts
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Document, Model, Schema, models } from "mongoose";
 
 export interface IProject extends Document {
   name: string;
   slug: string;
   client: string;
   status: string;
+  visibility: "draft" | "published";
   priority: "low" | "medium" | "high";
   budget: number;
   progress: number;
@@ -13,7 +13,7 @@ export interface IProject extends Document {
   githubUrl?: string;
   image?: string;
   description?: string;
-  gallery?: string[]; // Thêm trường Gallery theo yêu cầu
+  gallery?: string[];
   tags?: string[];
   createdAt?: Date;
   updatedAt?: Date;
@@ -21,31 +21,24 @@ export interface IProject extends Document {
 
 const ProjectSchema = new Schema<IProject>(
   {
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    client: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, index: true },
+    client: { type: String, required: true, trim: true },
     status: { type: String, default: "Đang triển khai" },
-    priority: {
-      type: String,
-      enum: ["low", "medium", "high"],
-      default: "medium",
-    },
+    visibility: { type: String, enum: ["draft", "published"], default: "published", index: true },
+    priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
     budget: { type: Number, default: 0 },
     progress: { type: Number, default: 0, min: 0, max: 100 },
     liveUrl: { type: String, default: "" },
     githubUrl: { type: String, default: "" },
-    image: String,
-    gallery: [String], // Thêm trường Gallery
+    image: { type: String, default: "" },
+    gallery: { type: [String], default: [] },
     description: { type: String, default: "" },
-    tags: [String],
+    tags: { type: [String], default: [] },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-// QUAN TRỌNG: Xóa model cũ để Mongoose load lại Schema mới (Chỉ cần thiết khi dev đổi schema liên tục)
-if (mongoose.models.Project) {
-  delete mongoose.models.Project;
-}
+const Project = (models.Project || mongoose.model<IProject>("Project", ProjectSchema)) as Model<IProject>;
 
-const Project = mongoose.model<IProject>("Project", ProjectSchema);
 export default Project;

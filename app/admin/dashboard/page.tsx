@@ -1,6 +1,7 @@
 // app/admin/dashboard/page.tsx
 import { Suspense } from "react";
 import AdminDashboardClient from "./AdminDashboardClient";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +14,7 @@ export default function AdminDashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-screen bg-orange-50">
-          <p className="text-sm font-semibold text-orange-600">
-            Đang tải dashboard...
-          </p>
-        </div>
+        <div className="grid min-h-screen place-items-center bg-[#fff8e9]"><LoadingSpinner size="lg" label="Đang tải dashboard" /></div>
       }
     >
       <AdminDashboardClient />

@@ -2,8 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .admin-select {
+    @apply h-14 w-full border border-zinc-950 bg-white px-4 text-sm font-black text-zinc-950 outline-none shadow-[3px_3px_0_#e4ded0] transition focus:bg-[#fff8e9] focus:shadow-[4px_4px_0_#ffb21c];
+  }
+
+  .admin-crud-input {
+    @apply h-14 w-full border border-zinc-950 bg-white px-4 text-sm font-bold text-zinc-950 outline-none shadow-[3px_3px_0_#e4ded0] transition placeholder:text-slate-400 focus:bg-[#fff8e9] focus:shadow-[4px_4px_0_#ffb21c];
+  }
+
+  .admin-crud-textarea {
+    @apply min-h-36 w-full resize-y border border-zinc-950 bg-white px-4 py-3 text-sm font-bold leading-7 text-zinc-950 outline-none shadow-[3px_3px_0_#e4ded0] transition placeholder:text-slate-400 focus:bg-[#fff8e9] focus:shadow-[4px_4px_0_#ffb21c];
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 body {
   @apply antialiased;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  scrollbar-color: #111111 #fff8e9;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: #fff8e9;
+  border-left: 1px solid #111111;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: #111111;
+  border: 3px solid #fff8e9;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px #111111, 4px 4px 0 #ffb21c;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: #df8500;
 }
 
 @keyframes fade-in {
@@ -206,15 +257,23 @@ body {
 
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  @apply rounded-full bg-slate-800/50;
+  background: #fff8e9;
+  border-left: 1px solid #111111;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-purple-500/50 hover:bg-purple-500/70;
+  background: #111111;
+  border: 2px solid #fff8e9;
+  border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #df8500;
 }
 
 /* Text Selection */
@@ -260,4 +319,41 @@ body {
   .responsive-text-6xl {
     @apply text-5xl;
   }
+}
+/* Boston-inspired editorial redesign for the public home page. */
+.boston-home > section:not(:first-child) {
+  border-bottom: 1px solid #18181b !important;
+}
+
+.boston-home > section:nth-child(even) {
+  background: #fff8e9 !important;
+}
+
+.boston-home > section:nth-child(odd) {
+  background: #fff !important;
+}
+
+.boston-home section h2 {
+  color: #18181b !important;
+  letter-spacing: -0.04em;
+}
+
+.boston-home section h2 span {
+  background-image: none !important;
+  color: #d98200 !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.boston-home section [class*="rounded-3xl"],
+.boston-home section [class*="rounded-2xl"] {
+  border-radius: 0 !important;
+}
+
+.boston-home section [class*="shadow-"] {
+  box-shadow: 4px 4px 0 rgba(24, 24, 27, .12) !important;
+}
+
+.boston-home section button,
+.boston-home section a {
+  transition-duration: 180ms;
 }

@@ -1,49 +1,28 @@
-import { Suspense } from "react";
-import { Metadata } from "next";
 import PricingClient from "./PricingClient";
+import { createMetadata } from "@/libs/seo";
 
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Bảng giá - VinhWorks | Minh bạch & Hiệu quả",
+export const metadata = createMetadata({
+  title: "Bảng giá thiết kế Website",
   description:
-    "Bảng giá dịch vụ thiết kế website trọn gói, minh bạch, không phát sinh chi phí. Các gói dịch vụ từ Cơ bản đến Cao cấp phù hợp mọi nhu cầu.",
-  openGraph: {
-    title: "Bảng giá Dịch vụ VinhWorks",
-    description:
-      "Xem chi tiết bảng giá thiết kế website và giải pháp phần mềm.",
-    url: "https://vinhworks.com/pricing",
-    siteName: "VinhWorks",
-    locale: "vi_VN",
-    type: "website",
-  },
-};
+    "Bảng giá tham khảo cho Landing Page, website doanh nghiệp và Web App. Phạm vi rõ ràng, so sánh chi tiết và báo giá theo nhu cầu thực tế.",
+  keywords: ["bảng giá website", "giá thiết kế landing page", "giá website doanh nghiệp", "Lương Vinh", "VinhWorks"],
+  path: "/pricing",
+});
 
-const jsonLd = {
+const schema = {
   "@context": "https://schema.org",
-  "@type": "PriceSpecification",
-  priceCurrency: "VND",
-  minPrice: "5000000",
-  maxPrice: "15000000",
-  description: "Bảng giá dịch vụ thiết kế website trọn gói tại VinhWorks",
+  "@type": "Service",
+  name: "Thiết kế và phát triển Website",
+  provider: { "@type": "Person", name: "Lương Vinh", url: "https://webgiare.id.vn/about" },
+  areaServed: "VN",
+  offers: { "@type": "AggregateOffer", priceCurrency: "VND", lowPrice: "5000000", offerCount: "3" },
 };
 
 export default function PricingPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center min-h-screen bg-white">
-            <div className="w-12 h-12 border-4 border-purple-200 rounded-full border-t-purple-600 animate-spin" />
-          </div>
-        }
-      >
-        <PricingClient />
-      </Suspense>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+      <PricingClient />
     </>
   );
 }

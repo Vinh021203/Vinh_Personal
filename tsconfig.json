@@ -13,11 +13,10 @@
     "incremental": true,
     "module": "esnext",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
@@ -32,9 +31,10 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "next-env.d.ts",
+    ".next/dev/types/**/*.ts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    "next-env.d.ts",
+    ".next-dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

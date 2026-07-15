@@ -1,368 +1,327 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Send,
-  X,
+  ArrowRight,
   Bot,
-  User,
-  Sparkles,
-  Zap,
   Headphones,
-  ChevronRight,
-  RefreshCcw,
+  Mail,
+  MessageSquare,
   Phone,
+  RefreshCcw,
+  Send,
+  Sparkles,
+  UserRound,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 
-// --- TYPES ---
+type Sender = "user" | "bot";
+
 interface Message {
   id: string;
-  sender: "user" | "bot" | "agent";
+  sender: Sender;
   content: string;
-  type: "text" | "options" | "typing";
   options?: string[];
   timestamp: Date;
 }
 
-interface ChatScript {
-  [key: string]: {
-    text: string;
-    options?: string[];
-    action?: "SWITCH_TO_AGENT";
-  };
-}
-
-// --- SCRIPT DATA ---
-const CHAT_SCRIPTS: ChatScript = {
+const scripts: Record<string, { text: string; options?: string[] }> = {
   start: {
-    text: "Chào bạn! 👋 VinhWorks AI có thể giúp gì cho bạn hôm nay?",
-    options: [
-      "💰 Báo giá dịch vụ",
-      "🛠️ Hỗ trợ kỹ thuật",
-      "🎧 Gặp nhân viên tư vấn",
-    ],
+    text: "Chào bạn! Mình là trợ lý VinhWorks. Bạn muốn trao đổi nhanh về hạng mục nào?",
+    options: ["Báo giá website", "Tư vấn landing page", "Tối ưu SEO", "Gặp Lương Vinh"],
   },
-  "💰 Báo giá dịch vụ": {
-    text: "Dạ, bạn quan tâm đến mảng dịch vụ nào ạ?",
-    options: ["Thiết kế Website", "Mobile App", "Marketing Online", "Quay lại"],
+  "Báo giá website": {
+    text: "Website thường phụ thuộc phạm vi: landing page, website doanh nghiệp, CMS hay web app. Bạn có thể gửi mục tiêu, số trang dự kiến và deadline để mình gợi ý hướng phù hợp.",
+    options: ["Tôi cần website doanh nghiệp", "Tôi cần web có quản trị", "Liên hệ tư vấn ngay"],
   },
-  "Thiết kế Website": {
-    text: "Gói thiết kế Website trọn gói bắt đầu từ 5.000.000đ. Bao gồm: \n- Giao diện độc quyền \n- Tối ưu SEO \n- Bảo hành 12 tháng.",
-    options: ["Xem mẫu giao diện", "Liên hệ tư vấn ngay", "Quay lại"],
+  "Tư vấn landing page": {
+    text: "Landing page phù hợp khi bạn cần chạy chiến dịch, giới thiệu dịch vụ hoặc thu lead. Mình sẽ ưu tiên tốc độ tải, CTA rõ và bố cục chuyển đổi tốt.",
+    options: ["Xem dự án mẫu", "Nhận tư vấn", "Quay lại"],
   },
-  "🛠️ Hỗ trợ kỹ thuật": {
-    text: "Để hỗ trợ tốt nhất, vui lòng cho biết vấn đề bạn đang gặp phải:",
-    options: ["Lỗi truy cập", "Quên mật khẩu", "Cấu hình Email", "Khác"],
+  "Tối ưu SEO": {
+    text: "Có thể tối ưu metadata, heading, schema, sitemap, tốc độ tải và cấu trúc nội dung. Nếu bạn có website hiện tại, gửi link để mình check nhanh.",
+    options: ["Gửi link website", "Tối ưu tốc độ", "Quay lại"],
   },
-  "🎧 Gặp nhân viên tư vấn": {
-    text: "Hệ thống đang kết nối đến nhân viên CSKH... Vui lòng chờ trong giây lát. ⏳",
-    action: "SWITCH_TO_AGENT",
+  "Gặp Lương Vinh": {
+    text: "Ok, cách nhanh nhất là gọi trực tiếp hoặc gửi thông tin dự án qua trang liên hệ. Bạn muốn đi theo hướng nào?",
+    options: ["Gọi ngay", "Mở trang liên hệ", "Quay lại"],
+  },
+  "Tôi cần website doanh nghiệp": {
+    text: "Rất hợp. Website doanh nghiệp nên có: trang giới thiệu, dịch vụ, dự án/case study, liên hệ và nền tảng SEO cơ bản. Mình có thể tư vấn phạm vi gọn để tiết kiệm chi phí.",
+    options: ["Mở trang liên hệ", "Gọi ngay"],
+  },
+  "Tôi cần web có quản trị": {
+    text: "Với CMS, mình sẽ thiết kế cả giao diện khách xem và dashboard quản trị để bạn tự cập nhật nội dung/dự án/dịch vụ.",
+    options: ["Mở trang liên hệ", "Gọi ngay"],
+  },
+  "Xem dự án mẫu": {
+    text: "Bạn có thể xem các dự án thật ở trang Dự án. Mình sẽ mở đúng danh sách portfolio để bạn tham khảo.",
+    options: ["Mở trang dự án", "Quay lại"],
+  },
+  "Nhận tư vấn": {
+    text: "Bạn để lại mục tiêu, ngân sách dự kiến và thời gian mong muốn nhé. Mình sẽ phản hồi theo hướng rõ ràng, thực tế.",
+    options: ["Mở trang liên hệ", "Gọi ngay"],
+  },
+  "Liên hệ tư vấn ngay": {
+    text: "Tuyệt. Bạn có thể gọi trực tiếp hoặc điền form để mình nắm đủ thông tin trước khi trao đổi.",
+    options: ["Gọi ngay", "Mở trang liên hệ"],
+  },
+  "Gửi link website": {
+    text: "Bạn dán link website vào ô chat này nhé. Mình sẽ ghi nhận và gợi ý các đầu việc cần kiểm tra: tốc độ, SEO, giao diện mobile và cấu trúc nội dung.",
+    options: ["Mở trang liên hệ", "Quay lại"],
+  },
+  "Tối ưu tốc độ": {
+    text: "Các điểm thường tối ưu gồm ảnh, font, JS bundle, cache/ISR, lazy loading và giảm request không cần thiết. Với Next.js có thể làm khá tốt.",
+    options: ["Mở trang liên hệ", "Quay lại"],
   },
   "Quay lại": {
-    text: "Bạn cần hỗ trợ thêm thông tin gì khác không ạ?",
-    options: [
-      "💰 Báo giá dịch vụ",
-      "🛠️ Hỗ trợ kỹ thuật",
-      "🎧 Gặp nhân viên tư vấn",
-    ],
-  },
-  default: {
-    text: "Xin lỗi, tôi là AI và chưa hiểu rõ ý bạn. Vui lòng chọn các mục hỗ trợ bên dưới hoặc chọn 'Gặp nhân viên tư vấn'.",
-    options: ["💰 Báo giá dịch vụ", "🎧 Gặp nhân viên tư vấn"],
+    text: "Bạn muốn mình hỗ trợ phần nào tiếp?",
+    options: ["Báo giá website", "Tư vấn landing page", "Tối ưu SEO", "Gặp Lương Vinh"],
   },
 };
 
+function makeId() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export default function ChatbotBox({ onClose }: { onClose: () => void }) {
   const { user } = useUser();
-  const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [isLiveChat, setIsLiveChat] = useState(false);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const guestIdRef = useRef<string>("");
 
-  const addMessage = (
-    sender: Message["sender"],
-    content: string,
-    options?: string[]
-  ) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender,
-      content,
-      type: options ? "options" : "text",
-      options,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
+  const addMessage = (sender: Sender, content: string, options?: string[]) => {
+    setMessages((items) => [
+      ...items,
+      { id: makeId(), sender, content, options, timestamp: new Date() },
+    ]);
   };
 
-  const handleSend = async (text: string = inputValue) => {
-    if (!text.trim()) return;
+  const reset = () => {
+    setMessages([]);
+    const welcome = scripts.start;
+    const name = user?.name ? ` ${user.name}` : "";
+    setTimeout(() => addMessage("bot", `Chào${name}! ${welcome.text}`, welcome.options), 0);
+  };
+
+  useEffect(() => {
+    const storedGuestId = window.localStorage.getItem("vinhworks_guest_id");
+    const nextGuestId = storedGuestId || `guest-${crypto.randomUUID()}`;
+    window.localStorage.setItem("vinhworks_guest_id", nextGuestId);
+    guestIdRef.current = nextGuestId;
+
+    reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.name]);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, typing]);
+
+  const handleAction = (value: string) => {
+    if (value === "Gọi ngay") {
+      window.location.href = "tel:0971386588";
+      return;
+    }
+    if (value === "Mở trang liên hệ") {
+      window.location.href = "/contact";
+      return;
+    }
+    if (value === "Mở trang dự án") {
+      window.location.href = "/projects";
+      return;
+    }
+    send(value);
+  };
+
+  const syncCustomerMessage = async (content: string) => {
+    try {
+      await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          guestId: guestIdRef.current,
+          senderName: user?.name || "Khách truy cập",
+          receiverId: null,
+          isAdmin: false,
+        }),
+      });
+    } catch (error) {
+      console.error("Không thể đồng bộ tin nhắn chatbot:", error);
+    }
+  };
+
+  const send = (value = input) => {
+    const text = value.trim();
+    if (!text || typing) return;
 
     addMessage("user", text);
-    setInputValue("");
-    setIsTyping(true);
+    syncCustomerMessage(text);
+    setInput("");
+    setTyping(true);
 
-    // Simulate Bot/Agent Response
-    setTimeout(() => {
-      if (isLiveChat) {
-        const agentName = "Minh (CSKH)";
-        addMessage(
-          "agent",
-          `Chào ${
-            user?.name || "bạn"
-          }, mình là ${agentName}. Mình đã nhận được tin: "${text}". Bạn chờ xíu nhé!`
-        );
-      } else {
-        const script = CHAT_SCRIPTS[text] || CHAT_SCRIPTS["default"];
-        if (script.action === "SWITCH_TO_AGENT") {
-          setIsLiveChat(true);
-          setTimeout(() => {
-            addMessage(
-              "bot",
-              "✅ Đã kết nối với nhân viên hỗ trợ: Minh (CSKH)"
-            );
-          }, 1500);
-        }
-        addMessage("bot", script.text, script.options);
-      }
-      setIsTyping(false);
-    }, 1000 + Math.random() * 500);
-  };
-
-  const handleReset = () => {
-    setMessages([]);
-    setIsLiveChat(false);
-    const welcome = CHAT_SCRIPTS["start"];
-    const welcomeText = `Chào ${
-      user?.name || "bạn"
-    }! 👋 VinhWorks AI có thể giúp gì cho bạn hôm nay?`;
-    addMessage("bot", welcomeText, welcome.options);
-  };
-
-  useEffect(() => {
-    handleReset();
-  }, []);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isTyping]);
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    window.setTimeout(() => {
+      const script = scripts[text] || {
+        text: "Mình đã ghi nhận ý của bạn. Nếu cần phản hồi chính xác hơn, bạn gửi thêm link website, mục tiêu dự án hoặc thời gian mong muốn nhé.",
+        options: ["Mở trang liên hệ", "Gọi ngay", "Quay lại"],
+      };
+      addMessage("bot", script.text, script.options);
+      setTyping(false);
+    }, 650);
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden font-sans bg-white border shadow-2xl rounded-3xl border-slate-100">
-      {/* --- HEADER --- */}
-      <div
-        className={`relative px-6 py-5 flex-shrink-0 transition-colors duration-500 ${
-          isLiveChat
-            ? "bg-gradient-to-r from-blue-600 to-indigo-600"
-            : "bg-gradient-to-r from-orange-500 to-amber-500"
-        }`}
-      >
-        {/* Decor */}
-        <div className="absolute top-0 right-0 w-32 h-32 -mt-10 -mr-10 rounded-full bg-white/10 blur-2xl" />
-
-        <div className="relative z-10 flex items-center justify-between">
+    <section className="flex h-full flex-col overflow-hidden border border-zinc-950 bg-white shadow-[8px_8px_0_#ffb21c]">
+      <header className="relative border-b border-zinc-950 bg-zinc-950 p-5 text-white">
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-32 bg-[linear-gradient(135deg,transparent_35%,rgba(255,178,28,.18)_35%)]" />
+        <div className="relative flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="flex items-center justify-center border shadow-inner w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md border-white/30">
-                {isLiveChat ? (
-                  <Headphones className="text-white" size={20} />
-                ) : (
-                  <Bot className="text-white" size={20} />
-                )}
-              </div>
-              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full animate-pulse" />
-            </div>
+            <span className="grid h-12 w-12 place-items-center border border-[#ffb21c] bg-[#ffb21c] text-zinc-950 shadow-[3px_3px_0_#fff]">
+              <Bot size={22} />
+            </span>
             <div>
-              <h3 className="text-lg font-bold leading-tight text-white">
-                {isLiveChat ? "Hỗ trợ trực tuyến" : "VinhWorks AI"}
-              </h3>
-              <p className="flex items-center gap-1 text-xs text-white/90">
-                {isLiveChat ? "Đang chat với nhân viên" : "Tự động trả lời"}{" "}
-                <Sparkles size={10} />
+              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#ffb21c]">
+                VinhWorks Assistant
+              </p>
+              <h2 className="mt-1 text-xl font-black leading-none">AI Chatbot</h2>
+              <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-zinc-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Sẵn sàng tư vấn nhanh
               </p>
             </div>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             <button
-              onClick={handleReset}
-              className="p-2 transition-colors rounded-full text-white/80 hover:text-white hover:bg-white/20"
-              title="Làm mới"
+              type="button"
+              onClick={reset}
+              className="grid h-10 w-10 place-items-center border border-white/20 bg-white/5 text-white transition hover:bg-[#ffb21c] hover:text-zinc-950"
+              aria-label="Làm mới hội thoại"
             >
-              <RefreshCcw size={18} />
+              <RefreshCcw size={17} />
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 transition-colors rounded-full text-white/80 hover:text-white hover:bg-white/20"
+              className="grid h-10 w-10 place-items-center border border-white/20 bg-white/5 text-white transition hover:bg-white hover:text-zinc-950"
+              aria-label="Đóng chatbot"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
+      </header>
+
+      <div className="grid grid-cols-3 border-b border-zinc-950 bg-[#fff8e9] text-center text-[9px] font-black uppercase tracking-[0.12em]">
+        <span className="flex items-center justify-center gap-1 border-r border-zinc-950 px-2 py-3">
+          <Sparkles size={13} className="text-[#d98200]" /> Tư vấn
+        </span>
+        <span className="flex items-center justify-center gap-1 border-r border-zinc-950 px-2 py-3">
+          <Headphones size={13} className="text-[#d98200]" /> Hỗ trợ
+        </span>
+        <span className="flex items-center justify-center gap-1 px-2 py-3">
+          <Phone size={13} className="text-[#d98200]" /> Liên hệ
+        </span>
       </div>
 
-      {/* --- MESSAGES --- */}
-      <div
-        ref={scrollRef}
-        className="flex-1 p-5 space-y-5 overflow-y-auto bg-slate-50 scroll-smooth custom-scrollbar"
-      >
-        <div className="text-center">
-          <span className="text-[10px] font-medium text-slate-400 bg-slate-200/50 px-3 py-1 rounded-full">
-            Hôm nay
-          </span>
-        </div>
-
-        <AnimatePresence mode="popLayout">
-          {messages.map((msg) => (
+      <div ref={scrollRef} className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-[#fff8e9] p-4">
+        <AnimatePresence initial={false}>
+          {messages.map((message) => (
             <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className={`flex flex-col ${
-                msg.sender === "user" ? "items-end" : "items-start"
-              }`}
+              key={message.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div
-                className={`flex items-end gap-2 max-w-[85%] ${
-                  msg.sender === "user" ? "flex-row-reverse" : "flex-row"
-                }`}
-              >
-                {/* Avatar */}
-                {msg.sender !== "user" && (
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
-                      msg.sender === "agent"
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-orange-100 text-orange-600"
-                    }`}
-                  >
-                    {msg.sender === "agent" ? (
-                      <Headphones size={16} />
-                    ) : (
-                      <Bot size={16} />
-                    )}
+              <div className={`max-w-[88%] ${message.sender === "user" ? "text-right" : "text-left"}`}>
+                <div className={`flex items-end gap-2 ${message.sender === "user" ? "flex-row-reverse" : ""}`}>
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center border border-zinc-950 ${message.sender === "user" ? "bg-[#ffb21c]" : "bg-white"}`}>
+                    {message.sender === "user" ? <UserRound size={15} /> : <Bot size={15} />}
+                  </span>
+                  <p className={`whitespace-pre-line border border-zinc-950 px-4 py-3 text-sm font-semibold leading-6 shadow-[3px_3px_0_rgba(24,24,27,.12)] ${message.sender === "user" ? "bg-[#ffb21c] text-zinc-950" : "bg-white text-slate-700"}`}>
+                    {message.content}
+                  </p>
+                </div>
+                {message.options?.length ? (
+                  <div className={`mt-3 flex flex-wrap gap-2 ${message.sender === "user" ? "justify-end" : "justify-start pl-10"}`}>
+                    {message.options.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => handleAction(option)}
+                        className="inline-flex items-center gap-2 border border-zinc-950 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-zinc-950 transition hover:-translate-y-0.5 hover:bg-[#ffb21c] hover:shadow-[3px_3px_0_#111]"
+                      >
+                        {option}
+                        <ArrowRight size={12} />
+                      </button>
+                    ))}
                   </div>
-                )}
-
-                {/* Bubble */}
-                <div
-                  className={`relative px-4 py-3 text-sm shadow-sm leading-relaxed whitespace-pre-line ${
-                    msg.sender !== "user"
-                      ? "bg-white text-slate-700 rounded-2xl rounded-bl-none border border-slate-100"
-                      : "bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-2xl rounded-br-none shadow-orange-500/20"
-                  }`}
-                >
-                  {msg.content}
-                </div>
+                ) : null}
+                <span className="mt-1.5 block text-[10px] font-bold text-zinc-400">
+                  {message.timestamp.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                </span>
               </div>
-
-              {/* Options */}
-              {msg.options && (
-                <div className="flex flex-wrap gap-2 mt-3 ml-10">
-                  {msg.options.map((opt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSend(opt)}
-                      className="px-3 py-1.5 bg-white border border-orange-200 text-orange-600 text-xs font-bold rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-all shadow-sm flex items-center gap-1 active:scale-95"
-                    >
-                      {opt} <ChevronRight size={12} />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Timestamp */}
-              <span
-                className={`text-[10px] text-slate-400 mt-1.5 ${
-                  msg.sender !== "user" ? "ml-11" : "mr-1"
-                }`}
-              >
-                {msg.timestamp.toLocaleTimeString("vi-VN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {/* Typing Indicator */}
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 ml-1"
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200">
-              {isLiveChat ? (
-                <Headphones size={16} className="text-slate-500" />
-              ) : (
-                <Bot size={16} className="text-slate-500" />
-              )}
-            </div>
-            <div className="flex gap-1 px-4 py-3 bg-white border rounded-bl-none border-slate-200 rounded-2xl">
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
-            </div>
-          </motion.div>
-        )}
+        {typing ? (
+          <div className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center border border-zinc-950 bg-white">
+              <Bot size={15} />
+            </span>
+            <span className="flex gap-1 border border-zinc-950 bg-white px-4 py-3">
+              <i className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:-.2s]" />
+              <i className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:-.1s]" />
+              <i className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" />
+            </span>
+          </div>
+        ) : null}
       </div>
 
-      {/* --- INPUT --- */}
-      <div className="flex-shrink-0 p-4 bg-white border-t border-slate-100">
-        <div className="flex items-end gap-2 bg-slate-50 p-1.5 rounded-[24px] border border-slate-200 focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-500/10 transition-all">
-          <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors">
-            <Phone size={20} />
-          </button>
+      <footer className="border-t border-zinc-950 bg-white p-3">
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <a href="tel:0971386588" className="flex items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white">
+            <Phone size={14} className="text-[#ffb21c]" /> Gọi nhanh
+          </a>
+          <a href="/contact" className="flex items-center justify-center gap-2 border border-zinc-950 bg-[#ffb21c] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-950">
+            <Mail size={14} /> Gửi form
+          </a>
+        </div>
+        <div className="flex items-end gap-2 border border-zinc-950 bg-[#fff8e9] p-2">
+          <MessageSquare size={18} className="mb-2 shrink-0 text-zinc-500" />
           <textarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder={
-              isLiveChat ? "Nhập tin nhắn..." : "Chọn hoặc nhập yêu cầu..."
-            }
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                send();
+              }
+            }}
             rows={1}
-            disabled={isTyping}
-            className="flex-1 w-full px-2 py-3 text-sm bg-transparent border-none outline-none resize-none text-slate-700 focus:ring-0 placeholder:text-slate-400 max-h-24 custom-scrollbar"
-            style={{ minHeight: "44px" }}
+            placeholder="Nhập nhu cầu của bạn..."
+            className="custom-scrollbar max-h-24 min-h-10 flex-1 resize-none bg-transparent py-2 text-sm font-semibold leading-6 text-zinc-800 outline-none placeholder:text-zinc-400"
           />
           <button
-            onClick={() => handleSend()}
-            disabled={!inputValue.trim() || isTyping}
-            className={`p-3 rounded-full transition-all duration-300 shadow-lg flex-shrink-0 ${
-              inputValue.trim() && !isTyping
-                ? "bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-orange-500/30 text-white transform hover:scale-105"
-                : "bg-slate-200 text-slate-400 cursor-not-allowed"
-            }`}
+            type="button"
+            onClick={() => send()}
+            disabled={!input.trim() || typing}
+            className="grid h-10 w-10 shrink-0 place-items-center border border-zinc-950 bg-[#ffb21c] text-zinc-950 transition hover:bg-zinc-950 hover:text-white disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400"
+            aria-label="Gửi tin nhắn"
           >
-            {isTyping ? (
-              <Zap size={18} className="animate-spin" />
-            ) : (
-              <Send size={18} className="ml-0.5" />
-            )}
+            <Send size={17} />
           </button>
         </div>
-        <div className="mt-2 text-center">
-          <p className="text-[10px] font-medium text-slate-400 flex items-center justify-center gap-1">
-            Powered by{" "}
-            <span className="font-bold text-slate-500">
-              VinhWorks Enterprise
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
+        <p className="mt-2 text-center text-[10px] font-bold text-zinc-400">
+          AI gợi ý nhanh — dự án thật sẽ được Lương Vinh tư vấn lại chi tiết.
+        </p>
+      </footer>
+    </section>
   );
 }

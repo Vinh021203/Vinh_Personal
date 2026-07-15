@@ -40,15 +40,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   // Dùng useCallback để tránh tạo lại hàm
   const refreshUser = useCallback(async () => {
     try {
-      // 🔥 THÊM ?t=Date.now() ĐỂ CHẶN CACHE TRÌNH DUYỆT
-      const res = await fetch(`/api/auth/me?t=${Date.now()}`, {
-        method: "GET",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
+      const res = await fetch("/api/auth/me", { method: "GET", cache: "no-store" });
 
       if (res.ok) {
         const data = await res.json();
@@ -69,7 +61,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
       router.push("/login");
-      router.refresh();
     } catch (error) {
       console.error("Lỗi đăng xuất:", error);
     }

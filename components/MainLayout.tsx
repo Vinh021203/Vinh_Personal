@@ -1,248 +1,152 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUp, Bot, MessageCircle, Phone, Sparkles, X } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { useLanguage } from "@/hooks/useLanguage";
-import { text } from "@/libs/text";
-import { FaFacebookMessenger, FaPhoneAlt, FaRobot } from "react-icons/fa";
-import { useUser } from "@/contexts/UserContext";
-import { useState, useEffect } from "react";
-import ChatbotBox from "@/components/ChatbotBox";
-import toast from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  MessageCircle,
-  Phone,
-  Bot,
-  X,
-  Sparkles,
-  Zap,
-  ChevronUp,
-  ArrowUp,
-} from "lucide-react";
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
+const ChatbotBox = dynamic(() => import("@/components/ChatbotBox"), {
+  ssr: false,
+  loading: () => (
+    <div className="grid h-full place-items-center border border-zinc-900 bg-white text-[10px] font-black uppercase tracking-[.18em] text-zinc-500 shadow-[5px_5px_0_#ffb21c]">
+      Đang mở chatbot
+    </div>
+  ),
+});
 
-export default function MainLayout({ children }: MainLayoutProps) {
-  const { lang } = useLanguage();
-  const t = text[lang];
-  const { user } = useUser();
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [showChat, setShowChat] = useState(false);
-  const [headerHeight, setHeaderHeight] = useState(80);
+  const [headerHeight, setHeaderHeight] = useState(74);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Calculate header height dynamically
   useEffect(() => {
-    const calculateHeaderHeight = () => {
+    const update = () => {
       const header = document.querySelector("header");
-      if (header) {
-        setHeaderHeight(header.offsetHeight);
-      }
+      if (header) setHeaderHeight(header.offsetHeight);
+      setShowScrollTop(window.scrollY > 420);
     };
 
-    calculateHeaderHeight();
-    window.addEventListener("resize", calculateHeaderHeight);
-    return () => window.removeEventListener("resize", calculateHeaderHeight);
-  }, []);
-
-  // Handle scroll to top button
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, { passive: true });
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleChatbotClick = () => {
-    if (!user) {
-      toast.error("Vui lòng đăng nhập để sử dụng chatbot!", {
-        style: {
-          background: "rgba(15, 23, 42, 0.95)",
-          color: "#fff",
-          border: "1px solid rgba(147, 51, 234, 0.3)",
-          backdropFilter: "blur(20px)",
-          borderRadius: "12px",
-        },
-      });
-      return;
-    }
+  const openChatbot = () => {
     setShowChat(true);
-    setIsFloatingMenuOpen(false);
+    setMenuOpen(false);
   };
 
-  const floatingButtons = [
-    {
-      id: "chatbot",
-      icon: Bot,
-      label: "AI Chatbot",
-      onClick: handleChatbotClick,
-      className:
-        "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600",
-      iconColor: "text-white",
-    },
-    {
-      id: "messenger",
-      icon: MessageCircle,
-      label: "Messenger",
-      href: "https://m.me/yourusername",
-      className:
-        "bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600",
-      iconColor: "text-white",
-    },
-    {
-      id: "phone",
-      icon: Phone,
-      label: "Gọi ngay",
-      href: "tel:0971386588",
-      className:
-        "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600",
-      iconColor: "text-white",
-    },
+  const actions = [
+    { id: "chatbot", icon: Bot, label: "AI Chatbot", onClick: openChatbot, accent: "bg-[#ffb21c] text-zinc-950" },
+    { id: "messenger", icon: MessageCircle, label: "Messenger", href: "https://m.me/yourusername", accent: "bg-white text-zinc-950" },
+    { id: "phone", icon: Phone, label: "Gọi ngay", href: "tel:0971386588", accent: "bg-zinc-950 text-white" },
   ];
 
   return (
     <>
       <Header />
-      <main
-        style={{ paddingTop: `${headerHeight}px` }}
-        className="relative min-h-screen"
-      >
+      <main style={{ paddingTop: headerHeight }} className="relative min-h-screen">
         {children}
       </main>
       <Footer />
 
-      {/* Enhanced Chatbox */}
       <AnimatePresence>
-        {showChat && user && (
+        {showChat && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            initial={{ opacity: 0, scale: 0.94, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            exit={{ opacity: 0, scale: 0.94, y: 18 }}
+            transition={{ type: "spring", stiffness: 260, damping: 24 }}
+            className="fixed bottom-5 right-4 z-[70] h-[min(680px,calc(100dvh-40px))] w-[calc(100vw-32px)] max-w-[420px] sm:bottom-6 sm:right-6"
           >
             <ChatbotBox onClose={() => setShowChat(false)} />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Enhanced Floating Action Buttons */}
       {!showChat && (
-        <div className="fixed z-50 bottom-6 right-6">
-          {/* Main Menu Button */}
-          <motion.button
-            onClick={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative flex items-center justify-center mb-4 text-white transition-all duration-300 rounded-full shadow-2xl w-14 h-14 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 hover:shadow-purple-500/25"
-            aria-label="Menu liên hệ"
-          >
-            <motion.div
-              animate={{ rotate: isFloatingMenuOpen ? 45 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {isFloatingMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Sparkles className="w-6 h-6" />
-              )}
-            </motion.div>
-
-            {/* Pulse effect */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-ping opacity-20"></div>
-          </motion.button>
-
-          {/* Floating Menu Items */}
+        <div className="fixed bottom-6 right-5 z-50 flex flex-col items-end gap-3 sm:right-6">
           <AnimatePresence>
-            {isFloatingMenuOpen && (
+            {menuOpen && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-3"
+                initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 16, scale: 0.96 }}
+                className="flex flex-col items-end gap-2.5"
               >
-                {floatingButtons.map((button, index) => {
-                  const IconComponent = button.icon;
-
-                  const ButtonContent = (
+                {actions.map((action, index) => {
+                  const Icon = action.icon;
+                  const content = (
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05, x: -5 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`group flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg transition-all duration-300 backdrop-blur-sm border border-white/10 ${button.className}`}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ x: -4 }}
+                      className={`group flex min-w-[190px] items-center border border-zinc-900 p-1.5 pr-5 shadow-[4px_4px_0_rgba(24,24,27,.2)] ${action.accent}`}
                     >
-                      <IconComponent
-                        className={`w-5 h-5 ${button.iconColor}`}
-                      />
-                      <span className="text-sm font-medium text-white whitespace-nowrap">
-                        {button.label}
+                      <span className={`mr-4 grid h-11 w-11 place-items-center border border-zinc-900 ${action.id === "phone" ? "bg-[#ffb21c] text-zinc-950" : "bg-white text-zinc-950"}`}>
+                        <Icon size={19} />
                       </span>
-
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 transition-opacity duration-300 opacity-0 rounded-2xl bg-gradient-to-r from-white/10 to-white/5 group-hover:opacity-100"></div>
+                      <span className="text-sm font-black">{action.label}</span>
                     </motion.div>
                   );
 
-                  return button.href ? (
-                    <a
-                      key={button.id}
-                      href={button.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative block"
-                    >
-                      {ButtonContent}
+                  return action.href ? (
+                    <a key={action.id} href={action.href} target={action.id === "messenger" ? "_blank" : undefined} rel={action.id === "messenger" ? "noopener noreferrer" : undefined}>
+                      {content}
                     </a>
                   ) : (
-                    <button
-                      key={button.id}
-                      onClick={button.onClick}
-                      className="relative block w-full"
-                    >
-                      {ButtonContent}
+                    <button key={action.id} type="button" onClick={action.onClick}>
+                      {content}
                     </button>
                   );
                 })}
               </motion.div>
             )}
           </AnimatePresence>
+
+          <motion.button
+            onClick={() => setMenuOpen(!menuOpen)}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
+            className={`relative grid h-16 w-16 place-items-center rounded-full border-2 border-zinc-900 shadow-[4px_4px_0_#18181b] transition-colors ${menuOpen ? "bg-zinc-950 text-white" : "bg-[#ffb21c] text-zinc-950"}`}
+            aria-label={menuOpen ? "Đóng menu liên hệ" : "Mở menu liên hệ"}
+            aria-expanded={menuOpen}
+          >
+            <span className="absolute -inset-2 -z-10 rounded-full border border-[#ffb21c] bg-amber-100/70" />
+            <motion.span animate={{ rotate: menuOpen ? 90 : 0 }}>
+              {menuOpen ? <X size={25} /> : <Sparkles size={25} />}
+            </motion.span>
+          </motion.button>
         </div>
       )}
 
-      {/* Enhanced Scroll to Top Button */}
       <AnimatePresence>
         {showScrollTop && !showChat && (
           <motion.button
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            whileHover={{ scale: 1.1, y: -2 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={scrollToTop}
-            className="fixed z-40 flex items-center justify-center w-12 h-12 text-white transition-all duration-300 border rounded-full shadow-2xl bottom-6 left-6 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 backdrop-blur-sm border-white/10"
+            initial={{ opacity: 0, x: -15 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -15 }}
+            whileHover={{ y: -3, scale: 1.05 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="group fixed bottom-6 left-5 z-40 grid h-[52px] w-[52px] place-items-center rounded-full border-2 border-zinc-900 bg-[#ffb21c] text-zinc-950 shadow-[0_10px_24px_rgba(24,24,27,.2)] sm:left-6"
             aria-label="Lên đầu trang"
           >
             <ArrowUp size={20} />
+            <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap border border-zinc-900 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wide text-zinc-950 opacity-0 shadow-[2px_2px_0_#ffb21c] transition-opacity group-hover:opacity-100 sm:block">
+              Lên đầu trang
+            </span>
           </motion.button>
         )}
       </AnimatePresence>
-
-      {/* Toast Container Styling */}
-      <style jsx global>{`
-        .react-hot-toast {
-          z-index: 9999;
-        }
-      `}</style>
     </>
   );
 }

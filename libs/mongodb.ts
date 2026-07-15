@@ -22,6 +22,14 @@ export async function connectDB() {
     });
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    // Cho phép request kế tiếp kết nối lại thay vì giữ promise đã rejected
+    // cho đến khi phải restart dev server.
+    cached.promise = null;
+    cached.conn = null;
+    throw error;
+  }
 }

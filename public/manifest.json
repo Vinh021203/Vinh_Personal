@@ -1,20 +1,38 @@
 {
-  "name": "VinhWorks",
+  "id": "/",
+  "name": "VinhWorks — Thiết kế Website bởi Lương Vinh",
   "short_name": "VinhWorks",
+  "description": "Thiết kế website, landing page, web application và giải pháp số chuyên nghiệp bởi Lương Vinh.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#fff8e9",
+  "theme_color": "#ffb21c",
+  "lang": "vi-VN",
+  "dir": "ltr",
+  "categories": ["business", "design", "productivity", "technology"],
   "icons": [
     {
-      "src": "/logo-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/vinhworks-favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dự án",
+      "short_name": "Dự án",
+      "description": "Xem các dự án đã thực hiện",
+      "url": "/projects"
     },
     {
-      "src": "/logo-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "name": "Liên hệ",
+      "short_name": "Liên hệ",
+      "description": "Trao đổi dự án với Lương Vinh",
+      "url": "/contact"
     }
   ]
 }

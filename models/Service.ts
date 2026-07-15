@@ -1,13 +1,14 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Document, Model, Schema, models } from "mongoose";
 
 export interface IService extends Document {
   name: string;
   description: string;
-  icon: string; // 'Code2', 'Settings', etc.
+  icon: string;
   status: "Hiển thị" | "Ẩn";
+  visibility: "draft" | "published";
   price: number;
   category: string;
-  image?: string; // URL ảnh thumbnail
+  image?: string;
   featured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -15,19 +16,19 @@ export interface IService extends Document {
 
 const ServiceSchema = new Schema<IService>(
   {
-    name: { type: String, required: true },
-    description: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
     icon: { type: String, required: true },
-    status: { type: String, enum: ["Hiển thị", "Ẩn"], default: "Hiển thị" },
+    status: { type: String, enum: ["Hiển thị", "Ẩn"], default: "Hiển thị", index: true },
+    visibility: { type: String, enum: ["draft", "published"], default: "published", index: true },
     price: { type: Number, default: 0 },
     category: { type: String, default: "General" },
     image: { type: String, default: "" },
     featured: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const Service: Model<IService> =
-  mongoose.models.Service || mongoose.model<IService>("Service", ServiceSchema);
+const Service = (models.Service || mongoose.model<IService>("Service", ServiceSchema)) as Model<IService>;
 
 export default Service;

@@ -1,383 +1,96 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import {
-  Menu,
-  X,
-  ChevronDown,
-  User,
-  LogOut,
-  Settings,
-  Sparkles,
-  Home,
-  Zap,
-  Wrench,
-  Rocket,
-  Diamond,
-  FileText,
-  Phone,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import BrandLogo from "./BrandLogo";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, LogOut, Menu, Settings, User, X } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { text } from "@/libs/text";
 import { useUser } from "@/contexts/UserContext";
+import { text } from "@/libs/text";
 
 export const Header = () => {
-  const [open, setOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
-
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-  const { user, setUser } = useUser();
+  const accountRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const { user, logout } = useUser();
   const { lang } = useLanguage();
   const t = text[lang];
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
-    window.location.reload();
-  };
-
-  const navItems = [
-    { label: t.home, href: "/", icon: Home },
-    { label: t.about, href: "/about", icon: Zap },
-    { label: t.services, href: "/services", icon: Wrench },
-    { label: t.projects, href: "/projects", icon: Rocket },
-    {
-      label: lang === "vi" ? "Bảng giá" : "Pricing",
-      href: "/pricing",
-      icon: Diamond,
-    },
-    { label: t.blog, href: "/blog", icon: FileText },
-    { label: t.contact, href: "/contact", icon: Phone },
+  const navigation = [
+    { label: t.home, href: "/" }, { label: t.about, href: "/about" },
+    { label: t.services, href: "/services" }, { label: t.projects, href: "/projects" },
+    { label: lang === "vi" ? "Bảng giá" : "Pricing", href: "/pricing" },
   ];
 
+  const isActive = (href: string) => href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+
+  useEffect(() => {
+    const closeAccount = (event: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) setAccountOpen(false);
+    };
+    document.addEventListener("mousedown", closeAccount);
+    return () => document.removeEventListener("mousedown", closeAccount);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => setMobileOpen(false), [pathname]);
+
   return (
-    <>
-      <motion.header
-        initial={{ y: -100, opacity: 0 }}
-        animate={{
-          y: 0,
-          opacity: 1,
-          marginTop: scrolled ? "1rem" : "0rem",
-          maxWidth: scrolled ? "95%" : "100%",
-          borderRadius: scrolled ? "9999px" : "0px",
-        }}
-        transition={{
-          duration: 0.5,
-          type: "spring",
-          stiffness: 100,
-          damping: 20,
-        }}
-        className={`fixed left-0 right-0 z-50 mx-auto transition-all duration-500 ${
-          scrolled
-            ? "bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60"
-            : "bg-white/70 backdrop-blur-lg border-b border-white/30"
-        }`}
-      >
-        {/* Background Mesh Gradient */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[inherit]">
-          <div className="absolute -top-[50%] -left-[10%] w-[60%] h-[200%] bg-gradient-to-r from-orange-100/40 to-amber-100/40 blur-3xl rotate-12" />
-          <div className="absolute -bottom-[50%] -right-[10%] w-[60%] h-[200%] bg-gradient-to-l from-rose-100/40 to-pink-100/40 blur-3xl -rotate-12" />
-        </div>
+    <header className={`fixed inset-x-0 top-0 z-50 h-[74px] border-b border-zinc-900 transition-all duration-300 ${scrolled ? "bg-white/95 shadow-[0_8px_30px_rgba(24,24,27,.08)] backdrop-blur-xl" : "bg-white"}`}>
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-5 lg:px-8">
+        <Link href="/" aria-label="VinhWorks - Trang chủ" className="group flex shrink-0 items-center">
+          <BrandLogo priority className="h-8 w-auto transition-transform duration-300 group-hover:scale-[1.03] sm:h-9" />
+        </Link>
 
-        <div
-          className={`flex items-center justify-between mx-auto max-w-7xl ${
-            scrolled ? "px-8 py-2" : "px-6 py-3"
-          }`}
-        >
-          {/* Logo Section - Lớn hơn khi scroll */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-            className="relative z-10 flex-shrink-0"
-          >
-            <Link
-              href="/"
-              className={`flex group ${
-                scrolled ? "items-center" : "flex-col items-center"
-              }`}
-            >
-              {/* Logo SVG - Lớn hơn khi scroll */}
-              <motion.div
-                animate={{
-                  height: scrolled ? "40px" : "24px",
-                }}
-                transition={{ duration: 0.3 }}
-                className="relative"
-              >
-                <Image
-                  src="/logo.svg"
-                  alt="VinhWorks"
-                  width={scrolled ? 160 : 140}
-                  height={scrolled ? 40 : 24}
-                  className="object-contain transition-all duration-300"
-                  priority
-                />
-              </motion.div>
+        <nav className="hidden h-full items-center gap-1 lg:flex" aria-label="Điều hướng chính">
+          {navigation.map((item) => {
+            const active = isActive(item.href);
+            return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`group relative flex h-full items-center px-3 text-[11px] font-extrabold uppercase tracking-[.12em] transition-colors ${active ? "text-zinc-950" : "text-zinc-500 hover:text-zinc-950"}`}>
+              <span className="relative z-10">{item.label}</span>
+              <span className={`absolute inset-x-3 bottom-0 h-[3px] origin-left bg-[#ffb21c] transition-transform duration-300 ${active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`}/>
+              {active && <span className="absolute right-1 top-[22px] h-1.5 w-1.5 rounded-full bg-[#ffb21c]"/>}
+            </Link>;
+          })}
+        </nav>
 
-              {/* Solution SVG - Ẩn khi scroll */}
-              {!scrolled && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="relative h-4 mt-1"
-                >
-                  <Image
-                    src="/solution.svg"
-                    alt="Tech Solutions"
-                    width={110}
-                    height={16}
-                    className="object-contain"
-                    priority
-                  />
-                </motion.div>
-              )}
-            </Link>
-          </motion.div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center bg-white/50 p-1.5 rounded-full border border-white shadow-sm relative z-10 mx-4">
-            {navItems.map((item) => {
-              const IconComponent = item.icon;
-              const isActive = hoveredPath === item.href;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onMouseEnter={() => setHoveredPath(item.href)}
-                  onMouseLeave={() => setHoveredPath(null)}
-                  className="relative px-3.5 py-2 text-sm font-medium transition-colors rounded-full group"
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="nav-pill"
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.6,
-                      }}
-                      className="absolute inset-0 border rounded-full shadow-sm bg-gradient-to-r from-orange-50 to-amber-50 border-orange-100/50"
-                      style={{ borderRadius: 9999 }}
-                    />
-                  )}
-
-                  <span
-                    className={`relative flex items-center gap-1.5 transition-colors duration-200 z-10 ${
-                      isActive
-                        ? "text-orange-600 font-bold"
-                        : "text-slate-500 group-hover:text-orange-500"
-                    }`}
-                  >
-                    <IconComponent
-                      size={15}
-                      className={`transition-transform duration-200 ${
-                        isActive
-                          ? "scale-110 stroke-orange-500"
-                          : "scale-100 opacity-70 group-hover:opacity-100"
-                      }`}
-                    />
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User & Actions Section */}
-          <div className="relative z-10 flex items-center flex-shrink-0 gap-3">
-            {user ? (
-              <div className="relative" ref={dropdownRef}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowDropdown((prev) => !prev)}
-                  className="flex items-center gap-2 py-1 pl-1 pr-3 transition-all bg-white border border-orange-100 rounded-full shadow-sm hover:shadow-md hover:border-orange-200"
-                >
-                  <div className="relative flex items-center justify-center w-8 h-8 overflow-hidden border-2 border-white rounded-full shadow-inner bg-gradient-to-br from-orange-100 to-rose-100">
-                    <span className="text-sm font-bold text-orange-600">
-                      {user.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <ChevronDown
-                    size={14}
-                    className={`text-orange-300 transition-transform duration-300 ${
-                      showDropdown ? "rotate-180" : ""
-                    }`}
-                  />
-                </motion.button>
-
-                <AnimatePresence>
-                  {showDropdown && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-4 w-60 overflow-hidden bg-white/95 backdrop-blur-2xl border border-orange-100 rounded-3xl shadow-[0_20px_50px_-12px_rgba(249,115,22,0.15)]"
-                    >
-                      <div className="p-4 border-b border-orange-100 bg-gradient-to-br from-orange-50 to-rose-50">
-                        <p className="text-sm font-bold text-slate-800">
-                          {user.name}
-                        </p>
-                        {user?.email && (
-                          <p className="text-xs text-slate-500">{user.email}</p>
-                        )}
-                      </div>
-                      <div className="p-2 space-y-1">
-                        {[
-                          { label: "Hồ sơ", icon: User, href: "/profile" },
-                          {
-                            label: "Cài đặt",
-                            icon: Settings,
-                            href: "/settings",
-                          },
-                        ].map((menuItem) => (
-                          <Link
-                            key={menuItem.href}
-                            href={menuItem.href}
-                            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors"
-                          >
-                            <menuItem.icon size={16} />
-                            {menuItem.label}
-                          </Link>
-                        ))}
-                        <div className="h-px my-1 bg-slate-100" />
-                        <button
-                          onClick={handleLogout}
-                          className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium text-rose-500 rounded-xl hover:bg-rose-50 transition-colors"
-                        >
-                          <LogOut size={16} />
-                          Đăng xuất
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="hidden px-5 py-2 text-sm font-bold transition-colors md:block text-slate-500 hover:text-orange-500"
-                >
-                  {t.login}
-                </Link>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="hidden md:block"
-                >
-                  <Link
-                    href="/register"
-                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white rounded-full shadow-lg shadow-orange-400/30 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:brightness-105 transition-all"
-                  >
-                    <Sparkles size={14} className="text-yellow-100" />
-                    {t.register}
-                  </Link>
-                </motion.div>
-              </div>
-            )}
-
-            {/* Mobile Toggle */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setOpen(!open)}
-              className="p-2 transition-colors bg-white border rounded-full text-slate-500 border-slate-100 md:hidden hover:bg-orange-50 hover:text-orange-500 hover:border-orange-100"
-            >
-              {open ? <X size={24} /> : <Menu size={24} />}
-            </motion.button>
-          </div>
-        </div>
-      </motion.header>
-
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            ref={mobileMenuRef}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-4 top-24 z-40 p-6 bg-white/95 backdrop-blur-3xl rounded-3xl border border-white/60 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] md:hidden"
-          >
-            <div className="grid gap-2">
-              {navItems.map((item, idx) => (
-                <motion.div
-                  key={item.href}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                >
-                  <Link
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-4 p-3 font-medium rounded-2xl hover:bg-orange-50 text-slate-600 group"
-                  >
-                    <div className="p-2 transition-all bg-slate-50 rounded-xl text-slate-400 group-hover:text-orange-500 group-hover:bg-white group-hover:shadow-sm">
-                      <item.icon size={20} />
-                    </div>
-                    {item.label}
-                  </Link>
-                </motion.div>
-              ))}
+        <div className="flex items-center gap-3">
+          {user ? (
+            <div ref={accountRef} className="relative">
+              <button onClick={() => setAccountOpen(!accountOpen)} className="flex items-center gap-2 border border-zinc-900 bg-white px-3 py-2 text-xs font-bold transition-colors hover:bg-amber-50">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[#ffb21c]">{user.name.charAt(0).toUpperCase()}</span>
+                <span className="hidden max-w-24 truncate sm:inline">{user.name}</span><ChevronDown size={14} className={accountOpen ? "rotate-180" : ""}/>
+              </button>
+              <AnimatePresence>{accountOpen && <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}} className="absolute right-0 mt-2 w-48 border border-zinc-900 bg-white p-2 shadow-[5px_5px_0_#ffb21c]">
+                <Link href="/profile" className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-amber-50"><User size={15}/>Hồ sơ</Link>
+                <Link href="/settings" className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-amber-50"><Settings size={15}/>Cài đặt</Link>
+                <button onClick={logout} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"><LogOut size={15}/>Đăng xuất</button>
+              </motion.div>}</AnimatePresence>
             </div>
+          ) : <>
+            <Link href="/login" className={`hidden text-xs font-bold transition-colors hover:text-[#d98200] sm:block ${pathname === "/login" ? "text-[#d98200]" : ""}`}>{t.login}</Link>
+            <Link href="/contact" aria-current={pathname === "/contact" ? "page" : undefined} className={`hidden border border-zinc-900 px-5 py-2.5 text-xs font-black transition-all hover:-translate-y-0.5 sm:block ${pathname === "/contact" ? "bg-zinc-950 text-white shadow-[3px_3px_0_#ffb21c]" : "bg-[#ffb21c] text-zinc-950 shadow-[3px_3px_0_#18181b]"}`}>{t.contact}</Link>
+          </>}
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="border border-zinc-900 bg-white p-2 transition-colors hover:bg-[#ffb21c] lg:hidden" aria-label="Mở menu">{mobileOpen ? <X/> : <Menu/>}</button>
+        </div>
+      </div>
 
-            {/* Mobile User Actions */}
-            <div className="flex flex-col gap-3 pt-6 mt-6 border-t border-slate-100">
-              {!user && (
-                <>
-                  <Link
-                    href="/login"
-                    className="w-full py-3 font-bold text-center text-slate-500 bg-slate-50 rounded-xl hover:bg-slate-100"
-                  >
-                    {t.login}
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="w-full py-3 font-bold text-center text-white shadow-lg bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl shadow-orange-500/20"
-                  >
-                    {t.register}
-                  </Link>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+      <AnimatePresence>{mobileOpen && <motion.nav initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} className="absolute inset-x-0 top-[73px] grid border-b border-zinc-900 bg-[#fff9ed] p-5 shadow-xl lg:hidden">
+        {navigation.map((item,index) => {
+          const active = isActive(item.href);
+          return <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`flex items-center border-b border-zinc-300 px-3 py-3 text-sm font-black ${active ? "bg-[#ffb21c] text-zinc-950" : ""}`}><span className={`mr-4 ${active ? "text-zinc-950" : "text-[#d98200]"}`}>0{index+1}</span>{item.label}{active && <span className="ml-auto h-2 w-2 rounded-full bg-zinc-950"/>}</Link>;
+        })}
+        {!user && <div className="mt-4 flex gap-3"><Link href="/login" className="flex-1 border border-zinc-900 bg-white p-3 text-center text-sm font-bold">{t.login}</Link><Link href="/register" className="flex-1 border border-zinc-900 bg-[#ffb21c] p-3 text-center text-sm font-bold">{t.register}</Link></div>}
+      </motion.nav>}</AnimatePresence>
+    </header>
   );
 };

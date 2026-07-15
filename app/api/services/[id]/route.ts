@@ -1,100 +1,87 @@
+import cloudinary from "@/libs/cloudinary";
 import { connectDB } from "@/libs/mongodb";
 import Service from "@/models/Service";
 import { NextResponse } from "next/server";
-import cloudinary from "@/libs/cloudinary";
+import { requireAdmin } from "@/libs/auth";
+import { logActivity } from "@/libs/activity";
 
-// --- GET: Chi tiết dịch vụ ---
-export async function GET(
-  _: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+type Context = { params: Promise<{ id: string }> };
+
+export async function GET(_: Request, { params }: Context) {
   const { id } = await params;
   await connectDB();
-
   const service = await Service.findById(id);
-  if (!service)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!service) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(service);
 }
 
-// --- PUT: Cập nhật dịch vụ ---
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: Request, { params }: Context) {
   try {
+    const auth = await requireAdmin();
+    if (auth.response) return auth.response;
+
     const { id } = await params;
     await connectDB();
 
     const service = await Service.findById(id);
-    if (!service)
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!service) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const form = await req.formData();
-
-    const name = form.get("name") as string;
-    const description = form.get("description") as string;
-    const icon = form.get("icon") as string;
-    const status = form.get("status") as "Hiển thị" | "Ẩn";
-    const price = Number(form.get("price"));
-    const category = form.get("category") as string;
-    // const featured = form.get('featured') === 'true'; // Uncomment nếu có
-
-    // Xử lý ảnh: Nếu có upload mới -> up lên Cloudinary, ngược lại giữ nguyên ảnh cũ
     const thumbnail = form.get("thumbnail") as File | null;
     let imageUrl = service.image;
 
     if (thumbnail && thumbnail.size > 0) {
       const bytes = await thumbnail.arrayBuffer();
       const buffer = Buffer.from(bytes);
-
-      const uploadResult = await new Promise<{ secure_url: string }>(
-        (resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "services" },
-            (error, result) => {
-              if (error || !result) reject(error);
-              else resolve(result);
-            }
-          );
-          stream.end(buffer);
-        }
-      );
+      const uploadResult = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream({ folder: "services" }, (error, result) => {
+          if (error || !result) reject(error);
+          else resolve(result);
+        });
+        stream.end(buffer);
+      });
       imageUrl = uploadResult.secure_url;
     }
 
-    const updatedData = {
-      name,
-      description,
-      icon,
-      status,
-      price,
-      category,
-      image: imageUrl,
-      // featured
-    };
+    const updatedService = await Service.findByIdAndUpdate(
+      id,
+      {
+        name: String(form.get("name") || service.name),
+        description: String(form.get("description") || service.description),
+        icon: String(form.get("icon") || service.icon),
+        status: normalizeStatus(String(form.get("status") || service.status)),
+        visibility: normalizeVisibility(String(form.get("visibility") || service.visibility)),
+        price: Number(form.get("price")) || 0,
+        category: String(form.get("category") || service.category),
+        image: imageUrl,
+        featured: form.get("featured") === "true",
+      },
+      { new: true },
+    );
 
-    const updatedService = await Service.findByIdAndUpdate(id, updatedData, {
-      new: true,
-    });
+    await logActivity({ actor: auth.user, action: "update", entity: "service", entityId: id, description: `Cập nhật dịch vụ ${updatedService?.name || service.name}` });
     return NextResponse.json(updatedService);
   } catch (error) {
     console.error("Update Service Error:", error);
-    return NextResponse.json(
-      { error: "Failed to update service" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update service" }, { status: 500 });
   }
 }
 
-// --- DELETE: Xóa dịch vụ ---
-export async function DELETE(
-  _: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_: Request, { params }: Context) {
+  const auth = await requireAdmin();
+  if (auth.response) return auth.response;
+
   const { id } = await params;
   await connectDB();
-
-  await Service.findByIdAndDelete(id);
+  const deleted = await Service.findByIdAndDelete(id);
+  if (deleted) await logActivity({ actor: auth.user, action: "delete", entity: "service", entityId: id, description: `Xóa dịch vụ ${deleted.name}` });
   return NextResponse.json({ success: true });
+}
+
+function normalizeStatus(status?: string) {
+  return status === "Ẩn" ? "Ẩn" : "Hiển thị";
+}
+
+function normalizeVisibility(value?: string) {
+  return value === "draft" ? "draft" : "published";
 }

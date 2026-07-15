@@ -1,383 +1,337 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
+  CalendarDays,
   ChevronDown,
+  Clock3,
+  ExternalLink,
   LogOut,
-  Settings,
-  User,
   Menu,
-  X,
+  MessageCircle,
   Search,
-  CloudSun,
-  Calendar,
-  Clock,
-  HelpCircle,
-  Command,
-  Shield,
+  Settings,
+  ShieldCheck,
+  UserRound,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@/contexts/UserContext";
 
-type HeaderProps = {
+interface HeaderProps {
   onToggleSidebar?: () => void;
   isMobileMenuOpen?: boolean;
-};
+}
 
-interface UserData {
-  name: string;
-  role: string;
-  email: string;
-  avatar: string;
+interface MessageItem {
+  _id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  createdAt: string;
+  isAdmin?: boolean;
+  read?: boolean;
 }
 
 export default function Header({
   onToggleSidebar,
-  isMobileMenuOpen,
+  isMobileMenuOpen = false,
 }: HeaderProps) {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateTime, setDateTime] = useState<Date | null>(null);
+  const { user, loading, logout } = useUser();
+  const [now, setNow] = useState<Date | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  // State cho User
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+  const initials =
+    user?.name
+      ?.split(" ")
+      .filter(Boolean)
+      .slice(-2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || "LV";
 
-  const router = useRouter();
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setNotificationsLoading(true);
+      const response = await fetch("/api/messages", { cache: "no-store" });
+      if (!response.ok) return;
 
-  // --- EFFECTS ---
-  useEffect(() => {
-    setDateTime(new Date());
-    const timer = setInterval(() => setDateTime(new Date()), 1000);
-    return () => clearInterval(timer);
+      const data = await response.json();
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Không thể tải thông báo tin nhắn:", error);
+    } finally {
+      setNotificationsLoading(false);
+    }
   }, []);
 
-  // Fetch Admin Data
   useEffect(() => {
-    const fetchAdmin = async () => {
-      try {
-        // Giả lập lấy user hiện tại (Trong thực tế bạn sẽ gọi /api/auth/me hoặc tương tự)
-        // Ở đây mình lấy danh sách user và chọn người đầu tiên là Admin để hiển thị
-        const res = await fetch("/api/users");
-        const data = await res.json();
-        const admin = data.find((u: any) => u.role === "admin") || data[0]; // Fallback user đầu tiên nếu ko có admin
+    setNow(new Date());
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-        if (admin) {
-          setCurrentUser({
-            name: admin.name,
-            email: admin.email,
-            role: admin.role,
-            avatar:
-              admin.avatar ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${admin.name}`,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data");
+  useEffect(() => {
+    fetchNotifications();
+    const timer = window.setInterval(fetchNotifications, 15000);
+    return () => window.clearInterval(timer);
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+
+      if (event.key === "Escape") {
+        setAccountOpen(false);
+        setNotificationsOpen(false);
       }
     };
-    fetchAdmin();
+
+    window.addEventListener("keydown", keydown);
+    return () => window.removeEventListener("keydown", keydown);
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowDropdown(false);
-      setShowNotifications(false);
-    };
-    const timeout = setTimeout(
-      () => document.addEventListener("click", handleClickOutside),
-      100,
-    );
-    return () => {
-      clearTimeout(timeout);
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [showDropdown, showNotifications]);
+  const unreadMessages = useMemo(
+    () =>
+      messages
+        .filter((message) => !message.isAdmin && !message.read)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
+    [messages],
+  );
 
-  const handleLogout = () => {
-    // Xử lý logout ở đây (xóa cookie, token...)
-    router.push("/");
-  };
+  const recentNotifications = unreadMessages.slice(0, 4);
+  const unreadCount = unreadMessages.length;
 
-  // --- FORMATTERS ---
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("vi-VN", {
-      weekday: "long",
+  const date =
+    now?.toLocaleDateString("vi-VN", {
+      weekday: "short",
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-    }).format(date);
-  };
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("vi-VN", {
+    }) || "—";
+  const time =
+    now?.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: false,
-    }).format(date);
-  };
-
-  // --- MOCK NOTIFICATIONS ---
-  const notifications = [
-    {
-      id: 1,
-      title: "Đơn hàng mới #DH-2024",
-      message: "Khách hàng Nguyễn Văn A vừa đặt hàng.",
-      time: "2 phút trước",
-      type: "success",
-    },
-    {
-      id: 2,
-      title: "Cảnh báo hệ thống",
-      message: "CPU server đang hoạt động ở mức 90%.",
-      time: "10 phút trước",
-      type: "warning",
-    },
-  ];
-
-  const quickActions = [
-    { label: "Hồ sơ cá nhân", href: "/admin/profile", icon: User },
-    { label: "Cài đặt hiển thị", href: "/admin/settings", icon: Settings },
-    { label: "Trung tâm trợ giúp", href: "/admin/help", icon: HelpCircle },
-  ];
+    }) || "--:--:--";
 
   return (
-    <header
-      className="sticky top-0 z-50 w-full border-b shadow-sm border-orange-200/50"
-      style={{
-        background:
-          "linear-gradient(to right, rgba(255, 247, 237, 0.9), rgba(255, 251, 235, 0.9))",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      <div className="flex items-center justify-between h-20 px-4 md:px-8 max-w-[1920px] mx-auto">
-        {/* --- LEFT: SEARCH & TOGGLE --- */}
-        <div className="flex items-center gap-6">
+    <header className="relative z-40 h-[72px] shrink-0 border-b border-zinc-900 bg-white text-zinc-950">
+      <div className="flex h-full items-center justify-between gap-3 px-3 sm:px-5 lg:px-7">
+        <div className="flex min-w-0 items-center gap-3">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSidebar?.();
-            }}
-            className="p-2.5 transition-all border border-orange-200 rounded-xl lg:hidden text-slate-600 hover:bg-orange-100 hover:text-orange-600 hover:border-orange-300"
+            id="sidebar-toggle"
+            onClick={onToggleSidebar}
+            aria-label="Mở menu"
+            className="grid h-11 w-11 shrink-0 place-items-center border border-zinc-900 bg-[#fff8e9] lg:hidden"
           >
-            <motion.div animate={{ rotate: isMobileMenuOpen ? 90 : 0 }}>
-              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-            </motion.div>
+            {isMobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
 
-          <div className="relative hidden md:block group">
-            <div className="relative">
-              <Search
-                className="absolute transition-colors transform -translate-y-1/2 text-slate-400 left-4 top-1/2 group-hover:text-orange-500"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Tìm kiếm nhanh (Ctrl+K)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 py-2.5 pl-11 pr-12 text-sm font-medium transition-all duration-300 border border-orange-200/60 rounded-2xl lg:w-96 text-slate-700 bg-white/60 focus:outline-none focus:bg-white focus:ring-4 focus:ring-orange-500/10 focus:border-orange-400 hover:border-orange-300 hover:shadow-sm placeholder:text-slate-400"
-              />
-              <div className="absolute flex items-center transform -translate-y-1/2 right-3 top-1/2">
-                <kbd className="hidden lg:flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-slate-400 bg-white border border-slate-200 rounded-lg shadow-sm">
-                  <Command size={10} /> K
-                </kbd>
-              </div>
-            </div>
+          <div className="relative hidden md:block">
+            <Search
+              size={16}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+            />
+            <input
+              ref={searchRef}
+              type="search"
+              placeholder="Tìm nhanh trong CMS..."
+              className="h-11 w-[280px] border border-zinc-300 bg-[#fff8e9] pl-11 pr-14 text-xs font-semibold outline-none transition-shadow focus:border-zinc-900 focus:shadow-[3px_3px_0_#ffb21c] xl:w-[390px]"
+            />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 border border-zinc-300 bg-white px-2 py-1 text-[8px] font-black text-zinc-400">
+              ⌘ K
+            </kbd>
+          </div>
+
+          <div className="md:hidden">
+            <p className="text-[8px] font-black uppercase tracking-[.18em] text-[#d98200]">
+              VinhWorks
+            </p>
+            <p className="mt-1 text-xs font-black">Admin CMS</p>
           </div>
         </div>
 
-        {/* --- RIGHT: ACTIONS & PROFILE --- */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          <div className="items-center hidden gap-5 pr-6 mr-2 border-r border-orange-200/60 xl:flex">
-            <div className="flex flex-col items-end text-right">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-orange-600 uppercase tracking-wider">
-                <Calendar size={12} />
-                {dateTime ? formatDate(dateTime) : "Loading..."}
-              </span>
-              <span className="flex items-center gap-1.5 text-sm font-extrabold text-slate-700 tabular-nums">
-                <Clock size={14} className="text-slate-400" />
-                {dateTime ? formatTime(dateTime) : "--:--:--"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-orange-100 shadow-sm">
-              <CloudSun size={20} className="text-amber-500" />
-              <span className="text-sm font-bold text-slate-700">28°C</span>
+        <div className="flex h-full items-center">
+          <div className="hidden h-full items-center gap-3 border-x border-zinc-200 px-5 xl:flex">
+            <CalendarDays size={15} className="text-[#d98200]" />
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-[.12em] text-zinc-400">
+                {date}
+              </p>
+              <p className="mt-1 flex items-center gap-2 text-xs font-black tabular-nums">
+                <Clock3 size={12} />
+                {time}
+              </p>
             </div>
           </div>
 
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2.5 transition-colors rounded-xl md:hidden text-slate-500 hover:text-orange-600 hover:bg-orange-50"
-          >
-            <Search size={22} />
-          </button>
-
-          <div className="relative">
+          <div className="relative h-full border-r border-zinc-200">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowNotifications(!showNotifications);
-                setShowDropdown(false);
+              onClick={() => {
+                setNotificationsOpen((value) => !value);
+                setAccountOpen(false);
+                fetchNotifications();
               }}
-              className={`relative p-2.5 transition-all duration-200 rounded-xl border ${
-                showNotifications
-                  ? "bg-orange-100 text-orange-600 border-orange-200"
-                  : "text-slate-500 hover:text-orange-600 hover:bg-white hover:border-orange-100 border-transparent"
-              }`}
+              aria-label="Thông báo"
+              className="relative grid h-full w-14 place-items-center hover:bg-[#fff8e9] sm:w-16"
             >
-              <Bell size={22} />
-              <span className="absolute top-2 right-2.5 flex h-2.5 w-2.5">
-                <span className="absolute inline-flex w-full h-full bg-red-400 rounded-full opacity-75 animate-ping"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-white"></span>
-              </span>
+              <Bell size={19} />
+              {unreadCount > 0 && (
+                <>
+                  <span className="absolute right-4 top-5 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" />
+                  <span className="absolute right-2 top-3 grid min-h-5 min-w-5 place-items-center rounded-full bg-[#ffb21c] px-1 text-[9px] font-black text-zinc-950 ring-2 ring-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                </>
+              )}
             </button>
 
             <AnimatePresence>
-              {showNotifications && (
+              {notificationsOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 z-50 mt-4 overflow-hidden origin-top-right bg-white border shadow-2xl w-80 sm:w-96 border-slate-100 rounded-2xl ring-1 ring-black/5 focus:outline-none"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  className="absolute right-0 top-[calc(100%+1px)] w-[min(380px,calc(100vw-24px))] border border-zinc-900 bg-white shadow-[6px_6px_0_#ffb21c]"
                 >
-                  <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-[#fff7ed] to-[#fffbeb] border-b border-orange-100">
-                    <h3 className="text-sm font-extrabold text-slate-800">
-                      Thông báo
-                    </h3>
-                    <span className="px-2.5 py-0.5 text-[10px] font-bold text-orange-700 bg-orange-100 rounded-full border border-orange-200">
-                      2 Mới
+                  <div className="flex items-center justify-between border-b border-zinc-900 bg-zinc-950 p-4 text-white">
+                    <div>
+                      <p className="text-[8px] font-black uppercase tracking-[.18em] text-[#ffb21c]">
+                        Notifications
+                      </p>
+                      <h2 className="mt-1 text-base font-black">Thông báo mới</h2>
+                    </div>
+                    <span className="border border-white/30 px-2 py-1 text-[8px] font-black">
+                      {String(unreadCount).padStart(2, "0")}
                     </span>
                   </div>
-                  <div className="max-h-[320px] overflow-y-auto py-1">
-                    {notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className="px-5 py-3.5 border-b border-slate-50 hover:bg-orange-50/50 cursor-pointer transition-colors group last:border-0"
-                      >
-                        <div className="flex gap-3.5">
-                          <div
-                            className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${
-                              notif.type === "success"
-                                ? "bg-green-500"
-                                : "bg-amber-500"
-                            }`}
-                          />
-                          <div>
-                            <p className="text-sm font-bold transition-colors text-slate-700 group-hover:text-orange-700">
-                              {notif.title}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                              {notif.message}
-                            </p>
-                            <p className="text-[10px] text-slate-400 mt-1.5 font-medium">
-                              {notif.time}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+
+                  {notificationsLoading && recentNotifications.length === 0 ? (
+                    <Notice
+                      title="Đang kiểm tra"
+                      text="CMS đang đồng bộ tin nhắn mới nhất."
+                    />
+                  ) : recentNotifications.length > 0 ? (
+                    recentNotifications.map((message, index) => (
+                      <Notice
+                        key={message._id}
+                        title={`Tin nhắn từ ${message.senderName || "khách hàng"}`}
+                        text={message.content}
+                        time={formatNotificationTime(message.createdAt)}
+                        last={index === recentNotifications.length - 1}
+                      />
+                    ))
+                  ) : (
+                    <Notice
+                      title="Không có tin mới"
+                      text="Chưa có yêu cầu hỗ trợ mới cần xử lý."
+                    />
+                  )}
+
+                  <Link
+                    href="/admin/messages"
+                    onClick={() => setNotificationsOpen(false)}
+                    className="flex min-h-12 items-center justify-between border-t border-zinc-900 bg-[#fff8e9] px-4 text-[9px] font-black uppercase"
+                  >
+                    Xem tất cả <ExternalLink size={14} />
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* User Profile */}
-          <div className="relative pl-4 border-l sm:pl-6 border-orange-200/60">
+          <div className="relative h-full">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowDropdown(!showDropdown);
-                setShowNotifications(false);
+              onClick={() => {
+                setAccountOpen((value) => !value);
+                setNotificationsOpen(false);
               }}
-              className={`flex items-center gap-3 group rounded-xl p-1 transition-all ${
-                showDropdown
-                  ? "bg-white shadow-sm ring-1 ring-orange-100"
-                  : "hover:bg-white/50"
+              className={`flex h-full items-center gap-3 px-3 text-left sm:px-5 ${
+                accountOpen ? "bg-[#fff8e9]" : "hover:bg-[#fff8e9]"
               }`}
             >
-              <div className="hidden text-right lg:block">
-                <p className="text-sm font-bold transition-colors text-slate-700 group-hover:text-orange-700">
-                  {currentUser ? currentUser.name : "Đang tải..."}
+              <Avatar src={user?.avatar} initials={initials} size="md" />
+              <div className="hidden min-w-0 lg:block">
+                <p className="max-w-40 truncate text-xs font-black">
+                  {loading ? "Đang tải..." : user?.name || "Lương Vinh"}
                 </p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  {currentUser ? currentUser.role : "Guest"}
+                <p className="mt-1 text-[8px] font-black uppercase tracking-[.15em] text-[#d98200]">
+                  {user?.role || "Admin"}
                 </p>
-              </div>
-              <div className="relative">
-                <div className="w-10 h-10 overflow-hidden transition-all rounded-full shadow-sm ring-2 ring-white group-hover:ring-orange-200">
-                  <Image
-                    src={currentUser?.avatar || "/placeholder-user.jpg"}
-                    alt="User"
-                    width={40}
-                    height={40}
-                    className="object-cover"
-                    unoptimized // Fix lỗi hiển thị ảnh external
-                  />
-                </div>
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
               </div>
               <ChevronDown
-                size={16}
-                className={`text-slate-400 transition-transform duration-300 ${
-                  showDropdown
-                    ? "rotate-180 text-orange-500"
-                    : "group-hover:text-orange-500"
+                size={14}
+                className={`hidden transition-transform sm:block ${
+                  accountOpen ? "rotate-180" : ""
                 }`}
               />
             </button>
 
             <AnimatePresence>
-              {showDropdown && currentUser && (
+              {accountOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 z-50 w-64 mt-4 overflow-hidden origin-top-right bg-white border shadow-2xl border-slate-100 rounded-2xl ring-1 ring-black/5"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  className="absolute right-0 top-[calc(100%+1px)] w-[290px] border border-zinc-900 bg-white shadow-[6px_6px_0_#ffb21c]"
                 >
-                  <div className="px-5 py-4 border-b border-orange-100 bg-gradient-to-br from-orange-50 to-white">
-                    <p className="text-sm font-extrabold text-slate-800">
-                      {currentUser.name}
-                    </p>
-                    <p className="text-xs truncate text-slate-500">
-                      {currentUser.email}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-2.5">
-                      <Shield size={12} className="text-orange-500" />
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-white border border-orange-200 text-orange-700 rounded-md shadow-sm uppercase tracking-wider">
-                        {currentUser.role}
+                  <div className="flex gap-3 border-b border-zinc-900 bg-[#fff8e9] p-4">
+                    <Avatar src={user?.avatar} initials={initials} size="lg" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black">
+                        {user?.name || "Lương Vinh"}
+                      </p>
+                      <p className="mt-1 truncate text-[10px] text-zinc-500">
+                        {user?.email || "Tài khoản quản trị"}
+                      </p>
+                      <span className="mt-3 inline-flex items-center gap-2 border border-zinc-900 bg-white px-2 py-1 text-[8px] font-black uppercase">
+                        <ShieldCheck size={11} className="text-[#d98200]" />
+                        {user?.role || "Admin"}
                       </span>
                     </div>
                   </div>
+
                   <div className="p-2">
-                    {quickActions.map((action) => (
-                      <button
-                        key={action.href}
-                        onClick={() => router.push(action.href)}
-                        className="flex items-center w-full gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 rounded-xl hover:bg-slate-50 hover:text-orange-600 transition-all group"
-                      >
-                        <div className="p-1.5 bg-slate-50 rounded-lg text-slate-400 group-hover:text-orange-500 group-hover:bg-white group-hover:shadow-sm transition-all">
-                          <action.icon size={16} />
-                        </div>
-                        {action.label}
-                      </button>
-                    ))}
+                    <AccountLink
+                      href="/profile"
+                      icon={<UserRound size={16} />}
+                      label="Hồ sơ cá nhân"
+                      close={() => setAccountOpen(false)}
+                    />
+                    <AccountLink
+                      href="/admin/settings"
+                      icon={<Settings size={16} />}
+                      label="Cài đặt CMS"
+                      close={() => setAccountOpen(false)}
+                    />
+                    <AccountLink
+                      href="/admin/messages"
+                      icon={<MessageCircle size={16} />}
+                      label="Tin nhắn"
+                      close={() => setAccountOpen(false)}
+                    />
                   </div>
-                  <div className="p-2 border-t border-slate-50 bg-slate-50/50">
+
+                  <div className="border-t border-zinc-900 p-2">
                     <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full gap-3 px-3 py-2.5 text-sm font-bold text-red-600 rounded-xl hover:bg-red-50 transition-all group"
+                      onClick={() => logout()}
+                      className="flex min-h-12 w-full items-center gap-3 px-3 text-[10px] font-black uppercase text-red-600 hover:bg-red-50"
                     >
-                      <div className="p-1.5 bg-red-50 rounded-lg text-red-400 group-hover:text-red-600 group-hover:bg-white group-hover:shadow-sm transition-all">
-                        <LogOut size={16} />
-                      </div>
+                      <LogOut size={16} />
                       Đăng xuất
                     </button>
                   </div>
@@ -389,4 +343,95 @@ export default function Header({
       </div>
     </header>
   );
+}
+
+export function Avatar({
+  src,
+  initials,
+  size = "md",
+}: {
+  src?: string;
+  initials: string;
+  size?: "md" | "lg";
+}) {
+  const dimension = size === "lg" ? "h-12 w-12" : "h-10 w-10";
+
+  return (
+    <span
+      className={`relative grid ${dimension} shrink-0 place-items-center overflow-hidden border border-zinc-900 bg-zinc-950 text-[10px] font-black text-[#ffb21c]`}
+    >
+      {src ? (
+        <img src={src} alt="Ảnh đại diện" className="h-full w-full object-cover" />
+      ) : (
+        initials
+      )}
+      <i className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
+    </span>
+  );
+}
+
+function AccountLink({
+  href,
+  icon,
+  label,
+  close,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  close: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={close}
+      className="flex min-h-12 items-center gap-3 px-3 text-[10px] font-black uppercase hover:bg-[#fff8e9]"
+    >
+      <span className="grid h-8 w-8 place-items-center border border-zinc-300">
+        {icon}
+      </span>
+      {label}
+      <ExternalLink size={12} className="ml-auto" />
+    </Link>
+  );
+}
+
+function Notice({
+  title,
+  text,
+  time,
+  last = false,
+}: {
+  title: string;
+  text: string;
+  time?: string;
+  last?: boolean;
+}) {
+  return (
+    <div className={`flex gap-3 p-4 ${last ? "" : "border-b border-zinc-300"}`}>
+      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#ffb21c]" />
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="truncate text-[10px] font-black uppercase">{title}</h3>
+          {time && (
+            <span className="ml-auto shrink-0 text-[9px] font-black text-zinc-400">
+              {time}
+            </span>
+          )}
+        </div>
+        <p className="mt-2 line-clamp-2 text-[10px] leading-5 text-zinc-500">
+          {text}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function formatNotificationTime(dateString: string) {
+  const date = new Date(dateString);
+
+  return date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

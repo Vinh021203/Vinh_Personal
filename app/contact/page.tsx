@@ -1,39 +1,29 @@
 import { Suspense } from "react";
 import ContactClient from "./ContactClient";
-import { Metadata } from "next";
+import { createMetadata } from "@/libs/seo";
 
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Liên hệ - VinhWorks | Tư vấn Giải pháp Số Miễn phí",
+export const metadata = createMetadata({
+  title: "Liên hệ Lương Vinh — Tư vấn Website",
   description:
-    "Liên hệ ngay với VinhWorks để nhận tư vấn thiết kế website, SEO và giải pháp công nghệ. Hỗ trợ 24/7, phản hồi nhanh chóng.",
-  openGraph: {
-    title: "Liên hệ - VinhWorks | Tư vấn Giải pháp Số Miễn phí",
-    description:
-      "Liên hệ ngay với VinhWorks để nhận tư vấn thiết kế website, SEO và giải pháp công nghệ.",
-    url: "https://vinhworks.com/contact",
-    siteName: "VinhWorks",
-    locale: "vi_VN",
-    type: "website",
-  },
-};
+    "Trao đổi trực tiếp với Lương Vinh về thiết kế website, landing page, web application, UI/UX và tối ưu hiệu năng.",
+  path: "/contact",
+  keywords: ["liên hệ thiết kế website", "tư vấn website", "báo giá website", "Lương Vinh"],
+});
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
-  name: "Liên hệ VinhWorks",
-  description:
-    "Trang liên hệ tư vấn dịch vụ thiết kế website và giải pháp công nghệ.",
-  url: "https://vinhworks.com/contact",
+  name: "Liên hệ Lương Vinh",
+  url: "https://webgiare.id.vn/contact",
   mainEntity: {
-    "@type": "Organization",
-    name: "VinhWorks",
-    telephone: "0971-386-588",
-    email: "luongvinh02122003@gmail.com",
+    "@type": "Person",
+    name: "Lương Vinh",
+    telephone: "+84971386588",
+    email: "contact@vinhworks.com",
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Hạ Long, Quảng Ninh",
+      addressLocality: "Hạ Long",
+      addressRegion: "Quảng Ninh",
       addressCountry: "VN",
     },
   },
@@ -42,18 +32,8 @@ const jsonLd = {
 export default function ContactPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center min-h-screen bg-slate-50">
-            <div className="w-12 h-12 border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin" />
-          </div>
-        }
-      >
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <Suspense fallback={<div className="min-h-screen bg-[#fff8e9]" />}>
         <ContactClient />
       </Suspense>
     </>
