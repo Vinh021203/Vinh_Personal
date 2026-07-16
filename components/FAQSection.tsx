@@ -30,7 +30,7 @@ export const FAQSection = () => {
             return <article key={faq.question} className={`faq-editorial border border-zinc-900 bg-white ${open ? "is-open" : ""}`}>
               <button onClick={() => setOpenIndex(open ? null : index)} className="group flex w-full items-center gap-4 p-5 text-left md:gap-6 md:p-7" aria-expanded={open}>
                 <span className={`grid h-11 w-11 shrink-0 place-items-center border border-zinc-900 text-sm font-black ${open ? "bg-[#ffb21c]" : "bg-[#fff8e9]"}`}>{String(index+1).padStart(2,"0")}</span>
-                <span className={`flex-1 text-base font-black tracking-[-.015em] md:text-xl ${open ? "text-[#b85f00]" : "text-zinc-950"}`}>{faq.question}</span>
+                <span className={`flex-1 text-base font-black tracking-[-.015em] md:text-xl ${open ? "text-[#7a3f00]" : "text-zinc-950"}`}>{faq.question}</span>
                 <span className={`grid h-10 w-10 shrink-0 place-items-center border border-zinc-900 transition-colors ${open ? "bg-zinc-950 text-white" : "bg-white group-hover:bg-[#ffb21c]"}`}>{open ? <Minus size={19}/> : <Plus size={19}/>}</span>
               </button>
               <AnimatePresence initial={false}>{open && <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} transition={{duration:.25}} className="overflow-hidden"><div className="border-t border-zinc-300 px-5 pb-7 pt-5 md:ml-[92px] md:px-0 md:pr-20"><p className="text-sm leading-7 text-zinc-600 md:text-base">{faq.answer}</p></div></motion.div>}</AnimatePresence>
