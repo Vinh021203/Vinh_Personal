@@ -468,8 +468,17 @@ body::-webkit-scrollbar-thumb:hover {
 
 .boston-home section h2 span {
   background-image: none !important;
-  color: #d98200 !important;
+  color: #9a4f00 !important;
   -webkit-text-fill-color: currentColor !important;
+}
+
+/* Accessibility: keep the VinhWorks orange readable on light/cream backgrounds. */
+.text-\[\#d98200\] {
+  color: #9a4f00 !important;
+}
+
+.group:hover .group-hover\:text-\[\#d98200\] {
+  color: #9a4f00 !important;
 }
 
 .boston-home section [class*="rounded-3xl"],

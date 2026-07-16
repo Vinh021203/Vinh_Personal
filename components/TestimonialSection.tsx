@@ -32,7 +32,7 @@ export const TestimonialSection = () => (
           {[...technologies, ...technologies].map((technology, index) => (
             <div key={`${technology.name}-${index}`} className="mx-8 flex shrink-0 items-center gap-3 text-zinc-800 md:mx-12">
               <span className={`grid h-11 w-11 place-items-center rounded-full ${technology.tint}`}>
-                <technology.icon size={25} className={technology.color}/>
+                <technology.icon size={25} className={technology.color} aria-hidden="true" focusable="false"/>
               </span>
               <span className="text-lg font-black md:text-2xl">{technology.name}</span>
             </div>

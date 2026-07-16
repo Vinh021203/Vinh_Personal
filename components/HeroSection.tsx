@@ -43,10 +43,10 @@ export const HeroSection = () => (
         <div className="mt-11 grid max-w-xl grid-cols-3 border border-zinc-900">
           {strengths.map((item, index) => (
             <div key={item.title} className={`hero-feature group relative bg-white p-3 transition-colors hover:bg-[#fff2d4] sm:p-5 ${index < strengths.length - 1 ? "border-r border-zinc-900" : ""}`}>
-              <span className="absolute right-1.5 top-1.5 text-[7px] font-black tracking-wider text-zinc-300 group-hover:text-[#d98200] sm:right-3 sm:top-2 sm:text-[9px]">{item.number}</span>
+              <span className="absolute right-1.5 top-1.5 text-[7px] font-black tracking-wider text-zinc-500 group-hover:text-[#9a4f00] sm:right-3 sm:top-2 sm:text-[9px]">{item.number}</span>
               <span className="mb-3 grid h-8 w-8 shrink-0 place-items-center border border-zinc-900 bg-[#ffb21c] sm:mb-4 sm:h-9 sm:w-9"><item.icon size={15} /></span>
               <div>
-                <h3 className="text-[8px] font-black uppercase leading-tight tracking-wide text-zinc-950 sm:text-[11px]">{item.title}</h3>
+                <p className="text-[8px] font-black uppercase leading-tight tracking-wide text-zinc-950 sm:text-[11px]">{item.title}</p>
                 <p className="mt-1 text-[8px] leading-tight text-zinc-500 sm:text-[10px]">{item.detail}</p>
               </div>
             </div>
