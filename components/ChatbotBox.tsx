@@ -254,7 +254,7 @@ export default function ChatbotBox({ onClose }: { onClose: () => void }) {
                         key={option}
                         type="button"
                         onClick={() => handleAction(option)}
-                        className="inline-flex items-center gap-2 border border-zinc-950 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-zinc-950 transition hover:-translate-y-0.5 hover:bg-[#ffb21c] hover:shadow-[3px_3px_0_#111]"
+                        className="inline-flex min-h-11 items-center gap-2 border border-zinc-950 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-zinc-950 transition hover:-translate-y-0.5 hover:bg-[#ffb21c] hover:shadow-[3px_3px_0_#111]"
                       >
                         {option}
                         <ArrowRight size={12} />
@@ -286,10 +286,10 @@ export default function ChatbotBox({ onClose }: { onClose: () => void }) {
 
       <footer className="border-t border-zinc-950 bg-white p-3">
         <div className="mb-3 grid grid-cols-2 gap-2">
-          <a href="tel:0971386588" className="flex items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white">
+          <a href="tel:0971386588" className="flex min-h-11 items-center justify-center gap-2 border border-zinc-950 bg-zinc-950 px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white">
             <Phone size={14} className="text-[#ffb21c]" /> Gọi nhanh
           </a>
-          <a href="/contact" className="flex items-center justify-center gap-2 border border-zinc-950 bg-[#ffb21c] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-950">
+          <a href="/contact" className="flex min-h-11 items-center justify-center gap-2 border border-zinc-950 bg-[#ffb21c] px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-950">
             <Mail size={14} /> Gửi form
           </a>
         </div>

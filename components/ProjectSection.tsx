@@ -99,7 +99,7 @@ const ProjectEditorialCard = ({ project, index }: { project: Project; index: num
       </div>
       <div className="flex flex-1 flex-col p-6">
         <div className="flex items-start justify-between gap-3">
-          <div><h3 className="line-clamp-2 text-xl font-black leading-tight tracking-[-.025em] text-zinc-950 group-hover:text-[#d98200]">{project.name}</h3><p className="mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400"><User size={12}/>{project.client}</p></div>
+          <div><h3 className="line-clamp-2 text-xl font-black leading-tight tracking-[-.025em] text-zinc-950 group-hover:text-[#d98200]">{project.name}</h3><p className="mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-600"><User size={12}/>{project.client}</p></div>
           {project.featured && <Star size={17} className="shrink-0 fill-[#ffb21c] text-[#ffb21c]"/>}
         </div>
         <p className="my-5 flex-1 text-sm leading-6 text-zinc-600 line-clamp-2">{stripHtml(project.description) || "Chưa có mô tả dự án."}</p>
