@@ -14,7 +14,10 @@ export interface ILead extends Document {
   message: string;
   source: "contact" | "chatbot" | "manual";
   priority: "low" | "medium" | "high";
-  status: "new" | "contacted" | "qualified" | "archived";
+  status: "new" | "contacted" | "qualified" | "archived" | "spam";
+  isSpam?: boolean;
+  spamScore?: number;
+  spamReason?: string;
   assignedTo?: string;
   notes?: string;
   lastContactAt?: Date;
@@ -43,7 +46,10 @@ const LeadSchema = new Schema<ILead>(
     message: { type: String, required: true, trim: true, maxlength: 3000 },
     source: { type: String, enum: ["contact", "chatbot", "manual"], default: "contact", index: true },
     priority: { type: String, enum: ["low", "medium", "high"], default: "medium", index: true },
-    status: { type: String, enum: ["new", "contacted", "qualified", "archived"], default: "new", index: true },
+    status: { type: String, enum: ["new", "contacted", "qualified", "archived", "spam"], default: "new", index: true },
+    isSpam: { type: Boolean, default: false, index: true },
+    spamScore: { type: Number, default: 0 },
+    spamReason: { type: String, default: "", trim: true, maxlength: 500 },
     assignedTo: { type: String, default: "", index: true },
     notes: { type: String, default: "", trim: true, maxlength: 3000 },
     lastContactAt: { type: Date },

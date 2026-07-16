@@ -21,7 +21,8 @@ export default function ProfileClient() {
   if (!user) return null;
 
   const initials = user.name.split(" ").filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase();
-  const memberId = user._id ? user._id.slice(-8).toUpperCase() : "VINHWORKS";
+  const userId = typeof user._id === "string" ? user._id : String(user._id || "");
+  const memberId = userId ? userId.slice(-8).toUpperCase() : "VINHWORKS";
   const isAdmin = user.role === "admin";
 
   return <main className="min-h-screen bg-white text-zinc-950">

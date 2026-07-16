@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
 import AppWrapper from "@/components/AppWrapper";
 import { UserProvider } from "@/contexts/UserContext";
+import ThemeProvider from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
 import PageTransition from "@/components/PageTransition";
 import { DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/libs/seo";
@@ -76,13 +77,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi">
+    <html lang="vi" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-        <link rel="preconnect" href="https://api.emailjs.com" crossOrigin="" />
       </head>
-      <body className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+      <body className="min-h-screen bg-white font-sans text-gray-900 antialiased" suppressHydrationWarning>
         <NextTopLoader
           color="#ffb21c"
           initialPosition={0.12}
@@ -95,9 +95,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           shadow="0 1px 0 #18181b,0 0 12px rgba(255,178,28,.55)"
         />
         <UserProvider>
-          <AppWrapper>
-            <PageTransition>{children}</PageTransition>
-          </AppWrapper>
+          <ThemeProvider>
+            <AppWrapper>
+              <PageTransition>{children}</PageTransition>
+            </AppWrapper>
+          </ThemeProvider>
         </UserProvider>
       </body>
     </html>

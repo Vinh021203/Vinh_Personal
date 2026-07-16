@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 
-export const SITE_URL = "https://webgiare.id.vn";
+const rawSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+  "https://webgiare.id.vn";
+
+export const SITE_URL = rawSiteUrl.replace(/\/$/, "");
 export const SITE_NAME = "VinhWorks";
 export const DEFAULT_OG_IMAGE = "/vinhworks-og-dark-1200x630.jpg";
 export const DEFAULT_DESCRIPTION =

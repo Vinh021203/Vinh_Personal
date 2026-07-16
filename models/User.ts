@@ -17,6 +17,21 @@ export interface IUser extends Document {
   passwordChangedAt?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  preferences?: {
+    notifications?: {
+      email?: boolean;
+      browser?: boolean;
+      leadAlerts?: boolean;
+      messageAlerts?: boolean;
+      systemAlerts?: boolean;
+    };
+    appearance?: {
+      language?: "vi" | "en";
+      theme?: "system" | "light" | "dark";
+      compactMode?: boolean;
+      reduceMotion?: boolean;
+    };
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +54,21 @@ const UserSchema = new Schema<IUser>(
     passwordChangedAt: { type: Date },
     resetPasswordToken: { type: String, default: "", select: false },
     resetPasswordExpires: { type: Date, select: false },
+    preferences: {
+      notifications: {
+        email: { type: Boolean, default: true },
+        browser: { type: Boolean, default: false },
+        leadAlerts: { type: Boolean, default: true },
+        messageAlerts: { type: Boolean, default: true },
+        systemAlerts: { type: Boolean, default: true },
+      },
+      appearance: {
+        language: { type: String, enum: ["vi", "en"], default: "vi" },
+        theme: { type: String, enum: ["system", "light", "dark"], default: "light" },
+        compactMode: { type: Boolean, default: false },
+        reduceMotion: { type: Boolean, default: false },
+      },
+    },
   },
   { timestamps: true },
 );

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download, Inbox, Mail, Phone, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, Inbox, Mail, Phone, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
-type LeadStatus = "new" | "contacted" | "qualified" | "archived";
+type LeadStatus = "new" | "contacted" | "qualified" | "archived" | "spam";
 
 interface Lead {
   _id: string;
@@ -17,6 +17,11 @@ interface Lead {
   message: string;
   source: string;
   status: LeadStatus;
+  isSpam?: boolean;
+  spamScore?: number;
+  spamReason?: string;
+  ipAddress?: string;
+  userAgent?: string;
   createdAt: string;
 }
 
@@ -25,6 +30,7 @@ const statuses: { value: LeadStatus; label: string }[] = [
   { value: "contacted", label: "Đã liên hệ" },
   { value: "qualified", label: "Tiềm năng" },
   { value: "archived", label: "Lưu trữ" },
+  { value: "spam", label: "Spam" },
 ];
 
 export default function LeadsClient() {
@@ -49,14 +55,11 @@ export default function LeadsClient() {
     fetchLeads();
   }, []);
 
-  const filtered = useMemo(
-    () => (filter === "all" ? leads : leads.filter((lead) => lead.status === filter)),
-    [filter, leads],
-  );
+  const filtered = useMemo(() => (filter === "all" ? leads : leads.filter((lead) => lead.status === filter)), [filter, leads]);
 
   const updateStatus = async (id: string, status: LeadStatus) => {
     const previous = leads;
-    setLeads((items) => items.map((lead) => (lead._id === id ? { ...lead, status } : lead)));
+    setLeads((items) => items.map((lead) => (lead._id === id ? { ...lead, status, isSpam: status === "spam" } : lead)));
     const res = await fetch(`/api/leads/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -82,6 +85,7 @@ export default function LeadsClient() {
   return (
     <main className="min-h-screen bg-[#fff8e9] px-4 py-7 text-zinc-950 sm:px-6 lg:px-8">
       <Toaster position="top-right" />
+
       <section className="grid overflow-hidden border border-zinc-950 bg-white shadow-[8px_8px_0_#ffb21c] lg:grid-cols-[1fr_0.75fr]">
         <div className="p-6 lg:p-9">
           <span className="inline-flex -rotate-2 items-center gap-2 border border-zinc-950 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[.22em] shadow-[3px_3px_0_#ffb21c]">
@@ -91,7 +95,7 @@ export default function LeadsClient() {
             Quản lý <span className="text-[#df8200]">leads.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-base font-semibold leading-8 text-slate-600">
-            Lưu lại yêu cầu từ form liên hệ, phân loại trạng thái và theo dõi khách hàng tiềm năng trong CMS.
+            Theo dõi yêu cầu từ form liên hệ, bảng giá và chatbot. Hệ thống tự chấm điểm spam để tránh rác email.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <button onClick={fetchLeads} className="inline-flex items-center gap-3 border border-zinc-950 bg-white px-5 py-3 text-xs font-black uppercase shadow-[3px_3px_0_#ffb21c]">
@@ -102,11 +106,12 @@ export default function LeadsClient() {
             </a>
           </div>
         </div>
+
         <div className="border-t border-zinc-950 bg-zinc-950 p-6 text-white lg:border-l lg:border-t-0 lg:p-9">
           <p className="text-[10px] font-black uppercase tracking-[.24em] text-[#ffb21c]">Lead snapshot</p>
           <div className="mt-6 grid grid-cols-2 gap-4">
             {statuses.map((status) => (
-              <button key={status.value} onClick={() => setFilter(status.value)} className="border border-white/20 p-4 text-left hover:border-[#ffb21c]">
+              <button key={status.value} onClick={() => setFilter(status.value)} className={`border p-4 text-left ${filter === status.value ? "border-[#ffb21c] bg-white/10" : "border-white/20 hover:border-[#ffb21c]"}`}>
                 <p className="text-[9px] font-black uppercase tracking-[.18em] text-white/50">{status.label}</p>
                 <p className="mt-3 text-3xl font-black">{leads.filter((lead) => lead.status === status.value).length.toString().padStart(2, "0")}</p>
               </button>
@@ -120,17 +125,16 @@ export default function LeadsClient() {
         {loading ? (
           <div className="grid min-h-56 place-items-center text-xs font-black uppercase tracking-[.2em]">Đang tải leads</div>
         ) : filtered.length === 0 ? (
-          <div className="grid min-h-56 place-items-center p-8 text-center">
-            <p className="text-2xl font-black">Chưa có lead phù hợp.</p>
-          </div>
+          <div className="grid min-h-56 place-items-center p-8 text-center"><p className="text-2xl font-black">Chưa có lead phù hợp.</p></div>
         ) : (
           <div className="divide-y divide-zinc-200">
             {filtered.map((lead) => (
-              <article key={lead._id} className="grid gap-5 p-5 lg:grid-cols-[1fr_190px_120px] lg:items-center">
+              <article key={lead._id} className={`grid gap-5 p-5 lg:grid-cols-[1fr_190px_120px] lg:items-center ${lead.isSpam ? "bg-red-50" : ""}`}>
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-xl font-black">{lead.name}</h2>
                     <span className="border border-zinc-950 bg-[#fff8e9] px-2 py-1 text-[9px] font-black uppercase">{lead.source}</span>
+                    {lead.isSpam && <span className="inline-flex items-center gap-1 border border-red-700 bg-red-600 px-2 py-1 text-[9px] font-black uppercase text-white"><ShieldAlert size={12} /> Spam {lead.spamScore}</span>}
                     <span className="text-xs font-bold text-slate-400">{new Date(lead.createdAt).toLocaleString("vi-VN")}</span>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-4 text-sm font-bold text-slate-600">
@@ -139,6 +143,10 @@ export default function LeadsClient() {
                   </div>
                   <p className="mt-4 text-sm leading-7 text-slate-600">{lead.message}</p>
                   <p className="mt-3 text-xs font-black uppercase tracking-[.12em] text-[#df8200]">{lead.service || "Chưa chọn dịch vụ"} · {lead.budget || "Chưa rõ ngân sách"}</p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold text-slate-500">
+                    {lead.ipAddress && <span className="border border-zinc-200 bg-white px-2 py-1">IP: {lead.ipAddress}</span>}
+                    {lead.spamReason && <span className="inline-flex items-center gap-1 border border-red-200 bg-white px-2 py-1 text-red-700"><AlertTriangle size={12} /> {lead.spamReason}</span>}
+                  </div>
                 </div>
                 <select value={lead.status} onChange={(e) => updateStatus(lead._id, e.target.value as LeadStatus)} className="admin-select">
                   {statuses.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}

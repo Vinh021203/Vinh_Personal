@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createMetadata, SITE_URL } from "@/libs/seo";
+import { createMetadata, DEFAULT_OG_IMAGE, SITE_URL } from "@/libs/seo";
 import { getPublicProjectBySlug } from "@/libs/public-project";
 
 const clean = (value = "") =>
@@ -29,9 +29,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: project.seoTitle || `${project.name} | Dự án`,
       description,
       path: `/projects/${project.slug}`,
-      image: project.ogImage || project.image || "/vinhworks-og-dark-1200x630.jpg",
+      image: project.ogImage || project.image || DEFAULT_OG_IMAGE,
       imageAlt: `${project.name} — VinhWorks`,
-      keywords: [project.name, project.client, project.category || "", project.industry || "", ...(project.tags || []), ...(project.technologies || []), "dự án website", "Lương Vinh"].filter(Boolean),
+      type: "article",
+      keywords: [
+        project.name,
+        project.client,
+        project.category || "",
+        project.industry || "",
+        ...(project.tags || []),
+        ...(project.technologies || []),
+        "dự án website",
+        "Lương Vinh",
+      ].filter(Boolean),
     });
   } catch {
     return createMetadata({
@@ -57,13 +67,15 @@ export default async function ProjectDetailLayout({
     const project = await getPublicProjectBySlug(slug);
 
     if (project) {
+      const image = project.ogImage || project.image || DEFAULT_OG_IMAGE;
+
       schema = {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         name: project.name,
         description: clean(project.summary || project.description),
         url: `${SITE_URL}/projects/${project.slug}`,
-        image: project.ogImage || project.image,
+        image: image.startsWith("http") ? image : `${SITE_URL}${image}`,
         creator: { "@type": "Person", name: "Lương Vinh", url: SITE_URL },
         about: project.tags || [],
         dateCreated: project.createdAt,

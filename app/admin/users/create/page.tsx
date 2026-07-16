@@ -37,6 +37,9 @@ export default function CreateUserPage() {
   const [role, setRole] = useState<Role>("user");
   const [status, setStatus] = useState<Status>("active");
   const [avatar, setAvatar] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [permissions, setPermissions] = useState("");
   const [saving, setSaving] = useState(false);
 
   const initials = useMemo(() => initialsOf(name), [name]);
@@ -48,7 +51,17 @@ export default function CreateUserPage() {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, status, avatar }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role,
+          status,
+          avatar,
+          phone,
+          bio,
+          permissions: splitList(permissions),
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -141,6 +154,14 @@ export default function CreateUserPage() {
               <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Avatar URL nếu có</span>
               <input value={avatar} onChange={(e) => setAvatar(e.target.value)} className="admin-crud-input mt-2" placeholder="https://..." />
             </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Số điện thoại</span>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="admin-crud-input mt-2" placeholder="0971 386 588" />
+            </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Bio ngắn</span>
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="admin-crud-textarea mt-2" rows={4} maxLength={500} placeholder="Mô tả ngắn về thành viên..." />
+            </label>
           </div>
         </section>
 
@@ -165,6 +186,10 @@ export default function CreateUserPage() {
                 </select>
               </label>
             </div>
+            <label className="mt-4 block">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Permissions</span>
+              <textarea value={permissions} onChange={(e) => setPermissions(e.target.value)} className="admin-crud-textarea mt-2" rows={4} placeholder={"projects:write\nservices:write\nusers:read"} />
+            </label>
           </section>
 
           <div className="border border-zinc-950 bg-[#fff8e9] p-5">
@@ -187,4 +212,11 @@ export default function CreateUserPage() {
       </form>
     </div>
   );
+}
+
+function splitList(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

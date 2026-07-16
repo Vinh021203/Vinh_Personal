@@ -32,6 +32,134 @@ body {
   scrollbar-width: thin;
 }
 
+html[data-vw-theme="dark"] {
+  color-scheme: dark;
+  --vw-bg: #08090b;
+  --vw-surface: #101114;
+  --vw-surface-soft: #17140d;
+  --vw-text: #fff7e6;
+  --vw-muted: #b8ac96;
+  --vw-line: #ffb21c;
+  --vw-ink: #050506;
+}
+
+html[data-vw-theme="dark"] body {
+  background: var(--vw-bg);
+  color: var(--vw-text);
+  scrollbar-color: #ffb21c #08090b;
+}
+
+html[data-vw-theme="dark"] :is(.bg-white, .bg-\[\#fff8e9\], .bg-amber-50, .bg-zinc-50, .bg-slate-50) {
+  background-color: var(--vw-surface) !important;
+}
+
+html[data-vw-theme="dark"] :is(main, section, header, footer) {
+  border-color: rgba(255, 178, 28, .38);
+}
+
+html[data-vw-theme="dark"] :is(.bg-white\/60, .bg-white\/80, .bg-white\/90, .bg-white\/95, .bg-\[\#fff8e9\]\/95) {
+  background-color: rgba(16, 17, 20, .92) !important;
+}
+
+html[data-vw-theme="dark"] :is(.text-zinc-950, .text-zinc-900, .text-gray-900, .text-slate-900, .text-black) {
+  color: #fff7e6 !important;
+}
+
+html[data-vw-theme="dark"] :is(.text-zinc-800, .text-zinc-700, .text-zinc-600, .text-gray-700, .text-slate-600) {
+  color: #f1dfbd !important;
+}
+
+html[data-vw-theme="dark"] :is(.text-zinc-500, .text-zinc-400, .text-slate-500, .text-slate-400) {
+  color: #d1c0a2 !important;
+}
+
+html[data-vw-theme="dark"] :is(.text-white, .text-zinc-100, .text-zinc-200, .text-zinc-300) {
+  color: #fff7e6 !important;
+}
+
+html[data-vw-theme="dark"] :is(.text-amber-700, .text-amber-600, .text-\[\#d98200\], .text-\[\#df8200\], .text-\[\#b85f00\]) {
+  color: #ffb21c !important;
+}
+
+html[data-vw-theme="dark"] :is(.border-zinc-900, .border-zinc-950, .border-zinc-800, .border-black) {
+  border-color: rgba(255, 178, 28, .72) !important;
+}
+
+html[data-vw-theme="dark"] :is(.border-zinc-300, .border-zinc-200, .border-slate-200) {
+  border-color: rgba(255, 178, 28, .28) !important;
+}
+
+html[data-vw-theme="dark"] :is(input, textarea, select) {
+  background-color: #0d0e11 !important;
+  color: var(--vw-text) !important;
+  border-color: rgba(255, 178, 28, .72) !important;
+}
+
+html[data-vw-theme="dark"] :is(input, textarea, select)::placeholder {
+  color: rgba(255, 247, 230, .42) !important;
+}
+
+html[data-vw-theme="dark"] :is(.bg-zinc-950, .bg-zinc-900, .bg-black) {
+  background-color: #050506 !important;
+}
+
+html[data-vw-theme="dark"] :is(.bg-amber-100, .bg-amber-200, .bg-zinc-100, .bg-zinc-200, .bg-slate-100) {
+  background-color: #1b1609 !important;
+  color: #fff7e6 !important;
+}
+
+html[data-vw-theme="dark"] :is(.boston-home, .project-settings-tabs, .testimonial-card, .process-card, .project-editorial-card) {
+  background-color: var(--vw-surface) !important;
+  color: #fff7e6 !important;
+}
+
+html[data-vw-theme="dark"] :is(.hero-feature, .project-cta) {
+  background-color: #0b0c0f !important;
+  color: #fff7e6 !important;
+  border-color: rgba(255, 178, 28, .8) !important;
+}
+
+html[data-vw-theme="dark"] svg path[stroke="currentColor"] {
+  color: #ffb21c;
+}
+
+html[data-vw-theme="dark"] .shadow-\[7px_7px_0_\#18181b\],
+html[data-vw-theme="dark"] .shadow-\[4px_4px_0_\#18181b\],
+html[data-vw-theme="dark"] .shadow-\[3px_3px_0_\#18181b\] {
+  box-shadow: 6px 6px 0 #ffb21c !important;
+}
+
+html[data-vw-theme="dark"] .shadow-\[7px_7px_0_\#ffb21c\],
+html[data-vw-theme="dark"] .shadow-\[6px_6px_0_\#ffb21c\],
+html[data-vw-theme="dark"] .shadow-\[5px_5px_0_\#ffb21c\],
+html[data-vw-theme="dark"] .shadow-\[4px_4px_0_\#ffb21c\],
+html[data-vw-theme="dark"] .shadow-\[3px_3px_0_\#ffb21c\] {
+  box-shadow: 5px 5px 0 #ffb21c !important;
+}
+
+html[data-vw-theme="dark"] .bg-\[\#ffb21c\] {
+  background-color: #ffb21c !important;
+  color: #050506 !important;
+}
+
+html[data-vw-theme="dark"] a:hover,
+html[data-vw-theme="dark"] button:hover {
+  border-color: #ffb21c;
+}
+
+html[data-vw-theme="dark"]::-webkit-scrollbar-track,
+html[data-vw-theme="dark"] body::-webkit-scrollbar-track {
+  background: #08090b;
+  border-left-color: rgba(255, 178, 28, .5);
+}
+
+html[data-vw-theme="dark"]::-webkit-scrollbar-thumb,
+html[data-vw-theme="dark"] body::-webkit-scrollbar-thumb {
+  background: #ffb21c;
+  border-color: #08090b;
+  box-shadow: 0 0 0 1px #ffb21c;
+}
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
   width: 12px;

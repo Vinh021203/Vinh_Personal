@@ -33,14 +33,28 @@ const iconMap: Record<string, LucideIcon> = { Code2, MonitorSmartphone, Layers, 
 export default function CreateServiceClient() {
   const router = useRouter();
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [status, setStatus] = useState("Hiển thị");
   const [visibility, setVisibility] = useState<"draft" | "published">("published");
   const [icon, setIcon] = useState("Code2");
   const [price, setPrice] = useState(0);
+  const [priceLabel, setPriceLabel] = useState("");
+  const [startingPrice, setStartingPrice] = useState(0);
   const [category, setCategory] = useState("");
+  const [features, setFeatures] = useState("");
+  const [deliverables, setDeliverables] = useState("");
+  const [process, setProcess] = useState("");
+  const [timeline, setTimeline] = useState("");
+  const [ctaLabel, setCtaLabel] = useState("");
+  const [ctaHref, setCtaHref] = useState("");
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  const [ogImage, setOgImage] = useState("");
+  const [order, setOrder] = useState(0);
   const [featured, setFeatured] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -64,12 +78,26 @@ export default function CreateServiceClient() {
     try {
       const form = new FormData();
       form.append("name", title.trim());
+      form.append("slug", slug.trim());
       form.append("description", description.trim());
+      form.append("shortDescription", shortDescription.trim());
       form.append("status", status);
       form.append("visibility", visibility);
       form.append("icon", icon);
       form.append("price", price.toString());
+      form.append("priceLabel", priceLabel.trim());
+      form.append("startingPrice", startingPrice.toString());
       form.append("category", category.trim());
+      form.append("features", JSON.stringify(splitList(features)));
+      form.append("deliverables", JSON.stringify(splitList(deliverables)));
+      form.append("process", JSON.stringify(splitList(process)));
+      form.append("timeline", timeline.trim());
+      form.append("ctaLabel", ctaLabel.trim());
+      form.append("ctaHref", ctaHref.trim());
+      form.append("seoTitle", seoTitle.trim());
+      form.append("seoDescription", seoDescription.trim());
+      form.append("ogImage", ogImage.trim());
+      form.append("order", order.toString());
       form.append("featured", featured.toString());
       if (image) form.append("thumbnail", image);
 
@@ -92,25 +120,51 @@ export default function CreateServiceClient() {
 
       <form onSubmit={submit} className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
-          <FormPanel icon={Wrench} kicker="01 · Nội dung" title="Thông tin dịch vụ">
+          <FormPanel icon={Wrench} kicker="01  Nội dung" title="Thông tin dịch vụ">
             <Field label="Tên dịch vụ" required><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="VD: Thiết kế website..." className="admin-crud-input" /></Field>
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field label="Slug tuỳ chỉnh"><input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="thiet-ke-website" className="admin-crud-input" /></Field>
+              <Field label="Danh mục"><input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Web Development" className="admin-crud-input" /></Field>
+            </div>
+            <Field label="Mô tả ngắn"><textarea value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} rows={3} maxLength={220} placeholder="Tóm tắt ngắn gọn hiển thị trên card..." className="admin-crud-textarea" /></Field>
             <Field label="Mô tả dịch vụ" required><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={6} placeholder="Mô tả giá trị dịch vụ..." className="admin-crud-textarea" /></Field>
           </FormPanel>
 
-          <FormPanel icon={Sparkles} kicker="02 · Nhận diện" title="Icon & ảnh minh họa">
+          <FormPanel icon={Sparkles} kicker="02  Nhận diện" title="Icon & ảnh minh hoạ">
             <Field label="Icon hiển thị"><div className="border border-zinc-950 bg-[#fff8e9] p-4"><SelectIconField icon={icon} setIcon={setIcon} /></div></Field>
-            <Field label="Ảnh minh họa">
+            <Field label="Ảnh minh hoạ">
               {imagePreview ? <ImagePreview src={imagePreview} onRemove={() => { setImage(null); setImagePreview(""); }} /> : <UploadBox label="Tải ảnh dịch vụ" onChange={handleImageChange} />}
             </Field>
+          </FormPanel>
+
+          <FormPanel icon={Layers} kicker="03  Chi tiết" title="Quyền lợi & quy trình">
+            <div className="grid gap-5 md:grid-cols-3">
+              <Field label="Tính năng"><textarea value={features} onChange={(e) => setFeatures(e.target.value)} rows={5} placeholder={"Mỗi dòng một tính năng\nResponsive\nSEO cơ bản"} className="admin-crud-textarea" /></Field>
+              <Field label="Bàn giao"><textarea value={deliverables} onChange={(e) => setDeliverables(e.target.value)} rows={5} placeholder={"Source code\nHướng dẫn quản trị"} className="admin-crud-textarea" /></Field>
+              <Field label="Quy trình"><textarea value={process} onChange={(e) => setProcess(e.target.value)} rows={5} placeholder={"Tư vấn\nThiết kế\nPhát triển\nBàn giao"} className="admin-crud-textarea" /></Field>
+            </div>
+          </FormPanel>
+
+          <FormPanel icon={Tag} kicker="04  SEO" title="Metadata & CTA">
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field label="SEO title"><input value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} maxLength={70} className="admin-crud-input" /></Field>
+              <Field label="OG image"><input value={ogImage} onChange={(e) => setOgImage(e.target.value)} placeholder="/vinhworks-og-dark-1200x630.jpg" className="admin-crud-input" /></Field>
+              <Field label="CTA label"><input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="Tư vấn ngay" className="admin-crud-input" /></Field>
+              <Field label="CTA link"><input value={ctaHref} onChange={(e) => setCtaHref(e.target.value)} placeholder="/contact" className="admin-crud-input" /></Field>
+            </div>
+            <Field label="SEO description"><textarea value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} maxLength={170} rows={3} className="admin-crud-textarea" /></Field>
           </FormPanel>
         </div>
 
         <aside className="space-y-6 xl:sticky xl:top-28 xl:self-start">
-          <FormPanel icon={Settings} kicker="03 · Cấu hình" title="Thiết lập">
+          <FormPanel icon={Settings} kicker="05  Cấu hình" title="Thiết lập">
             <Field label="Trạng thái"><select value={status} onChange={(e) => setStatus(e.target.value)} className="admin-crud-input"><option value="Hiển thị">Hiển thị</option><option value="Ẩn">Ẩn</option></select></Field>
             <Field label="Hiển thị ngoài website"><select value={visibility} onChange={(e) => setVisibility(e.target.value as "draft" | "published")} className="admin-crud-input"><option value="published">Công khai</option><option value="draft">Bản nháp</option></select></Field>
-            <Field label="Danh mục"><input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Web Development" className="admin-crud-input" /></Field>
-            <Field label="Giá khởi điểm (VNĐ)"><input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="admin-crud-input" /></Field>
+            <Field label="Giá hiển thị"><input value={priceLabel} onChange={(e) => setPriceLabel(e.target.value)} placeholder="Từ 5.000.000đ" className="admin-crud-input" /></Field>
+            <Field label="Giá khởi điểm (VNĐ)"><input type="number" value={startingPrice} onChange={(e) => setStartingPrice(Number(e.target.value))} className="admin-crud-input" /></Field>
+            <Field label="Giá nội bộ (VNĐ)"><input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="admin-crud-input" /></Field>
+            <Field label="Thời gian thực hiện"><input value={timeline} onChange={(e) => setTimeline(e.target.value)} placeholder="7–14 ngày" className="admin-crud-input" /></Field>
+            <Field label="Thứ tự hiển thị"><input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="admin-crud-input" /></Field>
             <FeaturedSwitch checked={featured} onChange={setFeatured} />
           </FormPanel>
           <PreviewCard title={title} description={description} icon={icon} status={status} category={category} price={price} featured={featured} image={imagePreview} />
@@ -123,7 +177,7 @@ export default function CreateServiceClient() {
 function AdminToast() { return <Toaster position="top-right" toastOptions={{ style: { background: "#09090b", color: "#fff", border: "1px solid #ffb21c", borderRadius: 0, fontWeight: 800 } }} />; }
 
 function CrudHeader({ title, kicker, backHref, primaryLabel, loading, disabled, onPrimary, onDraft }: { title: string; kicker: string; backHref: string; primaryLabel: string; loading: boolean; disabled: boolean; onPrimary: () => void; onDraft: () => void }) {
-  return <section className="sticky top-0 z-30 -mx-4 mb-7 border-b border-zinc-950 bg-[#fff8e9]/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-center gap-4"><Link href={backHref} className="grid h-12 w-12 shrink-0 place-items-center border border-zinc-950 bg-white shadow-[3px_3px_0_#ffb21c] transition hover:bg-zinc-950 hover:text-white"><ArrowLeft size={20} /></Link><div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#df8200]">{kicker}</p><h1 className="text-3xl font-black leading-none text-zinc-950 sm:text-4xl">{title}</h1></div></div><div className="grid grid-cols-2 gap-3 sm:flex"><button type="button" onClick={onDraft} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-white px-5 text-[10px] font-black uppercase tracking-[0.12em]"><Save size={17} />Lưu nháp</button><button type="button" onClick={onPrimary} disabled={loading || disabled} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-[#ffb21c] px-5 text-[10px] font-black uppercase tracking-[0.12em] shadow-[4px_4px_0_#111] transition hover:-translate-y-0.5 disabled:opacity-50">{loading ? <RefreshCw size={17} className="animate-spin" /> : <Sparkles size={17} />}{primaryLabel}</button></div></div></section>;
+  return <section className="sticky top-0 z-30 -mx-4 mb-7 border-b border-zinc-950 bg-[#fff8e9]/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-center gap-4"><Link href={backHref} className="grid h-12 w-12 shrink-0 place-items-center border border-zinc-950 bg-white shadow-[3px_3px_0_#ffb21c] transition hover:bg-zinc-950 hover:text-white"><ArrowLeft size={20} /></Link><div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#df8200]">{kicker}</p><h1 className="text-3xl font-black leading-none text-zinc-950 sm:text-4xl">{title}</h1></div></div><div className="grid grid-cols-2 gap-3 sm:flex"><button type="button" onClick={onDraft} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-white px-5 text-[10px] font-black uppercase tracking-[0.12em]"><Save size={17} />Lu nhp</button><button type="button" onClick={onPrimary} disabled={loading || disabled} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-[#ffb21c] px-5 text-[10px] font-black uppercase tracking-[0.12em] shadow-[4px_4px_0_#111] transition hover:-translate-y-0.5 disabled:opacity-50">{loading ? <RefreshCw size={17} className="animate-spin" /> : <Sparkles size={17} />}{primaryLabel}</button></div></div></section>;
 }
 
 function FormPanel({ icon: Icon, kicker, title, children }: { icon: LucideIcon; kicker: string; title: string; children: React.ReactNode }) {
@@ -134,3 +188,10 @@ function UploadBox({ label, onChange }: { label: string; onChange: (event: React
 function ImagePreview({ src, onRemove }: { src: string; onRemove: () => void }) { return <div className="relative aspect-video max-w-md border border-zinc-950 bg-[#fff8e9]"><Image src={src} alt="Preview" fill className="object-cover" /><button type="button" onClick={onRemove} className="absolute right-2 top-2 grid h-9 w-9 place-items-center border border-zinc-950 bg-white text-red-600"><X size={16} /></button></div>; }
 function FeaturedSwitch({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) { return <button type="button" onClick={() => onChange(!checked)} className={`flex w-full items-center justify-between border border-zinc-950 p-4 text-left ${checked ? "bg-[#ffb21c]" : "bg-[#fff8e9]"}`}><span className="flex items-center gap-3 text-sm font-black"><Star size={18} className={checked ? "fill-zinc-950" : ""} />Dịch vụ nổi bật</span><span className="text-[10px] font-black uppercase">{checked ? "Bật" : "Tắt"}</span></button>; }
 function PreviewCard({ title, description, icon, status, category, price, featured, image }: { title: string; description: string; icon: string; status: string; category: string; price: number; featured: boolean; image: string }) { const Icon = iconMap[icon] || Wrench; return <div className="overflow-hidden border border-zinc-950 bg-white shadow-[6px_6px_0_#ffb21c]"><div className="relative aspect-video border-b border-zinc-950 bg-[#fff8e9]">{image ? <Image src={image} alt="Preview" fill className="object-cover" /> : <div className="grid h-full place-items-center"><span className="grid h-20 w-20 place-items-center border border-zinc-950 bg-[#ffb21c] shadow-[4px_4px_0_#111]"><Icon size={34} /></span></div>}{featured && <span className="absolute left-3 top-3 border border-zinc-950 bg-[#ffb21c] px-2 py-1 text-[9px] font-black uppercase">Nổi bật</span>}</div><div className="p-5"><p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500"><Eye size={13} /> Live preview</p><h3 className="line-clamp-2 text-2xl font-black leading-tight">{title || "Tên dịch vụ"}</h3><p className="my-5 line-clamp-3 min-h-20 text-sm leading-7 text-slate-600">{description || "Mô tả dịch vụ sẽ hiển thị tại đây."}</p><div className="flex items-center justify-between border-t border-zinc-200 pt-4"><span className="inline-flex items-center gap-1 text-xs font-black uppercase text-slate-500"><Tag size={13} />{category || "General"}</span><span className="text-lg font-black"><DollarSign className="inline" size={15} /> {price.toLocaleString("vi-VN")}</span></div><div className="mt-3 text-[10px] font-black uppercase text-[#df8200]">{status}</div></div></div>; }
+
+function splitList(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}

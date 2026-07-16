@@ -26,6 +26,9 @@ interface UserData {
   role: Role;
   status?: Status;
   avatar?: string;
+  phone?: string;
+  bio?: string;
+  permissions?: string[];
   createdAt?: string;
   lastLogin?: string;
   posts?: number;
@@ -72,6 +75,9 @@ export default function EditUserPage() {
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [currentAvatar, setCurrentAvatar] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [permissions, setPermissions] = useState("");
   const [createdAt, setCreatedAt] = useState("");
   const [lastLogin, setLastLogin] = useState("");
   const [loading, setLoading] = useState(true);
@@ -88,6 +94,9 @@ export default function EditUserPage() {
         setRole(data.role || "user");
         setStatus(data.status || "active");
         setCurrentAvatar(data.avatar || "");
+        setPhone(data.phone || "");
+        setBio(data.bio || "");
+        setPermissions((data.permissions || []).join("\n"));
         setCreatedAt(data.createdAt || "");
         setLastLogin(data.lastLogin || "");
       } catch {
@@ -121,6 +130,9 @@ export default function EditUserPage() {
       formData.append("role", role);
       formData.append("status", status);
       formData.append("avatarUrl", currentAvatar);
+      formData.append("phone", phone);
+      formData.append("bio", bio);
+      formData.append("permissions", splitList(permissions).join(","));
       if (password.trim()) formData.append("password", password);
       if (avatar) formData.append("avatar", avatar);
 
@@ -228,6 +240,14 @@ export default function EditUserPage() {
                 </button>
               </div>
             </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Số điện thoại</span>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="admin-crud-input mt-2" placeholder="0971 386 588" />
+            </label>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Bio ngắn</span>
+              <textarea value={bio} onChange={(e) => setBio(e.target.value)} className="admin-crud-textarea mt-2" rows={4} maxLength={500} />
+            </label>
           </div>
         </section>
 
@@ -243,6 +263,10 @@ export default function EditUserPage() {
                 <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
               </label>
             </div>
+            <label className="mt-4 block">
+              <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Permissions</span>
+              <textarea value={permissions} onChange={(e) => setPermissions(e.target.value)} className="admin-crud-textarea mt-2" rows={4} placeholder={"projects:write\nservices:write\nusers:read"} />
+            </label>
           </section>
 
           <section className="border border-zinc-950 bg-white p-6 shadow-[7px_7px_0_#e4ded0]">
@@ -278,4 +302,11 @@ export default function EditUserPage() {
       </form>
     </div>
   );
+}
+
+function splitList(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

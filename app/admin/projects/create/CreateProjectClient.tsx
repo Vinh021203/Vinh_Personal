@@ -36,6 +36,18 @@ export default function CreateProjectClient() {
   const [status, setStatus] = useState("Đang triển khai");
   const [visibility, setVisibility] = useState<"draft" | "published">("published");
   const [description, setDescription] = useState("");
+  const [summary, setSummary] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [clientLogo, setClientLogo] = useState("");
+  const [duration, setDuration] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [role, setRole] = useState("");
+  const [technologies, setTechnologies] = useState("");
+  const [features, setFeatures] = useState("");
+  const [results, setResults] = useState("");
   const [budget, setBudget] = useState(0);
   const [progress, setProgress] = useState(0);
   const [priority, setPriority] = useState<Priority>("medium");
@@ -47,6 +59,11 @@ export default function CreateProjectClient() {
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  const [ogImage, setOgImage] = useState("");
+  const [order, setOrder] = useState(0);
+  const [featured, setFeatured] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const canSubmit = name.trim() && client.trim();
@@ -93,12 +110,29 @@ export default function CreateProjectClient() {
       formData.append("status", status);
       formData.append("visibility", visibility);
       formData.append("description", description.trim());
+      formData.append("summary", summary.trim());
+      formData.append("content", content.trim());
+      formData.append("category", category.trim());
+      formData.append("industry", industry.trim());
+      formData.append("clientLogo", clientLogo.trim());
+      formData.append("duration", duration.trim());
+      formData.append("startDate", startDate);
+      formData.append("endDate", endDate);
+      formData.append("role", role.trim());
       formData.append("budget", budget.toString());
       formData.append("progress", progress.toString());
       formData.append("priority", priority);
       formData.append("liveUrl", liveUrl.trim());
       formData.append("githubUrl", githubUrl.trim());
       formData.append("tags", JSON.stringify(tags));
+      formData.append("technologies", JSON.stringify(splitList(technologies)));
+      formData.append("features", JSON.stringify(splitList(features)));
+      formData.append("results", JSON.stringify(splitList(results)));
+      formData.append("seoTitle", seoTitle.trim());
+      formData.append("seoDescription", seoDescription.trim());
+      formData.append("ogImage", ogImage.trim());
+      formData.append("order", order.toString());
+      formData.append("featured", featured.toString());
       if (thumbnail) formData.append("thumbnail", thumbnail);
       gallery.forEach((file) => formData.append("gallery", file));
 
@@ -130,7 +164,7 @@ export default function CreateProjectClient() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:flex">
-            <button onClick={() => toast.success("Đã lưu bản nháp")} disabled={!name.trim()} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-white px-5 text-[10px] font-black uppercase tracking-[0.12em] disabled:opacity-50">
+            <button onClick={() => toast.success(" lu bn nhp")} disabled={!name.trim()} className="inline-flex h-12 items-center justify-center gap-2 border border-zinc-950 bg-white px-5 text-[10px] font-black uppercase tracking-[0.12em] disabled:opacity-50">
               <Save size={17} />
               Lưu nháp
             </button>
@@ -144,7 +178,7 @@ export default function CreateProjectClient() {
 
       <form onSubmit={submit} className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
-          <FormPanel icon={FolderKanban} kicker="01 · Nội dung" title="Thông tin cơ bản">
+          <FormPanel icon={FolderKanban} kicker="01  Nội dung" title="Thông tin cơ bản">
             <div className="grid gap-5 md:grid-cols-2">
               <Field label="Tên dự án" required>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Landing Page sự kiện..." className="admin-crud-input" />
@@ -152,17 +186,32 @@ export default function CreateProjectClient() {
               <Field label="Khách hàng" required>
                 <input value={client} onChange={(e) => setClient(e.target.value)} placeholder="Tên khách hàng / công ty" className="admin-crud-input" />
               </Field>
+              <Field label="Danh mục">
+                <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Landing Page / Web App..." className="admin-crud-input" />
+              </Field>
+              <Field label="Ngành hàng">
+                <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="E-commerce / Audio / Local business..." className="admin-crud-input" />
+              </Field>
             </div>
+            <Field label="Tóm tắt 2 dòng">
+              <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={3} maxLength={240} placeholder="Tóm tắt ngắn hiển thị trên card và SEO..." className="admin-crud-textarea" />
+            </Field>
             <Field label="Mô tả dự án">
               <Editor value={description} onChange={setDescription} />
             </Field>
+            <Field label="Nội dung case study">
+              <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} placeholder="Bối cảnh, bài toán, cách triển khai, kết quả..." className="admin-crud-textarea" />
+            </Field>
           </FormPanel>
 
-          <FormPanel icon={Images} kicker="02 · Media" title="Ảnh bìa & gallery">
+          <FormPanel icon={Images} kicker="02  Media" title="Ảnh bìa & gallery">
             <div className="grid gap-5 lg:grid-cols-[1fr_.85fr]">
               <UploadBox label={thumbnail ? "Đổi ảnh bìa" : "Tải ảnh bìa"} onChange={handleThumbnailChange} />
               <UploadBox label="Thêm ảnh gallery" multiple onChange={handleGalleryChange} />
             </div>
+            <Field label="Logo khách hàng">
+              <input value={clientLogo} onChange={(e) => setClientLogo(e.target.value)} placeholder="https://... hoặc /logo.png" className="admin-crud-input" />
+            </Field>
             {!!galleryPreviews.length && (
               <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
                 {galleryPreviews.map((src, index) => (
@@ -178,7 +227,7 @@ export default function CreateProjectClient() {
           </FormPanel>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <FormPanel icon={Activity} kicker="03 · Trạng thái" title="Tiến độ">
+            <FormPanel icon={Activity} kicker="03  Trạng thái" title="Tiến độ">
               <div className="space-y-5">
                 <Field label="Tình trạng">
                   <select value={status} onChange={(e) => setStatus(e.target.value)} className="admin-crud-input">
@@ -204,7 +253,7 @@ export default function CreateProjectClient() {
               </div>
             </FormPanel>
 
-            <FormPanel icon={DollarSign} kicker="04 · Chỉ số" title="Ngân sách">
+            <FormPanel icon={DollarSign} kicker="04  Chỉ số" title="Ngân sách">
               <div className="space-y-5">
                 <Field label="Ngân sách (VNĐ)">
                   <input type="number" value={budget} onChange={(e) => setBudget(Number(e.target.value))} className="admin-crud-input" />
@@ -217,7 +266,24 @@ export default function CreateProjectClient() {
             </FormPanel>
           </div>
 
-          <FormPanel icon={LinkIcon} kicker="05 · SEO & Link" title="Liên kết & tags">
+          <FormPanel icon={Calendar} kicker="05  Timeline" title="Vai trò & thời gian">
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field label="Vai trò thực hiện"><input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Design, Frontend, Backend..." className="admin-crud-input" /></Field>
+              <Field label="Thời lượng"><input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="2 tuần / 1 tháng..." className="admin-crud-input" /></Field>
+              <Field label="Ngày bắt đầu"><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="admin-crud-input" /></Field>
+              <Field label="Ngày kết thúc"><input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="admin-crud-input" /></Field>
+            </div>
+          </FormPanel>
+
+          <FormPanel icon={Star} kicker="06  Case study" title="Công nghệ & kết quả">
+            <div className="grid gap-5 md:grid-cols-3">
+              <Field label="Công nghệ"><textarea value={technologies} onChange={(e) => setTechnologies(e.target.value)} rows={5} placeholder={"Next.js\nMongoDB\nTailwind CSS"} className="admin-crud-textarea" /></Field>
+              <Field label="Tính năng"><textarea value={features} onChange={(e) => setFeatures(e.target.value)} rows={5} placeholder={"CMS quản trị\nForm liên hệ\nSEO metadata"} className="admin-crud-textarea" /></Field>
+              <Field label="Kết quả"><textarea value={results} onChange={(e) => setResults(e.target.value)} rows={5} placeholder={"Tốc độ tải tốt hơn\nTối ưu chuyển đổi"} className="admin-crud-textarea" /></Field>
+            </div>
+          </FormPanel>
+
+          <FormPanel icon={LinkIcon} kicker="07  SEO & Link" title="Liên kết, SEO & tags">
             <div className="grid gap-5 md:grid-cols-2">
               <Field label="Live URL">
                 <input value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} placeholder="https://website.com" className="admin-crud-input" />
@@ -225,7 +291,23 @@ export default function CreateProjectClient() {
               <Field label="Github URL">
                 <input value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="https://github.com/..." className="admin-crud-input" />
               </Field>
+              <Field label="SEO title">
+                <input value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} maxLength={70} className="admin-crud-input" />
+              </Field>
+              <Field label="OG image">
+                <input value={ogImage} onChange={(e) => setOgImage(e.target.value)} placeholder="/vinhworks-og-dark-1200x630.jpg" className="admin-crud-input" />
+              </Field>
+              <Field label="Thứ tự hiển thị">
+                <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="admin-crud-input" />
+              </Field>
+              <label className="flex items-center justify-between border border-zinc-950 bg-[#fff8e9] p-4 text-sm font-black">
+                Dự án nổi bật
+                <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} className="h-5 w-5 accent-[#ffb21c]" />
+              </label>
             </div>
+            <Field label="SEO description">
+              <textarea value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} rows={3} maxLength={170} className="admin-crud-textarea" />
+            </Field>
             <div className="mt-5 flex gap-2">
               <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} placeholder="Nhập tag..." className="admin-crud-input flex-1" />
               <button type="button" onClick={addTag} className="grid h-14 w-14 place-items-center border border-zinc-950 bg-[#ffb21c] shadow-[3px_3px_0_#111]"><Plus size={18} /></button>
@@ -276,7 +358,7 @@ function Editor({ value, onChange }: { value: string; onChange: (value: string) 
     <div>
       <div className="flex items-center gap-1 border border-zinc-950 border-b-0 bg-[#fff8e9] p-2">
         {["bold", "italic", "underline"].map((cmd) => <button key={cmd} type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand(cmd); }} className="h-8 w-8 border border-zinc-950 bg-white text-xs font-black uppercase hover:bg-[#ffb21c]">{cmd[0]}</button>)}
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertUnorderedList"); }} className="h-8 w-8 border border-zinc-950 bg-white text-xs font-black hover:bg-[#ffb21c]">≡</button>
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertUnorderedList"); }} className="h-8 w-8 border border-zinc-950 bg-white text-xs font-black hover:bg-[#ffb21c]"></button>
       </div>
       <div contentEditable suppressContentEditableWarning onInput={(e) => onChange(e.currentTarget.innerHTML)} dangerouslySetInnerHTML={{ __html: value }} className="min-h-36 border border-zinc-950 bg-white px-4 py-3 text-sm font-medium leading-7 outline-none focus:bg-[#fff8e9] [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5" />
     </div>
@@ -328,4 +410,11 @@ function CheckRow({ done, label }: { done: boolean; label: string }) {
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+}
+
+function splitList(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

@@ -3,76 +3,234 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Building2, Check, Code2, CreditCard, FileCheck2, Globe2, HelpCircle, Images, Info, Minus, PackageCheck, Plug, Plus, Rocket, Server, Sparkles, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Building2,
+  Check,
+  Code2,
+  Mail,
+  Phone,
+  Rocket,
+  Send,
+  Sparkles,
+  UserRound,
+  X,
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
-const plans=[
-  {id:"landing",number:"01",icon:Rocket,name:"Landing Page",price:"Từ 5 triệu",summary:"Một trang tập trung cho chiến dịch, sản phẩm hoặc dịch vụ cụ thể.",fit:"Cá nhân, sự kiện, quảng cáo",time:"Khoảng 1–2 tuần",popular:false,features:["Thiết kế responsive theo nhận diện","Tối đa 5–7 section nội dung","Form liên hệ hoặc CTA","SEO on-page cơ bản","Cấu hình analytics cơ bản","Hướng dẫn bàn giao"]},
-  {id:"business",number:"02",icon:Building2,name:"Website doanh nghiệp",price:"Từ 12 triệu",summary:"Website đa trang giúp doanh nghiệp giới thiệu năng lực và xây dựng niềm tin.",fit:"SME, thương hiệu, dịch vụ",time:"Khoảng 3–5 tuần",popular:true,features:["Thiết kế UI/UX riêng","5–10 trang nội dung","CMS quản trị nội dung","Blog hoặc dự án","SEO kỹ thuật & metadata","Đào tạo quản trị"]},
-  {id:"custom",number:"03",icon:Code2,name:"Web App / Custom",price:"Báo giá riêng",summary:"Sản phẩm có nghiệp vụ, tài khoản, dữ liệu hoặc tích hợp theo yêu cầu.",fit:"Startup, hệ thống nội bộ",time:"Theo phạm vi",popular:false,features:["Phân tích yêu cầu nghiệp vụ","Thiết kế luồng và giao diện","Tài khoản & phân quyền","API và cơ sở dữ liệu","Tích hợp dịch vụ bên thứ ba","Kế hoạch phát triển theo giai đoạn"]},
+const plans = [
+  {
+    id: "landing",
+    icon: Rocket,
+    name: "Landing Page",
+    price: "Từ 5 triệu",
+    fit: "Cá nhân, sự kiện, quảng cáo",
+    time: "Khoảng 1–2 tuần",
+    summary: "Một trang tập trung cho chiến dịch, sản phẩm hoặc dịch vụ cụ thể.",
+    features: ["Thiết kế responsive theo nhận diện", "Tối đa 5–7 section nội dung", "Form liên hệ hoặc CTA", "SEO on-page cơ bản", "Cấu hình analytics cơ bản", "Hướng dẫn bàn giao"],
+  },
+  {
+    id: "business",
+    icon: Building2,
+    name: "Website doanh nghiệp",
+    price: "Từ 12 triệu",
+    fit: "SME, thương hiệu, dịch vụ",
+    time: "Khoảng 3–5 tuần",
+    summary: "Website đa trang giúp doanh nghiệp giới thiệu năng lực và xây dựng niềm tin.",
+    popular: true,
+    features: ["Thiết kế UI/UX riêng", "5–10 trang nội dung", "CMS quản trị nội dung", "Blog hoặc dự án", "SEO kỹ thuật & metadata", "Đào tạo quản trị"],
+  },
+  {
+    id: "custom",
+    icon: Code2,
+    name: "Web App / Custom",
+    price: "Báo giá riêng",
+    fit: "Startup, hệ thống nội bộ",
+    time: "Theo phạm vi",
+    summary: "Sản phẩm có nghiệp vụ, tài khoản, dữ liệu hoặc tích hợp theo yêu cầu.",
+    features: ["Phân tích yêu cầu nghiệp vụ", "Thiết kế luồng và giao diện", "Tài khoản & phân quyền", "API và cơ sở dữ liệu", "Tích hợp dịch vụ bên thứ ba", "Kế hoạch phát triển theo giai đoạn"],
+  },
 ];
 
-const comparisons=[
-  {label:"Thiết kế responsive",values:[true,true,true]},
-  {label:"Thiết kế UI riêng",values:["Theo nhận diện",true,true]},
-  {label:"CMS quản trị",values:[false,true,"Tùy hệ thống"]},
-  {label:"Blog / Dự án",values:[false,true,"Tùy chọn"]},
-  {label:"Tài khoản người dùng",values:[false,false,true]},
-  {label:"API & Database",values:[false,"Cơ bản",true]},
-  {label:"SEO kỹ thuật",values:["Cơ bản",true,true]},
-  {label:"Hướng dẫn bàn giao",values:[true,true,true]},
-];
+const budgetOptions = ["Dưới 5 triệu", "5 – 10 triệu", "10 – 20 triệu", "20 – 50 triệu", "Trên 50 triệu", "Cần tư vấn"];
+const timelineOptions = ["Càng sớm càng tốt", "1–2 tuần", "3–5 tuần", "1–2 tháng", "Chưa rõ thời gian"];
 
-const extras=[
-  {icon:Globe2,title:"Tên miền",value:"Theo nhà cung cấp",text:"Thanh toán trực tiếp theo chu kỳ năm."},
-  {icon:Server,title:"Hosting / VPS",value:"Theo cấu hình",text:"Phụ thuộc lượng truy cập và tài nguyên."},
-  {icon:Plug,title:"Dịch vụ trả phí",value:"Theo thực tế",text:"Email, bản đồ, SMS, API hoặc plugin bên thứ ba."},
-  {icon:Images,title:"Nội dung & hình ảnh",value:"Có thể báo giá",text:"Copywriting, chụp ảnh hoặc thiết kế visual nếu cần."},
-];
+type Plan = (typeof plans)[number];
 
-const faqs=[
-  {q:"Giá trên có phải là giá cuối cùng không?",a:"Đây là mức khởi điểm để bạn định hình ngân sách. Báo giá cuối cùng được xác định sau khi thống nhất số trang, tính năng, nội dung, tích hợp và thời gian triển khai."},
-  {q:"Tại sao cùng là website nhưng chi phí lại khác nhau?",a:"Khác biệt nằm ở mức độ thiết kế riêng, số lượng nội dung, hệ thống quản trị, tính năng nghiệp vụ và yêu cầu tích hợp. Một landing page không có phạm vi giống một web app."},
-  {q:"Tôi cần chuẩn bị gì trước khi bắt đầu?",a:"Bạn nên có mục tiêu dự án, nhóm khách hàng, danh sách nội dung chính, ví dụ website tham khảo và ngân sách dự kiến. Nếu chưa đầy đủ, tôi sẽ hỗ trợ làm rõ trong giai đoạn đầu."},
-  {q:"Thanh toán được chia theo tiến độ không?",a:"Có. Dự án thường được chia thành các mốc khởi động, duyệt thiết kế hoặc bản phát triển, và bàn giao. Tỷ lệ cụ thể được ghi rõ trong đề xuất và hợp đồng."},
-  {q:"Có hỗ trợ sau khi bàn giao không?",a:"Có. Lỗi thuộc phạm vi mã nguồn được xử lý trong thời gian bảo hành đã thỏa thuận. Nâng cấp nội dung, tính năng mới hoặc vận hành dài hạn sẽ được báo giá riêng."},
-];
+export default function PricingClient() {
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
-const reveal={initial:{opacity:0,y:22},whileInView:{opacity:1,y:0},viewport:{once:true,margin:"-60px"}};
+  return (
+    <main className="overflow-hidden bg-white text-zinc-950">
+      <Toaster position="top-center" />
 
-export default function PricingClient(){const[openFaq,setOpenFaq]=useState(0);return <main className="overflow-hidden bg-white text-zinc-950">
-  <section className="relative border-b border-zinc-900 bg-[#fff8e9] py-16 md:py-24"><div className="mx-auto grid max-w-7xl items-end gap-12 px-5 lg:grid-cols-[1.15fr_.85fr] lg:px-8"><motion.div initial={{opacity:0,y:18}} animate={{opacity:1,y:0}}><span className="inline-flex rotate-[-3deg] items-center gap-2 border border-zinc-900 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[.2em] shadow-[3px_3px_0_#ffb21c]"><Sparkles size={14} className="text-[#d98200]"/>Pricing by Lương Vinh</span><h1 className="mt-8 text-5xl font-black leading-[.9] tracking-[-.06em] sm:text-7xl xl:text-8xl">Chi phí rõ ràng.<br/><span className="text-[#d98200]">Phạm vi minh bạch.</span></h1><p className="mt-8 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">Mỗi dự án có mục tiêu khác nhau. Các gói dưới đây là điểm khởi đầu để bạn lựa chọn phạm vi và dự trù ngân sách phù hợp.</p><div className="mt-8 flex flex-wrap gap-4"><a href="#plans" className="group inline-flex items-center gap-5 border border-zinc-900 bg-[#ffb21c] px-6 py-3.5 text-xs font-black uppercase shadow-[4px_4px_0_#18181b]">Xem các gói <ArrowRight size={17}/></a><Link href="/contact" className="inline-flex items-center gap-3 border border-zinc-900 bg-white px-6 py-3.5 text-xs font-black uppercase hover:bg-zinc-950 hover:text-white">Nhận báo giá <ArrowUpRight size={16}/></Link></div></motion.div><div className="border border-zinc-900 bg-zinc-950 p-6 text-white shadow-[7px_7px_0_#ffb21c] md:p-8"><span className="text-[9px] font-black uppercase tracking-[.18em] text-[#ffb21c]">Trước khi chọn gói</span><h2 className="mt-5 text-2xl font-black md:text-3xl">Giá tốt nhất là giá đúng với phạm vi.</h2><ul className="mt-6 space-y-4 text-sm text-zinc-300">{["Không thêm tính năng không cần thiết","Báo rõ phần bao gồm và chưa bao gồm","Chi phí bên thứ ba được tách riêng","Thay đổi phạm vi luôn được xác nhận"].map(item=><li key={item} className="flex gap-3"><Check size={16} className="mt-0.5 shrink-0 text-[#ffb21c]"/>{item}</li>)}</ul></div></div></section>
+      <section className="relative border-b border-zinc-900 bg-[#fff8e9] py-16 md:py-24">
+        <div className="mx-auto grid max-w-7xl items-end gap-12 px-5 lg:grid-cols-[1.15fr_.85fr] lg:px-8">
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
+            <span className="inline-flex rotate-[-3deg] items-center gap-2 border border-zinc-900 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[.2em] shadow-[3px_3px_0_#ffb21c]">
+              <Sparkles size={14} className="text-[#d98200]" /> Pricing by Lương Vinh
+            </span>
+            <h1 className="mt-8 text-5xl font-black leading-[.9] tracking-[-.06em] sm:text-7xl xl:text-8xl">
+              Chi phí rõ ràng.<br /><span className="text-[#d98200]">Phạm vi minh bạch.</span>
+            </h1>
+            <p className="mt-8 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
+              Chọn gói phù hợp để gửi nhanh thông tin dự án. Yêu cầu sẽ được lưu vào CMS và gửi thông báo về email của bạn qua backend.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a href="#plans" className="group inline-flex items-center gap-5 border border-zinc-900 bg-[#ffb21c] px-6 py-3.5 text-xs font-black uppercase shadow-[4px_4px_0_#18181b]">Xem các gói <ArrowRight size={17} /></a>
+              <Link href="/contact" className="inline-flex items-center gap-3 border border-zinc-900 bg-white px-6 py-3.5 text-xs font-black uppercase hover:bg-zinc-950 hover:text-white">Tư vấn riêng <ArrowUpRight size={16} /></Link>
+            </div>
+          </motion.div>
 
-  <section id="plans" className="bg-white py-16 md:py-24"><Heading eyebrow="01 · Gói dịch vụ" title={<>Chọn điểm bắt đầu<br/><span>phù hợp với bạn</span></>}/><div className="mx-auto mt-12 grid max-w-7xl gap-7 px-5 lg:grid-cols-3 lg:px-8">{plans.map((plan,index)=><PriceCard key={plan.id} plan={plan} index={index}/>)}</div><p className="mx-auto mt-10 max-w-3xl px-5 text-center text-xs leading-6 text-zinc-500"><Info size={14} className="mr-1 inline text-[#d98200]"/>Mức giá chưa bao gồm tên miền, hosting, dịch vụ trả phí của bên thứ ba và VAT nếu có. Báo giá chính thức luôn đi kèm phạm vi bàn giao cụ thể.</p></section>
+          <div className="border border-zinc-900 bg-zinc-950 p-6 text-white shadow-[7px_7px_0_#ffb21c] md:p-8">
+            <span className="text-[9px] font-black uppercase tracking-[.18em] text-[#ffb21c]">Trước khi chọn gói</span>
+            <h2 className="mt-5 text-2xl font-black md:text-3xl">Giá tốt nhất là giá đúng với phạm vi.</h2>
+            <ul className="mt-6 space-y-4 text-sm text-zinc-300">
+              {["Không thêm tính năng không cần thiết", "Báo rõ phần bao gồm và chưa bao gồm", "Chi phí bên thứ ba được tách riêng", "Thay đổi phạm vi luôn được xác nhận"].map((item) => (
+                <li key={item} className="flex gap-3"><Check size={16} className="mt-0.5 shrink-0 text-[#ffb21c]" />{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-  <section className="border-y border-zinc-900 bg-[#fff8e9] py-16 md:py-24"><Heading eyebrow="02 · So sánh" title={<>So sánh nhanh<br/><span>giữa các gói</span></>}/><p className="mx-auto mt-6 max-w-xl px-5 text-center text-sm leading-7 text-zinc-600">Đối chiếu những hạng mục quan trọng trước khi lựa chọn phạm vi phù hợp.</p><div className="comparison-scroll mx-auto mt-12 max-w-6xl overflow-x-auto px-5 pb-2"><table className="w-full min-w-[780px] border-separate border-spacing-0 bg-white text-left shadow-[7px_7px_0_rgba(24,24,27,.14)]"><thead><tr><th className="sticky left-0 z-20 w-[220px] border border-zinc-900 bg-[#ffb21c] p-5 align-bottom"><span className="text-[9px] font-black uppercase tracking-[.16em]">So sánh hạng mục</span><p className="mt-2 text-lg font-black">Bạn nhận được gì?</p></th>{plans.map((plan,index)=><th key={plan.id} className={`relative border-y border-r border-zinc-900 p-5 ${plan.popular?"bg-zinc-950 text-white":"bg-white text-zinc-950"}`}><div className="flex items-center gap-3"><span className={`grid h-10 w-10 place-items-center border ${plan.popular?"border-[#ffb21c] bg-[#ffb21c] text-zinc-950":"border-zinc-900 bg-[#fff8e9]"}`}><plan.icon size={18}/></span><div><span className={`text-[8px] font-black uppercase tracking-wider ${plan.popular?"text-[#ffb21c]":"text-[#d98200]"}`}>Gói 0{index+1}</span><p className="mt-1 text-sm font-black">{plan.name}</p></div></div>{plan.popular&&<span className="absolute right-3 top-3 text-[7px] font-black uppercase tracking-wider text-[#ffb21c]">Phổ biến</span>}</th>)}</tr></thead><tbody>{comparisons.map((row,index)=><tr key={row.label}><th className={`sticky left-0 z-10 border-x border-b border-zinc-900 p-4 text-xs font-black text-zinc-700 ${index%2?"bg-[#fff8e9]":"bg-white"}`}>{row.label}</th>{row.values.map((value,i)=><td key={i} className={`border-b border-r border-zinc-900 p-4 text-center text-xs font-bold ${i===1?"bg-amber-50":"bg-white"}`}>{value===true?<span className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-emerald-100 text-emerald-700"><Check size={15} strokeWidth={3}/></span>:value===false?<span className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-zinc-100 text-zinc-300"><X size={14}/></span>:<span className="inline-block border border-zinc-300 bg-white px-2.5 py-1 text-[9px] uppercase tracking-wide text-zinc-600">{value}</span>}</td>)}</tr>)}</tbody><tfoot><tr><th className="sticky left-0 z-10 border-x border-b border-zinc-900 bg-zinc-950 p-4 text-[9px] font-black uppercase tracking-wider text-white">Chọn điểm bắt đầu</th>{plans.map(plan=><td key={plan.id} className="border-b border-r border-zinc-900 bg-white p-3"><Link href={`/contact?plan=${plan.id}`} className="flex items-center justify-center gap-2 bg-[#ffb21c] px-3 py-2.5 text-[9px] font-black uppercase">Chọn gói <ArrowRight size={13}/></Link></td>)}</tr></tfoot></table><p className="mt-4 text-[10px] font-bold text-zinc-500 md:hidden">← Vuốt ngang để xem toàn bộ bảng →</p></div></section>
+      <section id="plans" className="bg-white py-16 md:py-24">
+        <Heading eyebrow="01 · Gói dịch vụ" title={<>Chọn điểm bắt đầu<br /><span>phù hợp với bạn</span></>} />
+        <div className="mx-auto mt-12 grid max-w-7xl gap-7 px-5 lg:grid-cols-3 lg:px-8">
+          {plans.map((plan, index) => <PriceCard key={plan.id} plan={plan} index={index} onSelect={() => setSelectedPlan(plan)} />)}
+        </div>
+      </section>
 
-  <section className="bg-white py-16 md:py-24"><div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[.8fr_1.2fr] lg:px-8"><motion.div {...reveal} className="text-center lg:text-left"><span className="text-[10px] font-black uppercase tracking-[.2em] text-[#d98200]">03 · Chi phí khác</span><h2 className="mt-5 text-4xl font-black leading-[.95] tracking-[-.05em] md:text-6xl">Những khoản<br/><span className="text-[#d98200]">cần dự trù thêm</span></h2><p className="mx-auto mt-6 max-w-lg text-sm leading-7 text-zinc-600 lg:mx-0">Các khoản này không phải phí thiết kế/lập trình và thường được thanh toán trực tiếp cho nhà cung cấp.</p></motion.div><div className="grid gap-4 sm:grid-cols-2">{extras.map((item,index)=><motion.article key={item.title} {...reveal} transition={{delay:index*.06}} className="extra-card group border border-zinc-900 bg-[#fff8e9] p-6"><div className="flex items-start justify-between"><span className="grid h-11 w-11 place-items-center border border-zinc-900 bg-white transition-colors group-hover:bg-[#ffb21c]"><item.icon size={20}/></span><span className="text-3xl font-black text-zinc-200 transition-colors group-hover:text-[#d98200]">0{index+1}</span></div><h3 className="mt-5 text-lg font-black">{item.title}</h3><strong className="mt-2 block text-xs font-black uppercase tracking-wide text-[#b85f00]">{item.value}</strong><p className="mt-3 text-xs leading-6 text-zinc-500">{item.text}</p></motion.article>)}</div></div></section>
+      <section className="border-y border-zinc-900 bg-[#fff8e9] py-16 md:py-24">
+        <Heading eyebrow="02 · So sánh nhanh" title={<>Bạn nhận được gì<br /><span>trong từng gói?</span></>} />
+        <div className="mx-auto mt-12 max-w-6xl overflow-x-auto px-5 pb-3">
+          <table className="w-full min-w-[760px] border-separate border-spacing-0 bg-white text-left shadow-[7px_7px_0_rgba(24,24,27,.14)]">
+            <thead>
+              <tr>
+                <th className="border border-zinc-900 bg-[#ffb21c] p-5 text-sm font-black">Hạng mục</th>
+                {plans.map((plan) => <th key={plan.id} className={`border-y border-r border-zinc-900 p-5 text-sm font-black ${plan.popular ? "bg-zinc-950 text-white" : "bg-white"}`}>{plan.name}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {["Responsive", "UI riêng", "CMS quản trị", "SEO metadata", "Hướng dẫn bàn giao"].map((row) => (
+                <tr key={row}>
+                  <th className="border-x border-b border-zinc-900 bg-[#fff8e9] p-4 text-xs font-black">{row}</th>
+                  {plans.map((plan) => <td key={plan.id} className="border-b border-r border-zinc-900 p-4 text-center"><span className="mx-auto grid h-7 w-7 place-items-center rounded-full bg-emerald-100 text-emerald-700"><Check size={15} strokeWidth={3} /></span></td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-  <section className="border-y border-zinc-900 bg-zinc-950 py-10 text-white md:py-12"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="text-center md:flex md:items-end md:justify-between md:text-left"><div><span className="inline-flex items-center gap-2 text-[8px] font-black uppercase tracking-[.16em] text-[#ffb21c] md:text-[9px] md:tracking-[.18em]"><CreditCard size={13}/>Thanh toán theo tiến độ</span><h2 className="mt-3 text-2xl font-black tracking-[-.03em] md:text-3xl">Chia theo ba mốc rõ ràng</h2></div><p className="mx-auto mt-3 max-w-md text-[10px] leading-5 text-zinc-400 md:mx-0 md:mt-0 md:text-xs md:leading-6">Tỷ lệ cụ thể được thống nhất theo quy mô dự án và ghi trong hợp đồng.</p></div><div className="mt-7 grid grid-cols-3 border border-white/20 md:mt-8">{[{n:"01",title:"Khởi động",text:"Xác nhận phạm vi và bắt đầu dự án."},{n:"02",title:"Thực hiện",text:"Duyệt thiết kế hoặc bản phát triển."},{n:"03",title:"Bàn giao",text:"Nghiệm thu và chuyển giao sản phẩm."}].map((item,index)=><div key={item.n} className={`px-2 py-4 text-center sm:px-4 md:px-6 md:py-5 md:text-left ${index<2?"border-r border-white/20":""}`}><span className="text-xs font-black text-[#ffb21c] md:text-sm">{item.n}</span><h3 className="mt-2 text-[10px] font-black leading-tight sm:text-xs md:text-base">{item.title}</h3><p className="mt-1 hidden text-xs leading-6 text-zinc-400 sm:block">{item.text}</p></div>)}</div></div></section>
+      <section className="bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-5xl px-5 text-center">
+          <span className="inline-flex rotate-[-3deg] items-center gap-2 border border-zinc-900 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[.2em] shadow-[3px_3px_0_#ffb21c]">
+            <Sparkles size={14} className="text-[#d98200]" /> Need a custom quote?
+          </span>
+          <h2 className="mt-8 text-[38px] font-black leading-[1.02] tracking-[-.055em] sm:text-5xl md:text-7xl md:leading-[.94]">
+            Chưa thấy gói phù hợp?<span className="mt-2 block text-[#d98200]">Hãy chọn phạm vi riêng.</span>
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-zinc-600">Gửi mục tiêu, tính năng và ngân sách dự kiến. Tôi sẽ giúp bạn xác định hướng triển khai phù hợp.</p>
+          <button onClick={() => setSelectedPlan(plans[2])} className="group mt-8 inline-flex items-center gap-5 border border-zinc-900 bg-[#ffb21c] px-7 py-4 text-xs font-black uppercase shadow-[4px_4px_0_#18181b]">
+            Yêu cầu báo giá <ArrowRight size={17} />
+          </button>
+        </div>
+      </section>
 
-  <section className="bg-[#fff8e9] py-16 md:py-24"><div className="mx-auto max-w-4xl px-5"><Heading eyebrow="04 · FAQ" title={<>Thông tin cần biết<br/><span>trước khi báo giá</span></>}/><div className="mt-12 space-y-4">{faqs.map((faq,index)=>{const open=openFaq===index;return <article key={faq.q} className={`price-faq border border-zinc-900 bg-white ${open?"open":""}`}><button onClick={()=>setOpenFaq(open?-1:index)} className="flex w-full items-center gap-4 p-5 text-left md:p-6"><span className={`grid h-10 w-10 shrink-0 place-items-center border border-zinc-900 text-xs font-black ${open?"bg-[#ffb21c]":"bg-[#fff8e9]"}`}>{String(index+1).padStart(2,"0")}</span><span className="flex-1 text-sm font-black md:text-lg">{faq.q}</span><span className={`grid h-9 w-9 place-items-center border border-zinc-900 ${open?"bg-zinc-950 text-white":""}`}>{open?<Minus size={17}/>:<Plus size={17}/>}</span></button><AnimatePresence initial={false}>{open&&<motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} className="overflow-hidden"><p className="border-t border-zinc-300 px-5 py-5 text-sm leading-7 text-zinc-600 md:ml-[80px] md:pr-16">{faq.a}</p></motion.div>}</AnimatePresence></article>})}</div></div></section>
+      <AnimatePresence>
+        {selectedPlan && <PlanLeadModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />}
+      </AnimatePresence>
+    </main>
+  );
+}
 
-  <section className="bg-white py-16 md:py-24"><div className="mx-auto max-w-5xl px-5 text-center"><span className="inline-flex rotate-[-3deg] items-center gap-2 border border-zinc-900 bg-white px-4 py-2 text-[9px] font-black uppercase tracking-[.2em] shadow-[3px_3px_0_#ffb21c]"><HelpCircle size={14} className="text-[#d98200]"/>Need a custom quote?</span><h2 className="mt-8 text-[38px] font-black leading-[1.02] tracking-[-.055em] sm:text-5xl md:text-7xl md:leading-[.94]">Chưa thấy gói phù hợp?<span className="mt-2 block text-[#d98200]">Hãy chọn một phạm vi riêng.</span></h2><p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-zinc-600">Gửi mục tiêu, tính năng và ngân sách dự kiến. Tôi sẽ giúp bạn xác định hướng triển khai phù hợp.</p><Link href="/contact" className="group mt-8 inline-flex items-center gap-5 border border-zinc-900 bg-[#ffb21c] px-7 py-4 text-xs font-black uppercase shadow-[4px_4px_0_#18181b]">Yêu cầu báo giá <ArrowRight size={17}/></Link></div></section>
+function PriceCard({ plan, index, onSelect }: { plan: Plan; index: number; onSelect: () => void }) {
+  const Icon = plan.icon;
+  return (
+    <motion.article initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ delay: index * 0.08 }} className={`relative flex flex-col border border-zinc-900 p-6 shadow-[6px_6px_0_rgba(24,24,27,.13)] transition hover:-translate-y-1 hover:shadow-[6px_6px_0_#ffb21c] md:p-8 ${plan.popular ? "bg-zinc-950 text-white" : "bg-white"}`}>
+      {plan.popular && <span className="absolute right-4 top-4 border border-[#ffb21c] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-[#ffb21c]">Phổ biến</span>}
+      <div className="flex items-start justify-between"><span className={`grid h-12 w-12 place-items-center border ${plan.popular ? "border-[#ffb21c] bg-[#ffb21c] text-zinc-950" : "border-zinc-900 bg-[#fff8e9]"}`}><Icon size={22} /></span><span className={`text-4xl font-black ${plan.popular ? "text-white/10" : "text-zinc-100"}`}>0{index + 1}</span></div>
+      <h3 className="mt-7 text-2xl font-black">{plan.name}</h3>
+      <p className={`mt-3 min-h-[48px] text-sm leading-6 ${plan.popular ? "text-zinc-300" : "text-zinc-600"}`}>{plan.summary}</p>
+      <div className={`my-6 border-y py-5 ${plan.popular ? "border-white/20" : "border-zinc-300"}`}><strong className="block text-3xl font-black text-[#d98200]">{plan.price}</strong><span className={`mt-2 block text-[9px] font-bold uppercase tracking-wide ${plan.popular ? "text-zinc-400" : "text-zinc-500"}`}>{plan.fit} · {plan.time}</span></div>
+      <ul className="flex-1 space-y-3">{plan.features.map((feature) => <li key={feature} className={`flex gap-2 text-xs leading-5 ${plan.popular ? "text-zinc-300" : "text-zinc-600"}`}><Check size={14} className="mt-0.5 shrink-0 text-[#d98200]" />{feature}</li>)}</ul>
+      <button onClick={onSelect} className={`group mt-7 flex items-center justify-between border border-zinc-900 px-5 py-3.5 text-[10px] font-black uppercase ${plan.popular ? "bg-[#ffb21c] text-zinc-950" : "bg-white hover:bg-[#ffb21c]"}`}>Chọn gói này <ArrowRight size={16} /></button>
+    </motion.article>
+  );
+}
 
-  <style jsx global>{`
-    .price-card,.extra-card{box-shadow:6px 6px 0 rgba(24,24,27,.13)!important}
-    .price-card:hover,.extra-card:hover{box-shadow:6px 6px 0 #ffb21c!important;transform:translateY(-4px)}
-    .price-faq.open{box-shadow:5px 5px 0 #ffb21c!important}
-    .comparison-scroll .sticky{position:static!important}
-    .comparison-scroll{scroll-behavior:smooth;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
-    @media(max-width:767px){
-      .comparison-scroll table{min-width:980px!important}
-      .comparison-scroll thead th:first-child,
-      .comparison-scroll tbody th,
-      .comparison-scroll tfoot th{width:260px!important;min-width:260px!important}
-      .comparison-scroll thead th:not(:first-child){min-width:220px!important}
-      .comparison-scroll tbody th,.comparison-scroll tbody td{padding:18px 20px!important}
-      .comparison-scroll tbody th{font-size:12px!important}
-      .comparison-scroll tbody td{font-size:12px!important}
+function PlanLeadModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", budget: "", timeline: "", message: "" });
+
+  const update = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      toast.error("Vui lòng nhập họ tên, email và nội dung.");
+      return;
     }
-  `}</style>
-  </main>}
 
-const PriceCard=({plan,index}:{plan:(typeof plans)[number];index:number})=><motion.article {...reveal} transition={{delay:index*.08}} className={`price-card relative flex flex-col border border-zinc-900 p-6 md:p-8 ${plan.popular?"bg-zinc-950 text-white":"bg-white"}`}>{plan.popular&&<span className="absolute right-4 top-4 border border-[#ffb21c] px-2 py-1 text-[8px] font-black uppercase tracking-wider text-[#ffb21c]">Phù hợp phổ biến</span>}<div className="flex items-start justify-between"><span className={`grid h-12 w-12 place-items-center border ${plan.popular?"border-[#ffb21c] bg-[#ffb21c] text-zinc-950":"border-zinc-900 bg-[#fff8e9]"}`}><plan.icon size={22}/></span><span className={`text-4xl font-black ${plan.popular?"text-white/10":"text-zinc-100"}`}>{plan.number}</span></div><h3 className="mt-7 text-2xl font-black">{plan.name}</h3><p className={`mt-3 min-h-[48px] text-sm leading-6 ${plan.popular?"text-zinc-300":"text-zinc-600"}`}>{plan.summary}</p><div className={`my-6 border-y py-5 ${plan.popular?"border-white/20":"border-zinc-300"}`}><strong className="block text-3xl font-black text-[#d98200]">{plan.price}</strong><span className={`mt-2 block text-[9px] font-bold uppercase tracking-wide ${plan.popular?"text-zinc-400":"text-zinc-500"}`}>{plan.fit} · {plan.time}</span></div><ul className="flex-1 space-y-3">{plan.features.map(feature=><li key={feature} className={`flex gap-2 text-xs leading-5 ${plan.popular?"text-zinc-300":"text-zinc-600"}`}><Check size={14} className="mt-0.5 shrink-0 text-[#d98200]"/>{feature}</li>)}</ul><Link href={`/contact?plan=${plan.id}`} className={`group mt-7 flex items-center justify-between border border-zinc-900 px-5 py-3.5 text-[10px] font-black uppercase ${plan.popular?"bg-[#ffb21c] text-zinc-950":"bg-white hover:bg-[#ffb21c]"}`}>Chọn gói này <ArrowRight size={16}/></Link></motion.article>;
+    setLoading(true);
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          service: plan.name,
+          projectType: plan.id,
+          subject: `Yêu cầu báo giá gói ${plan.name}`,
+          source: "contact",
+          message: `[Gói đã chọn: ${plan.name} - ${plan.price}]\n${form.message}`,
+        }),
+      });
+      if (!response.ok) throw new Error("Không thể gửi yêu cầu");
+      toast.success("Đã gửi yêu cầu báo giá.");
+      onClose();
+    } catch (error) {
+      toast.error("Chưa gửi được yêu cầu. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const Heading=({eyebrow,title}:{eyebrow:string;title:React.ReactNode})=><div className="mx-auto max-w-7xl px-5 text-center lg:px-8"><span className="text-[10px] font-black uppercase tracking-[.2em] text-[#d98200]">{eyebrow}</span><h2 className="mt-5 text-4xl font-black leading-[.95] tracking-[-.05em] [&>span]:text-[#d98200] md:text-6xl">{title}</h2></div>;
+  return (
+    <motion.div className="fixed inset-0 z-[90] grid place-items-center bg-zinc-950/65 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.form onSubmit={submit} initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.98 }} className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto border border-zinc-900 bg-[#fff8e9] shadow-[10px_10px_0_#ffb21c]">
+        <div className="flex items-start justify-between border-b border-zinc-900 bg-zinc-950 p-5 text-white sm:p-6">
+          <div><p className="text-[9px] font-black uppercase tracking-[.18em] text-[#ffb21c]">Pricing request</p><h2 className="mt-2 text-2xl font-black">Chọn gói {plan.name}</h2><p className="mt-2 text-sm text-zinc-400">{plan.price} · {plan.time}</p></div>
+          <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center border border-white/30 hover:bg-white hover:text-zinc-950"><X size={18} /></button>
+        </div>
+        <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+          <Input icon={<UserRound size={17} />} label="Họ và tên" name="name" value={form.name} onChange={update} required />
+          <Input icon={<Mail size={17} />} label="Email" name="email" value={form.email} onChange={update} required type="email" />
+          <Input icon={<Phone size={17} />} label="Số điện thoại" name="phone" value={form.phone} onChange={update} />
+          <Input icon={<Building2 size={17} />} label="Công ty / thương hiệu" name="company" value={form.company} onChange={update} />
+          <Select label="Ngân sách dự kiến" name="budget" value={form.budget} onChange={update} options={budgetOptions} />
+          <Select label="Thời gian mong muốn" name="timeline" value={form.timeline} onChange={update} options={timelineOptions} />
+          <label className="sm:col-span-2"><span className="mb-2 block text-[10px] font-black uppercase tracking-[.16em] text-zinc-500">Nội dung *</span><textarea name="message" value={form.message} onChange={update} required rows={6} placeholder="Mô tả nhanh mục tiêu, tính năng hoặc website tham khảo..." className="w-full border border-zinc-900 bg-white px-4 py-4 text-sm font-semibold leading-7 outline-none focus:shadow-[4px_4px_0_#ffb21c]" /></label>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-zinc-900 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <p className="text-xs font-semibold leading-6 text-zinc-500">Yêu cầu sẽ được lưu vào CMS Leads và gửi mail qua EmailJS backend.</p>
+          <button disabled={loading} className="inline-flex items-center justify-center gap-3 border border-zinc-900 bg-[#ffb21c] px-6 py-4 text-[10px] font-black uppercase shadow-[4px_4px_0_#18181b] disabled:opacity-60">{loading ? "Đang gửi..." : "Gửi yêu cầu"} <Send size={16} /></button>
+        </div>
+      </motion.form>
+    </motion.div>
+  );
+}
+
+function Input({ label, icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; icon?: React.ReactNode }) {
+  return <label><span className="mb-2 block text-[10px] font-black uppercase tracking-[.16em] text-zinc-500">{label}</span><span className="relative block">{icon && <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">{icon}</span>}<input {...props} className={`h-14 w-full border border-zinc-900 bg-white text-sm font-semibold outline-none focus:shadow-[4px_4px_0_#ffb21c] ${icon ? "pl-12 pr-4" : "px-4"}`} /></span></label>;
+}
+
+function Select({ label, options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; options: string[] }) {
+  return <label><span className="mb-2 block text-[10px] font-black uppercase tracking-[.16em] text-zinc-500">{label}</span><select {...props} className="h-14 w-full border border-zinc-900 bg-white px-4 text-sm font-black outline-none focus:shadow-[4px_4px_0_#ffb21c]"><option value="">Chọn thông tin</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+}
+
+function Heading({ eyebrow, title }: { eyebrow: string; title: React.ReactNode }) {
+  return <div className="mx-auto max-w-7xl px-5 text-center lg:px-8"><span className="text-[10px] font-black uppercase tracking-[.2em] text-[#d98200]">{eyebrow}</span><h2 className="mt-5 text-4xl font-black leading-[.95] tracking-[-.05em] [&>span]:text-[#d98200] md:text-6xl">{title}</h2></div>;
+}
