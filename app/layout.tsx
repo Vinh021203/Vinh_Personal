@@ -5,7 +5,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import ThemeProvider from "@/components/ThemeProvider";
 import NextTopLoader from "nextjs-toploader";
 import PageTransition from "@/components/PageTransition";
-import { DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "@/libs/seo";
+import { DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE_URL, SITE_NAME, SITE_URL } from "@/libs/seo";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   creator: "Lương Vinh",
   publisher: SITE_NAME,
   category: "technology",
-  alternates: { canonical: "/" },
+  alternates: { canonical: SITE_URL },
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/vinhworks-favicon-512.png", type: "image/png", sizes: "512x512" }],
@@ -57,13 +57,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: "vi_VN",
     type: "website",
-    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: "Lương Vinh - VinhWorks" }],
+    images: [{ url: DEFAULT_OG_IMAGE_URL, width: 1200, height: 630, alt: "Lương Vinh - VinhWorks" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "VinhWorks | Thiết kế Website & Giải pháp số",
     description: DEFAULT_DESCRIPTION,
-    images: [DEFAULT_OG_IMAGE],
+    images: [{ url: DEFAULT_OG_IMAGE_URL, alt: "Lương Vinh - VinhWorks" }],
   },
 };
 

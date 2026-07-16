@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 
 const rawSiteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-  "https://webgiare.id.vn";
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
+  "https://vinhwork.vercel.app";
 
 export const SITE_URL = rawSiteUrl.replace(/\/$/, "");
 export const SITE_NAME = "VinhWorks";
 export const DEFAULT_OG_IMAGE = "/vinhworks-og-dark-1200x630.jpg";
+export const DEFAULT_OG_IMAGE_URL = `${SITE_URL}${DEFAULT_OG_IMAGE}`;
 export const DEFAULT_DESCRIPTION =
-  "Lương Vinh thiết kế và phát triển website, landing page, web application và trải nghiệm số tối ưu cho doanh nghiệp.";
+  "Lương Vinh thiết kế website, landing page, web application và giải pháp số tối ưu cho doanh nghiệp.";
 
 type SeoOptions = {
   title: string;
@@ -45,6 +46,10 @@ export function absoluteUrl(path = "/") {
   return new URL(path, SITE_URL).toString();
 }
 
+export function absoluteImageUrl(image = DEFAULT_OG_IMAGE) {
+  return image.startsWith("http") ? image : absoluteUrl(image);
+}
+
 export function createMetadata({
   title,
   description,
@@ -56,7 +61,7 @@ export function createMetadata({
   noIndex = false,
 }: SeoOptions): Metadata {
   const canonical = absoluteUrl(path);
-  const imageUrl = image.startsWith("http") ? image : absoluteUrl(image);
+  const imageUrl = absoluteImageUrl(image);
 
   return {
     title,
