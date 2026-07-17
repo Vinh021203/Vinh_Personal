@@ -13,13 +13,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "404 - Không tìm thấy trang | VinhWorks",
     description: "Có vẻ như bạn đã đi lạc. Hãy quay về trang chủ để tiếp tục.",
-    url: "https://webgiare.id.vn",
+    url: "https://vinhwork.io.vn",
     siteName: "VinhWorks",
     locale: "vi_VN",
     type: "website",
     images: [
       {
-        url: "https://webgiare.id.vn/vinhworks-og-dark-1200x630.jpg",
+        url: "https://vinhwork.io.vn/vinhworks-og-dark-1200x630.jpg",
         width: 1200,
         height: 630,
         alt: "VinhWorks Not Found",

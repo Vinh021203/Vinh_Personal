@@ -13,7 +13,7 @@ const schema = {
   "@context": "https://schema.org",
   "@type": "Service",
   name: "Thiết kế và phát triển Website",
-  provider: { "@type": "Person", name: "Lương Vinh", url: "https://webgiare.id.vn/about" },
+  provider: { "@type": "Person", name: "Lương Vinh", url: "https://vinhwork.io.vn/about" },
   areaServed: "VN",
   offers: { "@type": "AggregateOffer", priceCurrency: "VND", lowPrice: "5000000", offerCount: "3" },
 };

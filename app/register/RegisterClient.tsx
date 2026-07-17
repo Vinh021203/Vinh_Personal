@@ -59,7 +59,7 @@ export default function RegisterClient() {
         <p className="mt-7 max-w-xl text-sm leading-7 text-zinc-400 xl:text-base xl:leading-8">Tạo tài khoản để truy cập hệ thống, theo dõi thông tin cá nhân và sử dụng những tính năng dành cho thành viên.</p>
         <div className="mt-9 grid max-w-2xl grid-cols-3 border border-white/20"><Benefit number="01" text="Tài khoản riêng" /><Benefit number="02" text="Dữ liệu bảo mật" /><Benefit number="03" text="Truy cập nhanh" last /></div>
       </div>
-      <div className="relative flex items-center justify-between border-t border-white/15 px-8 py-5 text-[8px] font-black uppercase tracking-[.16em] text-zinc-500 xl:px-12"><span>© 2026 VinhWorks</span><span>webgiare.id.vn</span></div>
+      <div className="relative flex items-center justify-between border-t border-white/15 px-8 py-5 text-[8px] font-black uppercase tracking-[.16em] text-zinc-500 xl:px-12"><span>© 2026 VinhWorks</span><span>vinhwork.io.vn</span></div>
     </motion.section>
 
     <section className="relative h-full min-h-0 overflow-hidden bg-[#fff8e9]">

@@ -16,8 +16,8 @@ const personSchema = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: "Lương Vinh",
-  url: "https://webgiare.id.vn/about",
-  image: "https://webgiare.id.vn/me.jpg",
+  url: "https://vinhwork.io.vn/about",
+  image: "https://vinhwork.io.vn/me.jpg",
   jobTitle: "Independent Web Developer",
   address: {
     "@type": "PostalAddress",

@@ -14,12 +14,12 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   name: "Liên hệ Lương Vinh",
-  url: "https://webgiare.id.vn/contact",
+  url: "https://vinhwork.io.vn/contact",
   mainEntity: {
     "@type": "Person",
     name: "Lương Vinh",
     telephone: "+84971386588",
-    email: "contact@vinhworks.com",
+    email: "contact@vinhwork.io.vn",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Hạ Long",

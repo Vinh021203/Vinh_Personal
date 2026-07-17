@@ -15,8 +15,8 @@ const jsonLd = {
   "@type": "CollectionPage",
   name: "Dự án của Lương Vinh",
   description: "Danh sách website và sản phẩm số do Lương Vinh thực hiện.",
-  url: "https://webgiare.id.vn/projects",
-  author: { "@type": "Person", name: "Lương Vinh", url: "https://webgiare.id.vn" },
+  url: "https://vinhwork.io.vn/projects",
+  author: { "@type": "Person", name: "Lương Vinh", url: "https://vinhwork.io.vn" },
 };
 
 export default function ProjectsPage() {

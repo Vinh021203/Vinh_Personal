@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const rawSiteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
-  "https://vinhwork.vercel.app";
+  "https://vinhwork.io.vn";
 
 export const SITE_URL = rawSiteUrl.replace(/\/$/, "");
 export const SITE_NAME = "VinhWorks";

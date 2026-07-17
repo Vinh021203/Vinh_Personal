@@ -112,8 +112,8 @@ export default function ContactClient() {
               <h2 className="mt-2 text-2xl font-black">Không qua trung gian.</h2>
             </div>
             <QuickContact icon={<Phone size={18} />} label="Điện thoại" value="0971 386 588" href="tel:0971386588" />
-            <QuickContact icon={<Mail size={18} />} label="Email" value="contact@vinhworks.com" href="mailto:contact@vinhworks.com" />
-            <QuickContact icon={<Globe2 size={18} />} label="Website" value="webgiare.id.vn" href="https://webgiare.id.vn" last />
+            <QuickContact icon={<Mail size={18} />} label="Email" value="contact@vinhwork.io.vn" href="mailto:contact@vinhwork.io.vn" />
+            <QuickContact icon={<Globe2 size={18} />} label="Website" value="vinhwork.io.vn" href="https://vinhwork.io.vn" last />
           </div>
         </div>
       </section>
