@@ -159,6 +159,9 @@ export default function ContactClient() {
             <button disabled={submitting} className="mt-6 inline-flex w-full items-center justify-center gap-3 border border-zinc-900 bg-[#ffb21c] px-6 py-5 text-sm font-black uppercase tracking-[.14em] shadow-[5px_5px_0_#111] transition hover:-translate-y-0.5 disabled:opacity-60">
               {submitting ? "Đang gửi..." : sent ? "Gửi thêm yêu cầu" : "Gửi yêu cầu"} <Send size={18} />
             </button>
+            <p className="mt-4 text-center text-xs font-semibold leading-6 text-zinc-500">
+              Thông tin của bạn chỉ dùng để tư vấn dự án và sẽ được phản hồi trực tiếp bởi Lương Vinh.
+            </p>
           </form>
         </div>
       </section>

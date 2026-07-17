@@ -75,7 +75,7 @@ export default function PricingClient() {
               Chi phí rõ ràng.<br /><span className="text-[#d98200]">Phạm vi minh bạch.</span>
             </h1>
             <p className="mt-8 max-w-2xl text-base leading-8 text-zinc-600 md:text-lg">
-              Chọn gói phù hợp để gửi nhanh thông tin dự án. Yêu cầu sẽ được lưu vào CMS và gửi thông báo về email của bạn qua backend.
+              Chọn gói phù hợp để gửi nhanh thông tin dự án. Tôi sẽ xem brief và phản hồi trực tiếp với hướng triển khai rõ ràng.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <a href="#plans" className="group inline-flex items-center gap-5 border border-zinc-900 bg-[#ffb21c] px-6 py-3.5 text-xs font-black uppercase shadow-[4px_4px_0_#18181b]">Xem các gói <ArrowRight size={17} /></a>
@@ -215,7 +215,7 @@ function PlanLeadModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
           <label className="sm:col-span-2"><span className="mb-2 block text-[10px] font-black uppercase tracking-[.16em] text-zinc-500">Nội dung *</span><textarea name="message" value={form.message} onChange={update} required rows={6} placeholder="Mô tả nhanh mục tiêu, tính năng hoặc website tham khảo..." className="w-full border border-zinc-900 bg-white px-4 py-4 text-sm font-semibold leading-7 outline-none focus:shadow-[4px_4px_0_#ffb21c]" /></label>
         </div>
         <div className="flex flex-col gap-3 border-t border-zinc-900 bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <p className="text-xs font-semibold leading-6 text-zinc-500">Yêu cầu sẽ được lưu vào CMS Leads và gửi mail qua EmailJS backend.</p>
+          <p className="text-xs font-semibold leading-6 text-zinc-500">Thông tin của bạn sẽ được gửi bảo mật và phản hồi trực tiếp trong thời gian sớm nhất.</p>
           <button disabled={loading} className="inline-flex items-center justify-center gap-3 border border-zinc-900 bg-[#ffb21c] px-6 py-4 text-[10px] font-black uppercase shadow-[4px_4px_0_#18181b] disabled:opacity-60">{loading ? "Đang gửi..." : "Gửi yêu cầu"} <Send size={16} /></button>
         </div>
       </motion.form>
