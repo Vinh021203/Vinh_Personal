@@ -61,6 +61,7 @@ const nextConfig = {
           "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://ui-avatars.com https://api.dicebear.com",
           "font-src 'self' data:",
           "connect-src 'self' https://api.emailjs.com https://res.cloudinary.com",
+          "frame-src 'self' https://docs.google.com",
           "frame-ancestors 'self'",
           "base-uri 'self'",
           "form-action 'self'",
