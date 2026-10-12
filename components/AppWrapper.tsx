@@ -12,7 +12,7 @@ export default function AppWrapper({
   const pathname = usePathname();
 
   // Danh sách các route KHÔNG hiển thị Header/Footer
-  const hiddenLayoutRoutes = ["/login", "/register", "/form"];
+  const hiddenLayoutRoutes = ["/login", "/register"];
 
   // Kiểm tra xem route hiện tại có nằm trong danh sách ẩn, HOẶC là trang admin không
   const isHiddenLayout =

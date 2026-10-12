@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import avatar from "@/public/me.jpg";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, Code2, Download, Gauge, Heart, Layers3, Lightbulb, Mail, MapPin, Palette, Search, ShieldCheck, Sparkles, UserRound, Workflow } from "lucide-react";
@@ -46,7 +47,7 @@ export default function AboutClient() {
           <div className="absolute -left-5 -top-5 h-20 w-20 border-l-2 border-t-2 border-[#ffb21c]"/>
           <div className="border border-zinc-900 bg-white p-3 shadow-[10px_10px_0_#ffb21c]">
             <div className="mb-3 flex items-center justify-between border-b border-zinc-900 pb-3 text-[9px] font-black uppercase tracking-[.16em]"><span>Portrait / 2026</span><span>Hạ Long · VN</span></div>
-            <div className="relative aspect-[4/5] overflow-hidden bg-amber-100 sm:aspect-[4/3]"><Image src="/me.jpg" alt="Lương Vinh" fill priority sizes="(max-width: 1024px) 100vw, 560px" className="object-cover object-center"/></div>
+            <div className="relative aspect-square overflow-hidden bg-amber-100"><Image src={avatar} alt="Lương Vinh" fill priority sizes="(max-width: 1024px) 100vw, 560px" className="object-cover object-center"/></div>
           </div>
           <span className="absolute -bottom-5 -right-2 rotate-2 border border-zinc-900 bg-zinc-950 px-5 py-3 text-[10px] font-black uppercase tracking-wide text-white shadow-[3px_3px_0_#ffb21c]">Design · Code · Deliver</span>
         </motion.div>

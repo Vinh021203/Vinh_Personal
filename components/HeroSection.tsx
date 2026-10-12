@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import avatar from "@/public/me.jpg";
 import Link from "next/link";
 import { ArrowDownRight, ArrowRight, Code2, Palette, Zap } from "lucide-react";
 
@@ -61,8 +62,8 @@ export const HeroSection = () => (
             <span className="text-[10px] font-black uppercase tracking-[.15em]">Creative developer</span>
             <div className="flex gap-2"><i className="h-2 w-2 rounded-full bg-zinc-950" /><i className="h-2 w-2 rounded-full bg-[#ffad0a]" /></div>
           </div>
-          <div className="relative aspect-[4/3] overflow-hidden bg-[#f3e7d2]">
-            <Image src="/me.jpg" alt="VinhWorks developer" fill priority sizes="(max-width: 1024px) 100vw, 620px" className="object-cover object-center grayscale-[15%]" />
+          <div className="relative aspect-square overflow-hidden bg-[#f3e7d2]">
+            <Image src={avatar} alt="Lương Vinh" fill priority sizes="(max-width: 1024px) 100vw, 620px" className="object-cover object-center grayscale-[15%]" />
             <div className="absolute bottom-4 left-4 border border-zinc-900 bg-white px-4 py-3 text-xs font-black shadow-[3px_3px_0_#18181b]">AVAILABLE FOR WORK · 2026</div>
           </div>
         </div>

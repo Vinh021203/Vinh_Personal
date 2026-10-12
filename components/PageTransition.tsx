@@ -73,7 +73,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
               >
                 <div className="flex items-center gap-3">
                   <LoadingSpinner size="sm" />
-                  <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-[.2em]">Dang chuyen trang</span>
+                  <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-[.2em]">Đang chuyển trang</span>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-white/10">
                   <motion.span

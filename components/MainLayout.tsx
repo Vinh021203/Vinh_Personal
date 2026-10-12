@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, Bot, MessageCircle, Phone, Sparkles, X } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import SurveyPopup from "./SurveyPopup";
 
 const ChatbotBox = dynamic(() => import("@/components/ChatbotBox"), {
   ssr: false,
@@ -57,7 +56,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {children}
       </main>
       <Footer />
-      <SurveyPopup />
 
       <AnimatePresence>
         {showChat && (
